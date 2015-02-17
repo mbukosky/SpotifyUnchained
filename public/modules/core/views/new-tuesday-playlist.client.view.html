@@ -1,0 +1,14 @@
+<section data-ng-controller="NewTuesdayPlaylistController">
+  <h1>This is the New tuesday playlist</h1>
+
+  <div data-ng-repeat="(key, value) in data">
+    <pre>{{value.title | json}}</pre>
+
+    <ul>
+      <li data-ng-repeat="track in value.tracks">
+        <a data-ng-href="{{track.open_url}}" target="_blank">{{track.name}}</a>
+      </li>
+    </ul>
+  </div>
+
+</section>
