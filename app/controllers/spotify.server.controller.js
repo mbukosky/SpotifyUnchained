@@ -1,0 +1,73 @@
+'use strict';
+
+/**
+ * Module dependencies.
+ */
+var request = require('request'),
+  playlist = require('./playlist.server.controller'),
+  _ = require('lodash');
+
+var client_id = 'cdfebf44789444849ef7ad7dccef8a2a';
+var client_secret = '4cb435beaeb64b308126565a5d05d714'; // TODO: Can I put this in a config?
+var playlist_id = '1yHZ5C3penaxRdWR7LRIOb';
+
+var authOptions = {
+  url: 'https://accounts.spotify.com/api/token',
+  headers: {
+    'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64'))
+  },
+  form: {
+    grant_type: 'client_credentials'
+  },
+  json: true
+};
+
+var saveTracks = function(data) {
+
+  var tracks = [];
+  data.items.forEach(function(item) {
+    tracks.push({
+      id: item.track.id,
+      name: item.track.name,
+      added_at: item.added_at,
+      open_url: item.track.external_urls.spotify
+    });
+  });
+
+  var req = function() {};
+  var res = {
+    json: function(playlist) {
+      console.log('Created playlist' + playlist);
+    }
+  };
+  
+  playlist.create(req, res, tracks);
+};
+
+/**
+ * Sync a Spotify playlist by fetching the results and saving them to the database
+ */
+exports.sync = function(req, res) {
+  request.post(authOptions, function(error, response, body) {
+    if (!error && response.statusCode === 200) {
+
+      // use the access token to access the Spotify Web API
+      var token = body.access_token;
+      console.log('TOKEN: ' + token);
+
+      var options = {
+        url: 'https://api.spotify.com/v1/users/spotify/playlists/' + playlist_id + '/tracks',
+        headers: {
+          'Authorization': 'Bearer ' + token
+        },
+        json: true
+      };
+
+      request.get(options, function(error, response, body) {
+        saveTracks(body);
+
+        console.log('All Tracks Saved!');
+      });
+    }
+  });
+};
