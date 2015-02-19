@@ -9,25 +9,44 @@ var mongoose = require('mongoose'),
   Playlist = mongoose.model('Playlist'),
   _ = require('lodash');
 
+var getRecentTuesday = function() {
+  return moment()
+    .startOf('week')
+    .add(2, 'days')
+    .format('MM.DD.YYYY');
+};
+
+var getNewTuesdayTitle = function() {
+  return 'New.Tuesday.' + getRecentTuesday();
+};
+
 /**
  * Create a Spotify
  */
 exports.create = function(req, res, tracks) {
   var playlist = new Playlist(tracks);
 
-  var title = moment().format('MM-DD-YYYY');
-  playlist.title = title;
+  playlist.title = getNewTuesdayTitle();
   playlist.tracks = tracks;
 
-  playlist.save(function(err) {
-    if (err) {
-      return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
-      });
-    } else {
-      res.json(playlist);
-    }
-  });
+  var upsertData = playlist.toObject();
+
+  delete upsertData._id;
+
+  Playlist.update({
+      title: playlist.title
+    }, upsertData, {
+      upsert: true
+    },
+    function(err) {
+      if (err) {
+        return res.status(400).send({
+          message: errorHandler.getErrorMessage(err)
+        });
+      } else {
+        res.json(playlist);
+      }
+    });
 };
 
 /**

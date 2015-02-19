@@ -37,10 +37,10 @@ var saveTracks = function(data) {
   var req = function() {};
   var res = {
     json: function(playlist) {
-      console.log('Created playlist' + playlist);
+      console.log('Saved ' + playlist.title);
     }
   };
-  
+
   playlist.create(req, res, tracks);
 };
 
@@ -65,8 +65,6 @@ exports.sync = function(req, res) {
 
       request.get(options, function(error, response, body) {
         saveTracks(body);
-
-        console.log('All Tracks Saved!');
       });
     }
   });
