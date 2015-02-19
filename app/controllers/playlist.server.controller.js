@@ -9,14 +9,24 @@ var mongoose = require('mongoose'),
   Playlist = mongoose.model('Playlist'),
   _ = require('lodash');
 
+var getRecentTuesday = function() {
+  return moment()
+    .startOf('week')
+    .add(2, 'days')
+    .format('MM.DD.YYYY');
+};
+
+var getNewTuesdayTitle = function() {
+  return 'New.Tuesday.' + getRecentTuesday();
+};
+
 /**
  * Create a Spotify
  */
 exports.create = function(req, res, tracks) {
   var playlist = new Playlist(tracks);
 
-  var title = moment().format('MM-DD-YYYY');
-  playlist.title = title;
+  playlist.title = getNewTuesdayTitle();
   playlist.tracks = tracks;
 
   var upsertData = playlist.toObject();
