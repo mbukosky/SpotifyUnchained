@@ -19,15 +19,24 @@ exports.create = function(req, res, tracks) {
   playlist.title = title;
   playlist.tracks = tracks;
 
-  playlist.save(function(err) {
-    if (err) {
-      return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
-      });
-    } else {
-      res.json(playlist);
-    }
-  });
+  var upsertData = playlist.toObject();
+
+  delete upsertData._id;
+
+  Playlist.update({
+      title: playlist.title
+    }, upsertData, {
+      upsert: true
+    },
+    function(err) {
+      if (err) {
+        return res.status(400).send({
+          message: errorHandler.getErrorMessage(err)
+        });
+      } else {
+        res.json(playlist);
+      }
+    });
 };
 
 /**
