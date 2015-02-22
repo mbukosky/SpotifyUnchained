@@ -34,6 +34,9 @@ var PlaylistSchema = new Schema({
     open_url: {
       type: String
     },
+    uri: {
+      type: String
+    },
     added_at: {
       type: Date
     }

@@ -31,7 +31,8 @@ var saveTracks = function(data) {
       name: item.track.name,
       artist: item.track.artists[0].name,
       added_at: item.added_at,
-      open_url: item.track.external_urls.spotify
+      open_url: item.track.external_urls.spotify,
+      uri: item.track.uri
     });
   });
 
