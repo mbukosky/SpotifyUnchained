@@ -1,11 +1,24 @@
 'use strict';
+
+/**
+ * Lets set the environment variable for heroku
+ * This file is not checked into source control
+ */
+var envs_exist = require('fs').existsSync('./config/env/heroku.js');
+if (envs_exist) {
+  require('./config/env/heroku.js')();
+}
+
+// Init the new relic application
+require('newrelic');
+
 /**
  * Module dependencies.
  */
 var init = require('./config/init')(),
-	config = require('./config/config'),
-	mongoose = require('mongoose'),
-	chalk = require('chalk');
+  config = require('./config/config'),
+  mongoose = require('mongoose'),
+  chalk = require('chalk');
 
 /**
  * Main application entry file.
@@ -14,10 +27,10 @@ var init = require('./config/init')(),
 
 // Bootstrap db connection
 var db = mongoose.connect(config.db, function(err) {
-	if (err) {
-		console.error(chalk.red('Could not connect to MongoDB!'));
-		console.log(chalk.red(err));
-	}
+  if (err) {
+    console.error(chalk.red('Could not connect to MongoDB!'));
+    console.log(chalk.red(err));
+  }
 });
 
 // Init the express application

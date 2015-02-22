@@ -7,8 +7,8 @@ var request = require('request'),
   playlist = require('./playlist.server.controller'),
   _ = require('lodash');
 
-var client_id = 'cdfebf44789444849ef7ad7dccef8a2a';
-var client_secret = '4cb435beaeb64b308126565a5d05d714'; // TODO: Can I put this in a config?
+var client_id = process.env.SPOTIFY_CLIENT_ID || 'client';
+var client_secret = process.env.SPOTIFY_CLIENT_SECRET || 'secret';
 var playlist_id = '1yHZ5C3penaxRdWR7LRIOb';
 
 var authOptions = {
@@ -67,5 +67,7 @@ exports.sync = function(req, res) {
         saveTracks(body);
       });
     }
+
+    //TODO: Added error logging
   });
 };
