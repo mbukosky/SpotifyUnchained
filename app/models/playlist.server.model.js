@@ -28,7 +28,13 @@ var PlaylistSchema = new Schema({
     name: {
       type: String
     },
+    artist: {
+      type: String
+    },
     open_url: {
+      type: String
+    },
+    uri: {
       type: String
     },
     added_at: {
