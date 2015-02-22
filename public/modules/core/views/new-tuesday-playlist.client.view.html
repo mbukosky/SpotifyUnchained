@@ -1,8 +1,11 @@
 <section data-ng-controller="NewTuesdayPlaylistController">
   <h1>This is the New tuesday playlist</h1>
-
+  <pre>{{saved | json}}</pre>
   <accordion close-others="oneAtATime">
-    <accordion-group heading="{{playlist.title}}" data-ng-repeat="playlist in data">
+    <accordion-group data-ng-repeat="playlist in data">
+      <accordion-heading>
+        {{playlist.title}} <i class="pull-right fa fa-bars" title="save playlist" data-ng-click="onSavePlaylist(playlist.title)"></i>
+      </accordion-heading>
       <ul>
         <li data-ng-repeat="track in playlist.tracks">
           <a data-ng-href="{{track.open_url}}" target="_blank">{{track.artist}} - {{track.name}}</a>
