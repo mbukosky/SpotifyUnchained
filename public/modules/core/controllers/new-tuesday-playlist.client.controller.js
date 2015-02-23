@@ -1,12 +1,12 @@
 'use strict';
 
-angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', 'Spotify',
-  function($scope, Spotify) {
+angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', 'SpotifyPlaylist',
+  function($scope, SpotifyPlaylist) {
     $scope.oneAtATime = true;
-    $scope.data = Spotify.query();
+    $scope.data = SpotifyPlaylist.query();
     $scope.saved = null;
 
-    $scope.onSavePlaylist = function(title){
+    $scope.onSavePlaylist = function(title) {
       $scope.saved = title;
     };
 
