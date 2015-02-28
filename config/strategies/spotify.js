@@ -4,13 +4,14 @@
  * Module dependencies.
  */
 var passport = require('passport'),
+  refresh = require('passport-oauth2-refresh'),
   SpotifyStrategy = require('passport-spotify').Strategy,
   config = require('../config'),
   users = require('../../app/controllers/users.server.controller');
 
 module.exports = function() {
   // Use spotify strategy
-  passport.use(new SpotifyStrategy({
+  var strategy = new SpotifyStrategy({
       clientID: config.spotify.clientID,
       clientSecret: config.spotify.clientSecret,
       callbackURL: config.spotify.callbackURL,
@@ -18,8 +19,14 @@ module.exports = function() {
     function(req, accessToken, refreshToken, profile, done) {
       // Set the provider data and include tokens
       var providerData = profile._json;
-      providerData.accessToken = accessToken;
-      providerData.refreshToken = refreshToken;
+
+      /**
+       * NOTE: There is a bug in passport where the accessToken and
+       * refresh token and swapped. I am patching this in the strategy
+       * so I don't have to apply this backwards logic throughout the app
+       */
+      providerData.accessToken = refreshToken.access_token;
+      providerData.refreshToken = accessToken;
 
       // Create the user OAuth profile
       var providerUserProfile = {
@@ -33,5 +40,8 @@ module.exports = function() {
       // Save the user OAuth profile
       users.saveOAuthUserProfile(req, providerUserProfile, done);
     }
-  ));
+  );
+
+  passport.use(strategy);
+  refresh.use(strategy);
 };

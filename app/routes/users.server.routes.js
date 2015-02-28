@@ -58,6 +58,7 @@ module.exports = function(app) {
     scope: ['playlist-read-private', 'playlist-modify-private']
   }));
   app.route('/auth/spotify/callback').get(users.oauthCallback('spotify'));
+  app.route('/auth/spotify/refresh').get(users.oauthRefresh('spotify'));
 
   // Finish by binding the user middleware
   app.param('userId', users.userByID);

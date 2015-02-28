@@ -1,13 +1,10 @@
 'use strict';
 
-angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$http', '$location', 'SpotifyPlaylist', 'Spotify', 'localStorageService', 'Authentication',
-  function($scope, $http, $location, SpotifyPlaylist, Spotify, localStorageService, Authentication) {
+angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$http', '$location', 'SpotifyPlaylist', 'Spotify', 'Authentication',
+  function($scope, $http, $location, SpotifyPlaylist, Spotify, Authentication) {
     $scope.oneAtATime = true;
     $scope.data = SpotifyPlaylist.query();
-    $scope.authentication = Authentication;
     $scope.user = Authentication.user;
-
-    //TODO Need to figure out how to expire the token from the cache
 
     $scope.onSavePlaylist = function(title, tracks) {
       var uris = [];
@@ -27,17 +24,32 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
       });
     };
 
-    if ($scope.user) {
-      $scope.token = $scope.user.providerData.refreshToken.access_token;
-      Spotify.setAuthToken($scope.token);
+    $scope.refreshToken = function() {
+      $http.get('/auth/spotify/refresh', {
+        params: {
+          refresh_token: $scope.user.providerData.refreshToken
+        }
+      }).success(function(response) {
+        // Update the user with new tokens
+        $scope.user = Authentication.user = response;
+      }).error(function(response) {
+        console.log(response.message);
+      });
+    };
 
+    if ($scope.user) {
+      var token = $scope.user.providerData.accessToken;
+      Spotify.setAuthToken(token);
+
+      // Try getting the users settings
       Spotify.getCurrentUser().then(function(data) {
         //TODO can I just use the error promise?
       }, function(response) {
         var error = response.error;
-        if (error.status == 401) {
+        if (error.status === 401) {
           console.error(error.message);
-          //TODO need to redirect back to signin
+
+          $scope.refreshToken();
         }
       });
     }
