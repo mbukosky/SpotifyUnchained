@@ -12,14 +12,15 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
         this.push(value.uri);
       }, uris);
 
-      Spotify.createPlaylist($scope.user, {
+      var user_id = $scope.user.username;
+      Spotify.createPlaylist(user_id, {
         name: title,
         public: false
       }).then(function(data) {
         var playlist = data.id;
 
-        Spotify.addPlaylistTracks($scope.user, playlist, uris).then(function(data) {
-          console.log('tracks added to playlist - ' + data);
+        Spotify.addPlaylistTracks(user_id, playlist, uris).then(function(data) {
+          console.log('tracks added to playlist - ' + JSON.stringify(data));
         });
       });
     };
