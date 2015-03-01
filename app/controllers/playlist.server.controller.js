@@ -16,7 +16,7 @@ var getRecentTuesday = function() {
 };
 
 var getNewTuesdayTitle = function() {
-  return 'New.Tuesday.' + getRecentTuesday();
+  return 'New.Music.Tuesday.' + getRecentTuesday();
 };
 
 /**
