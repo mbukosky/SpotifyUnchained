@@ -33,6 +33,7 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
       }).success(function(response) {
         // Update the user with new tokens
         $scope.user = Authentication.user = response;
+        $location.path('/');
       }).error(function(response) {
         console.log(response.message);
       });
