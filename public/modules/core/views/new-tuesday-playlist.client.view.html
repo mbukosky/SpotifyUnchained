@@ -1,8 +1,20 @@
-<section data-ng-controller="NewTuesdayPlaylistController">
-  <h1>This is the New tuesday playlist</h1>
-  <!-- <pre ng-show="token">{{token | json }}</pre> -->
-  <!-- <pre ng-show="user">{{user | json }}</pre> -->
-  <!-- <pre>{{saved | json}}</pre> -->
+<section class="new-music" data-ng-controller="NewTuesdayPlaylistController">
+
+  <div class="jumbotron text-center">
+    <h2>Never lose a playlist again!</h1>
+      <p>Browse any archived playlist before saving to your account</p>
+      <div data-ng-hide="{{user}}">
+        <h5>Sign in below to save a playlist</h5>
+        <div class="row">
+          <div class="col-md-12 text-center">
+            <a href="/auth/spotify" class="undecorated-link">
+              <img src="/modules/users/img/buttons/spotify.png">
+            </a>
+          </div>
+        </div>
+      </div>
+  </div>
+
   <accordion close-others="oneAtATime">
     <accordion-group data-ng-repeat="playlist in data">
       <accordion-heading>
