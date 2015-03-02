@@ -26,3 +26,6 @@ body {
 .new-music well {
   color: #fff;
 }
+.fa {
+  cursor: pointer;
+}

@@ -6,7 +6,12 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
     $scope.data = SpotifyPlaylist.query();
     $scope.user = Authentication.user;
 
-    $scope.onSavePlaylist = function(title, tracks) {
+    $scope.onSavePlaylist = function(title, tracks, e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
       var uris = [];
       angular.forEach(tracks, function(value) {
         this.push(value.uri);
