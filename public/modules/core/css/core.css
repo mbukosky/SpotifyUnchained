@@ -29,3 +29,6 @@ body {
 .fa {
   cursor: pointer;
 }
+.saved {
+  color: #84bd00;
+}
