@@ -6,10 +6,23 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
     $scope.data = SpotifyPlaylist.query();
     $scope.user = Authentication.user;
 
-    $scope.onSavePlaylist = function(title, tracks, e) {
+    // Saved items are using the same index as the playlist
+    $scope.saved = [];
+    SpotifyPlaylist.query().$promise.then(function(data) {
+      angular.forEach(data, function(value) {
+        this.push(false);
+      }, $scope.saved);
+    });
+
+    $scope.onSavePlaylist = function(title, tracks, e, idx) {
       if (e) {
         e.preventDefault();
         e.stopPropagation();
+      }
+
+      if($scope.saved[idx]){
+        //TODO: Disable click
+        return;
       }
 
       var uris = [];
@@ -26,6 +39,7 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
 
         Spotify.addPlaylistTracks(user_id, playlist, uris).then(function(data) {
           console.log('tracks added to playlist - ' + JSON.stringify(data));
+          $scope.saved[idx] = true;
         });
       });
     };
