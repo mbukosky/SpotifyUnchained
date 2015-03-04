@@ -5,25 +5,35 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
     $scope.oneAtATime = true;
     $scope.data = SpotifyPlaylist.query();
     $scope.user = Authentication.user;
+    $scope.saved = {};
 
-    // Saved items are using the same index as the playlist
-    $scope.saved = [];
-    SpotifyPlaylist.query().$promise.then(function(data) {
-      angular.forEach(data, function(value) {
-        this.push(false);
-      }, $scope.saved);
-    });
+    var determineSavedPlaylists = function() {
+      /* Get the first 50 playlist and see if the user has
+      * already downloaded it. Use the playlist
+      * name as the matching key.
+      */
+      Spotify.getUserPlaylists($scope.user.username, {
+        limit: 50
+      }).then(function(data) {
+        angular.forEach(data.items, function(value) {
+          this[value.name] = true;
+        }, $scope.saved);
+      });
+    };
 
-    $scope.onSavePlaylist = function(title, tracks, e, idx) {
+    $scope.onSavePlaylist = function(title, tracks, e) {
       if (e) {
         e.preventDefault();
         e.stopPropagation();
       }
 
-      if($scope.saved[idx]){
+      if ($scope.saved[title]) {
         //TODO: Disable click
         return;
       }
+
+      //Mark the current playlist as saved to avoid a double click
+      $scope.saved[title] = true;
 
       var uris = [];
       angular.forEach(tracks, function(value) {
@@ -39,7 +49,6 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
 
         Spotify.addPlaylistTracks(user_id, playlist, uris).then(function(data) {
           console.log('tracks added to playlist - ' + JSON.stringify(data));
-          $scope.saved[idx] = true;
         });
       });
     };
@@ -65,6 +74,8 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
       // Try getting the users settings
       Spotify.getCurrentUser().then(function(data) {
         //TODO can I just use the error promise?
+
+        determineSavedPlaylists();
       }, function(response) {
         var error = response.error;
         if (error.status === 401) {
