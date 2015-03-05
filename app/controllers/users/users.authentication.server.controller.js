@@ -43,37 +43,42 @@ exports.signout = function(req, res) {
 
 exports.oauthRefresh = function(strategy) {
   return function(req, res, next) {
-    var refresh_token = req.query.refresh_token;
-    var user = req.user;
-    refresh.requestNewAccessToken(strategy, refresh_token, function(err, accessToken, refreshToken) {
-
+    // Find the user to get the refresh token
+    User.findById(req.user.id, function(err, user) {
       if (err || !user) {
         res.status(400).send(err);
       } else {
+        refresh.requestNewAccessToken(strategy, user.providerData.refreshToken, function(err, accessToken, refreshToken) {
 
-        // Update the user's data with the new tokens
-        user.providerData.accessToken = accessToken;
-
-        // Most likely we will not get a new refresh token
-        if (refreshToken) {
-          user.providerData.refreshToken = refreshToken;
-        }
-
-        // Then tell mongoose that we've updated the providerData field
-        user.markModified('providerData');
-
-        // Then save the user
-        user.save(function(err) {
-          if (err) {
-            return res.status(400).send({
-              message: errorHandler.getErrorMessage(err)
-            });
+          if (err || !user) {
+            res.status(400).send(err);
           } else {
-            req.login(user, function(err) {
+
+            // Update the user's data with the new tokens
+            user.providerData.accessToken = accessToken;
+
+            // Most likely we will not get a new refresh token
+            if (refreshToken) {
+              user.providerData.refreshToken = refreshToken;
+            }
+
+            // Then tell mongoose that we've updated the providerData field
+            user.markModified('providerData');
+
+            // Then save the user
+            user.save(function(err) {
               if (err) {
-                res.status(400).send(err);
+                return res.status(400).send({
+                  message: errorHandler.getErrorMessage(err)
+                });
               } else {
-                res.json(user);
+                req.login(user, function(err) {
+                  if (err) {
+                    res.status(400).send(err);
+                  } else {
+                    res.json(user);
+                  }
+                });
               }
             });
           }

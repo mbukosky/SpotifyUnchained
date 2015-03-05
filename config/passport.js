@@ -7,7 +7,7 @@ var passport = require('passport'),
 	User = require('mongoose').model('User'),
 	path = require('path'),
 	config = require('./config');
-	
+
 /**
  * Module init function.
  */
@@ -22,6 +22,9 @@ module.exports = function() {
 		User.findOne({
 			_id: id
 		}, '-salt -password', function(err, user) {
+			// Remove sensitive data before sending to client
+			user.providerData.refreshToken = undefined;
+
 			done(err, user);
 		});
 	});

@@ -3,12 +3,12 @@
 module.exports = {
   app: {
     title: 'SpotifyUnchained',
-    description: 'Full-Stack JavaScript with MongoDB, Express, AngularJS, and Node.js',
-    keywords: 'Spotify, Node.js, AngularJS'
+    description: 'Save a spotify playlist before they update each week',
+    keywords: 'Spotify, playlist, new music tuesday, Node.js, AngularJS'
   },
   port: process.env.PORT || 3000,
   templateEngine: 'swig',
-  sessionSecret: 'MEAN',
+  sessionSecret: process.env.SESSION_SECRET || 'MEAN',
   sessionCollection: 'sessions',
   assets: {
     lib: {

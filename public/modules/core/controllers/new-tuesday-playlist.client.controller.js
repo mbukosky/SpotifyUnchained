@@ -9,9 +9,9 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
 
     var determineSavedPlaylists = function() {
       /* Get the first 50 playlist and see if the user has
-      * already downloaded it. Use the playlist
-      * name as the matching key.
-      */
+       * already downloaded it. Use the playlist
+       * name as the matching key.
+       */
       Spotify.getUserPlaylists($scope.user.username, {
         limit: 50
       }).then(function(data) {
@@ -54,11 +54,7 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
     };
 
     $scope.refreshToken = function() {
-      $http.get('/auth/spotify/refresh', {
-        params: {
-          refresh_token: $scope.user.providerData.refreshToken
-        }
-      }).success(function(response) {
+      $http.get('/auth/spotify/refresh').success(function(response) {
         // Update the user with new tokens
         $scope.user = Authentication.user = response;
         $location.path('/');
