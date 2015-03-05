@@ -43,8 +43,8 @@ exports.signout = function(req, res) {
 
 exports.oauthRefresh = function(strategy) {
   return function(req, res, next) {
-    var refresh_token = req.query.refresh_token;
     var user = req.user;
+    var refresh_token = user.providerData.refreshToken;
     refresh.requestNewAccessToken(strategy, refresh_token, function(err, accessToken, refreshToken) {
 
       if (err || !user) {
