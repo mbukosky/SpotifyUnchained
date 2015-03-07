@@ -46,6 +46,7 @@
     "passport-spotify": "^0.1.0",
     "passport-twitter": "~1.0.2",
     "request": "^2.53.0",
+    "spotify-web-api-node": "^2.0.1",
     "swig": "~1.4.1"
   },
   "devDependencies": {
