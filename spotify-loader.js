@@ -1,5 +1,7 @@
 'use strict';
 
+// NODE_ENV=development node spotify-loader.js
+
 // Load up my private env
 require('./config/env/heroku')();
 
@@ -7,6 +9,7 @@ var config = require('./config/config'),
   mongoose = require('mongoose'),
   path = require('path'),
   chalk = require('chalk'),
+  moment = require('moment'),
   SpotifyWebApi = require('spotify-web-api-node'),
   accounts = require('./spotify-playlist.json');
 
@@ -24,11 +27,23 @@ mongoose.connect(config.db, function(err) {
 require(path.resolve('./app/models/playlist.server.model.js'));
 var Playlist = mongoose.model('Playlist');
 
+var getPublishedDate = function(title) {
+  var onlyDigits = title.replace(/([A-Z])\w+/g, '');
+  var m = moment(onlyDigits);
+
+  if (m.isValid()) {
+    return m.format('MM.DD.YYYY');
+  } else {
+    return null;
+  }
+};
+
 var create = function(title, tracks, done) {
   var playlist = new Playlist(tracks);
 
   playlist.title = title
   playlist.tracks = tracks;
+  playlist.published_date = getPublishedDate(title);
 
   var upsertData = playlist.toObject();
 
