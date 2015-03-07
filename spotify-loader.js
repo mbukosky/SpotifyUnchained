@@ -7,7 +7,8 @@ var config = require('./config/config'),
   mongoose = require('mongoose'),
   path = require('path'),
   chalk = require('chalk'),
-  SpotifyWebApi = require('spotify-web-api-node');
+  SpotifyWebApi = require('spotify-web-api-node'),
+  accounts = require('./spotify-playlist.json');
 
 /**
  * Database, models, and helpers
@@ -40,7 +41,7 @@ var create = function(title, tracks, done) {
     },
     function(err) {
       if (err) {
-        done(errorHandler.getErrorMessage(err))
+        done(err);
       } else {
         done(playlist);
       }
@@ -56,9 +57,6 @@ var spotifyApi = new SpotifyWebApi({
   clientSecret: config.spotify.clientSecret,
   redirectUri: config.spotify.callbackURL
 });
-
-var user = 'andreuha';
-var playlist = '3BLx9ad3ju8fErQE3q1YXr';
 
 var savePlaylist = function(data) {
 
@@ -81,23 +79,25 @@ var savePlaylist = function(data) {
 };
 
 /**
- * --Main entry point--
+ **** Main entry point *****
  * Call out to Spotify and save all the playlist tracks
  */
 
 spotifyApi.clientCredentialsGrant()
   .then(function(data) {
-    // console.log('The access token expires in ' + data.body['expires_in']);
     console.log('The access token is ' + chalk.yellow(data.body['access_token']));
 
     // Save the access token so that it's used in future calls
     spotifyApi.setAccessToken(data.body['access_token']);
 
-    return spotifyApi.getPlaylist(user, playlist);
-  })
-  .then(function(data) {
-    // Upsert to the database
-    savePlaylist(data.body);
+    // Loop over the accounts and save each playlist
+    accounts.forEach(function(acct) {
+      spotifyApi.getPlaylist(acct.user, acct.playlist).then(function(data) {
+        // Upsert to the database
+        savePlaylist(data.body);
+      });
+    });
+
   })
   .catch(function(error) {
     console.log(chalk.red('Something went wrong when retrieving an access token'), err);
