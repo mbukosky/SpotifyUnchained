@@ -4,7 +4,7 @@ module.exports = {
   app: {
     title: 'SpotifyUnchained',
     description: 'Save a spotify playlist before they update each week',
-    keywords: 'Spotify, playlist, new music tuesday, Node.js, AngularJS'
+    keywords: 'Spotify, playlist, new music tuesday, archive, Node.js, AngularJS'
   },
   port: process.env.PORT || 3000,
   templateEngine: 'swig',

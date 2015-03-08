@@ -48,7 +48,7 @@
 
 <body class="ng-cloak">
 
-	<a href="https://github.com/mbukosky/SpotifyUnchained">
+	<a class="hidden-xs hidden-sm" href="https://github.com/mbukosky/SpotifyUnchained">
 		<img style="position: absolute; top: 20; left: 0; border: 0;" src="https://camo.githubusercontent.com/121cd7cbdc3e4855075ea8b558508b91ac463ac2/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f6c6566745f677265656e5f3030373230302e706e67"
 		alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_left_green_007200.png">
 	</a>
@@ -72,10 +72,10 @@
 		m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
 		})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-		{% if process.env.NODE_ENV === 'development' %}
-		ga('create', 'UA-60007219-1', {'cookieDomain': 'none'});
-		{% else %}
+		{% if process.env.NODE_ENV === 'production' %}
 		ga('create', 'UA-60007219-1', 'auto');
+		{% else %}
+		ga('create', 'UA-60007219-1', {'cookieDomain': 'none'});
 		{% endif %}
 		ga('send', 'pageview');
 	</script>

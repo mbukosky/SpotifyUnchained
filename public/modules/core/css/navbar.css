@@ -24,4 +24,7 @@
     color: #84bd00;
     background-color: #22252b;
   }
+  .navbar-inverse .navbar-brand {
+    font-size: 16px;
+  }
 }
