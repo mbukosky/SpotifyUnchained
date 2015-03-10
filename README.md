@@ -1,5 +1,8 @@
 # [Spotify Unchained](http://www.spotifyunchained.com)
 
+[![Build Status](https://travis-ci.org/mbukosky/SpotifyUnchained.svg)](https://travis-ci.org/mbukosky/SpotifyUnchained)
+[![Dependencies Status](https://david-dm.org/mbukosky/SpotifyUnchained.svg)](https://david-dm.org/mbukosky/SpotifyUnchained)
+
 Never lose a playlist again. This website was specially designed to replace a running Spotify [form](https://community.spotify.com/t5/Music-Chat/New-Music-Tuesday-Archive/m-p/1037048#M20850). I am a developer, Spotify user, and here is my solution.
 
 ## Website
