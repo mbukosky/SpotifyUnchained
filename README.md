@@ -1,4 +1,4 @@
-# [Spotify Unchained](http://www.spotifyunchained.com)
+# [Spotify Unchained](https://spotifyunchained.com)
 
 [![Build Status](https://travis-ci.org/mbukosky/SpotifyUnchained.svg)](https://travis-ci.org/mbukosky/SpotifyUnchained)
 [![Dependencies Status](https://david-dm.org/mbukosky/SpotifyUnchained.svg)](https://david-dm.org/mbukosky/SpotifyUnchained)
