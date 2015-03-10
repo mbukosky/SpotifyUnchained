@@ -6,7 +6,7 @@
 Never lose a playlist again. This website was specially designed to replace a running Spotify [form](https://community.spotify.com/t5/Music-Chat/New-Music-Tuesday-Archive/m-p/1037048#M20850). I am a developer, Spotify user, and here is my solution.
 
 ## Website
- [http://www.spotifyunchained.com](http://www.spotifyunchained.com)
+ [spotifyunchained.com](https://spotifyunchained.com)
 
 ## Prerequisites
 Make sure you have installed all these prerequisites on your development machine.
