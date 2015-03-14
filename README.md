@@ -55,6 +55,8 @@ If you encounter any problem try the Troubleshooting section.
 
 ## Credits
 * [MEAN.JS](http://meanjs.org)
+* [angular-spotify](https://github.com/eddiemoore/angular-spotify)
+* [angular-remote-logger](https://github.com/inakianduaga/angular-remote-logger)
 
 ## License
 (The MIT License)
