@@ -1,7 +1,7 @@
 {
   "name": "spotifyunchained",
-  "version": "0.0.1",
-  "description": "Full-Stack JavaScript with MongoDB, Express, AngularJS, and Node.js",
+  "version": "0.0.2",
+  "description": "Automatically archive spotify playlist new music tuesday",
   "dependencies": {
     "bootstrap": "~3",
     "angular": "~1.2",
@@ -16,5 +16,8 @@
     "angular-ui-router": "~0.2.11",
     "angular-spotify": "~0.11.0",
     "angular-remote-logger": "~0.2.1"
+  },
+  "resolutions": {
+    "angular": "1.2.28"
   }
 }
