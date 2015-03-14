@@ -1,7 +1,7 @@
 'use strict';
 
-angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$http', '$location', 'SpotifyPlaylist', 'Spotify', 'Authentication',
-  function($scope, $http, $location, SpotifyPlaylist, Spotify, Authentication) {
+angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$http', '$location', '$log', 'SpotifyPlaylist', 'Spotify', 'Authentication',
+  function($scope, $http, $location, $log, SpotifyPlaylist, Spotify, Authentication) {
     $scope.oneAtATime = true;
     $scope.data = SpotifyPlaylist.query();
     $scope.user = Authentication.user;
@@ -48,7 +48,7 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
         var playlist = data.id;
 
         Spotify.addPlaylistTracks(user_id, playlist, uris).then(function(data) {
-          console.log('tracks added to playlist - ' + JSON.stringify(data));
+          $log.info(user_id + ' downloaded ' + title + ' - ' + JSON.stringify(data));
         });
       });
     };
@@ -59,7 +59,7 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
         $scope.user = Authentication.user = response;
         $location.path('/');
       }).error(function(response) {
-        console.log(response.message);
+        $log.error(response.message);
       });
     };
 
@@ -75,7 +75,7 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
       }, function(response) {
         var error = response.error;
         if (error.status === 401) {
-          console.error(error.message);
+          $log.warn(error.message);
 
           $scope.refreshToken();
         }

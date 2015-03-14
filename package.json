@@ -1,7 +1,7 @@
 {
   "name": "spotifyunchained",
-  "description": "Full-Stack JavaScript with MongoDB, Express, AngularJS, and Node.js",
-  "version": "0.0.1",
+  "description": "Automatically archive spotify playlist new music tuesday",
+  "version": "0.0.2",
   "author": "Michael Bukosky",
   "engines": {
     "node": "0.10.x",
