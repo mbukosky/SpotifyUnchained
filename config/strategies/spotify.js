@@ -30,7 +30,7 @@ module.exports = function() {
 
       // Create the user OAuth profile
       var providerUserProfile = {
-        displayName: profile.displayName,
+        displayName: profile.displayName || profile.id,
         username: profile.id,
         provider: 'spotify',
         providerIdentifierField: 'id',
