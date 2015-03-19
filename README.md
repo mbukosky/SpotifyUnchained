@@ -3,12 +3,15 @@
 [![Build Status](https://travis-ci.org/mbukosky/SpotifyUnchained.svg)](https://travis-ci.org/mbukosky/SpotifyUnchained)
 [![Dependencies Status](https://david-dm.org/mbukosky/SpotifyUnchained.svg)](https://david-dm.org/mbukosky/SpotifyUnchained)
 
-Never lose a playlist again. A simple site that automatically archives [new music tuesday](https://open.spotify.com/user/spotify/playlist/1yHZ5C3penaxRdWR7LRIOb) playlist before it refreshes. This website was specially designed to replace a running Spotify [form](https://community.spotify.com/t5/Music-Chat/New-Music-Tuesday-Archive/m-p/1037048#M20850). 
+Never lose a playlist again. A simple site that automatically archives [new music tuesday](https://open.spotify.com/user/spotify/playlist/1yHZ5C3penaxRdWR7LRIOb) playlist before it refreshes. This website was specially designed to replace a running Spotify [form](https://community.spotify.com/t5/Music-Chat/New-Music-Tuesday-Archive/m-p/1037048#M20850).
 
 I am a developer, Spotify user, and here is my solution.
 
-## Website
- [spotifyunchained.com](https://spotifyunchained.com)
+## Social
+* [spotifyunchained.com](https://spotifyunchained.com)
+* [@SpotifyUnchnd](https://twitter.com/SpotifyUnchnd)
+* [facebook](https://www.facebook.com/spotifyunchained)
+* SpotifyUnchained@gmail.com
 
 ## Prerequisites
 Make sure you have installed all these prerequisites on your development machine.
@@ -54,6 +57,7 @@ If you encounter any problem try the Troubleshooting section.
 ## Community
 * The [original](https://community.spotify.com/t5/Music-Chat/New-Music-Tuesday-Archive/m-p/1037048#M20850) Spotify form
 * Create a new issue if you want additional features or playlists added
+* Tweet me [@SpotifyUnchnd](https://twitter.com/SpotifyUnchnd)
 
 ## Credits
 * [MEAN.JS](http://meanjs.org)

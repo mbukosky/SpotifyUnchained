@@ -3,7 +3,7 @@
 module.exports = {
   app: {
     title: 'SpotifyUnchained',
-    description: 'Save a spotify playlist before they update each week',
+    description: 'Archives of Spotify\'s New Music Tuesday',
     keywords: 'Spotify, playlist, new music tuesday, archive, Node.js, AngularJS'
   },
   port: process.env.PORT || 3000,

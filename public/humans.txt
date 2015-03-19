@@ -3,7 +3,7 @@
 
 # TEAM
 
-    Michael Bukosky -- Developer -- https://github.com/mbukosky/SpotifyUnchained
+    Michael Bukosky -- Developer -- @SpotifyUnchnd
 
 # TECHNOLOGY COLOPHON
 
