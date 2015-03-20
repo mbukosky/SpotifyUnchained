@@ -7,6 +7,18 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
     $scope.user = Authentication.user;
     $scope.saved = {};
 
+    $scope.getTrackTemplate = function(track) {
+      if (track.preview) {
+        return '/modules/core/views/track-play-button.template.html';
+      } else {
+        return '/modules/core/views/track-preview.template.html';
+      }
+    };
+
+    $scope.preview = function(track) {
+      track.preview = true;
+    };
+
     var determineSavedPlaylists = function() {
       /* Get the first 50 playlist and see if the user has
        * already downloaded it. Use the playlist
