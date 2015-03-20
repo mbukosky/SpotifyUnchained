@@ -7,7 +7,7 @@ var ApplicationConfiguration = (function() {
   var applicationModuleVendorDependencies = ['ngResource', 'ngCookies', 'ngAnimate', 'ngTouch', 'ngSanitize', 'ui.router', 'ui.bootstrap', 'ui.utils'];
 
   // Additional dependencies
-  var additionalDependencies = ['spotify', 'angular-remote-logger'];
+  var additionalDependencies = ['spotify', 'angular-remote-logger', 'ngOnload'];
 
   // Add a new vertical module
   var registerModule = function(moduleName, dependencies) {
