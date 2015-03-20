@@ -26,6 +26,12 @@ body {
 .new-music well {
   color: #fff;
 }
+.fa-play-circle-o {
+  color: #84bd00;
+}
+.fa-cog {
+  line-height:90px;
+}
 .fa {
   cursor: pointer;
 }
