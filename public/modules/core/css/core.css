@@ -26,6 +26,9 @@ body {
 .new-music well {
   color: #fff;
 }
+.new-music ul {
+  list-style: none;
+}
 .fa {
   cursor: pointer;
 }
