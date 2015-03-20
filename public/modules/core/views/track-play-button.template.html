@@ -1,1 +1,6 @@
-<iframe src="{{track.uri | trustPlayButton}}" width="300" height="80" frameborder="0" allowtransparency="true"></iframe>
+<div class="list-group-item" data-ng-controller="PlayButtonController">
+  <div ng-hide="loaded">
+    <i class="fa fa-2x fa-cog fa-spin pull-right"></i>
+  </div>
+  <iframe data-ng-onload="done()" src="{{track.uri | trustPlayButton}}" width="300" height="80" frameborder="0" allowtransparency="true"></iframe>
+</div>

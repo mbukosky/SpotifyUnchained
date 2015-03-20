@@ -20,11 +20,9 @@
       <accordion-heading>
         {{playlist.title}} <i class="pull-right fa fa-cloud-download" title="save playlist" data-ng-class="{'saved': saved[playlist.title]}" data-ng-show="{{user}}" data-ng-click="onSavePlaylist(playlist.title, playlist.tracks, $event)"></i>
       </accordion-heading>
-      <ul>
-        <li data-ng-repeat="track in playlist.tracks">
-          <data-ng-include src="getTrackTemplate(track)"></data-ng-include>
-        </li>
-      </ul>
+      <div class="list-group">
+        <data-ng-include src="getTrackTemplate(track)" data-ng-repeat="track in playlist.tracks"></data-ng-include>
+      </div>
     </accordion-group>
   </accordion>
 

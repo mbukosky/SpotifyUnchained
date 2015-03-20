@@ -7,6 +7,7 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
     $scope.user = Authentication.user;
     $scope.saved = {};
 
+    //TODO: Move this code into the view?
     $scope.getTrackTemplate = function(track) {
       if (track.preview) {
         return '/modules/core/views/track-play-button.template.html';
