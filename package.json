@@ -1,7 +1,7 @@
 {
   "name": "spotifyunchained",
   "description": "Automatically archive spotify playlist new music tuesday",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "author": "Michael Bukosky",
   "engines": {
     "node": "0.10.x",
