@@ -112,6 +112,18 @@ module.exports = function(db) {
   // Setting the app router and static folder
   app.use(express.static(path.resolve('./public')));
 
+  // Force HTTPS on Heroku
+  if (process.env.NODE_ENV === 'production') {
+    app.use(function(req, res, next) {
+      var protocol = req.get('x-forwarded-proto');
+      if (protocol === 'https') {
+        next();
+      } else {
+        res.redirect('https://' + req.hostname + req.url);
+      }
+    });
+  }
+
   // Globbing routing files
   config.getGlobbedFiles('./app/routes/**/*.js').forEach(function(routePath) {
     require(path.resolve(routePath))(app);
