@@ -35,6 +35,6 @@ body {
 .fa {
   cursor: pointer;
 }
-.saved {
+.saved, .loading {
   color: #84bd00;
 }
