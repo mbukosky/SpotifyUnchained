@@ -15,6 +15,10 @@
       </div>
   </div>
 
+  <div class="text-center loading" ng-hide="loaded">
+    <i class="fa fa-4x fa-cog fa-spin"></i>
+  </div>
+
   <accordion close-others="oneAtATime">
     <accordion-group data-ng-repeat="playlist in data">
       <accordion-heading>

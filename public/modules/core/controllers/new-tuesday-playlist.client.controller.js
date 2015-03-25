@@ -3,9 +3,13 @@
 angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$http', '$location', '$log', 'SpotifyPlaylist', 'Spotify', 'Authentication',
   function($scope, $http, $location, $log, SpotifyPlaylist, Spotify, Authentication) {
     $scope.oneAtATime = true;
-    $scope.data = SpotifyPlaylist.query();
     $scope.user = Authentication.user;
     $scope.saved = {};
+    $scope.loaded = false;
+
+    $scope.data = SpotifyPlaylist.query({}, function() {
+      $scope.loaded = true;
+    });
 
     //TODO: Move this code into the view?
     $scope.getTrackTemplate = function(track) {
