@@ -17,7 +17,7 @@ exports.log = function(req, res) {
     });
   } else {
     //use console so I can pick up information in log file on heroku
-    console[msg.logType]('client %s: %s', msg.logType, msg.message);
+    console[msg.logType]('client %s: %s', msg.logType, JSON.stringify(msg.message));
 
     return res.status(200).end();
   }
