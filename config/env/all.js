@@ -2,7 +2,7 @@
 
 module.exports = {
   app: {
-    title: 'SpotifyUnchained - Archives of Spotify\'s New Music Tuesday',
+    title: 'Unchaining Spotify - Archives of Spotify\'s New Music Tuesday',
     description: 'Archives of Spotify\'s New Music Tuesday',
     keywords: 'Spotify, playlist, new music tuesday, archive, Node.js, AngularJS'
   },
