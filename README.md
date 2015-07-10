@@ -65,4 +65,4 @@ If you encounter any problem try the Troubleshooting section.
 * [angular-remote-logger](https://github.com/inakianduaga/angular-remote-logger)
 
 ## License
-(The MIT License)
+(MIT)
