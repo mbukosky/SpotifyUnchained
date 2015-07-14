@@ -1,18 +1,21 @@
 <section class="new-music" data-ng-controller="NewTuesdayPlaylistController">
 
   <div class="jumbotron text-center">
-    <h2>Never lose a playlist again!</h1>
-      <p>Browse any archived playlist before saving to your account</p>
-      <div data-ng-hide="{{user}}">
-        <h5>Sign in below to save a playlist</h5>
-        <div class="row">
-          <div class="col-md-12 text-center">
-            <a href="/auth/spotify" class="undecorated-link">
-              <img src="/modules/users/img/buttons/spotify.png">
-            </a>
-          </div>
+    <h2>Never lose a playlist again!</h2>
+    <p>Browse any archived playlist before saving to your account</p>
+    <h4>
+      <a href="http://www.engadget.com/2015/07/07/rip-new-music-tuesday-hello-new-music-friday/" target="_blank">RIP New Music Tuesday. Hello New Music Friday</a>
+    </h4>
+    <div data-ng-hide="{{user}}">
+      <h5>Sign in below to save a playlist</h5>
+      <div class="row">
+        <div class="col-md-12 text-center">
+          <a class="undecorated-link" href="/auth/spotify">
+            <img src="/modules/users/img/buttons/spotify.png">
+          </a>
         </div>
       </div>
+    </div>
   </div>
 
   <div class="text-center loading" ng-hide="loaded">
@@ -22,10 +25,11 @@
   <accordion close-others="oneAtATime">
     <accordion-group data-ng-repeat="playlist in data">
       <accordion-heading>
-        {{playlist.title}} <i class="pull-right fa fa-cloud-download" title="save playlist" data-ng-class="{'saved': saved[playlist.title]}" data-ng-show="{{user}}" data-ng-click="onSavePlaylist(playlist.title, playlist.tracks, $event)"></i>
+        {{playlist.title}}
+        <i class="pull-right fa fa-cloud-download" data-ng-class="{'saved': saved[playlist.title]}" data-ng-click="onSavePlaylist(playlist.title, playlist.tracks, $event)" data-ng-show="{{user}}" title="save playlist"></i>
       </accordion-heading>
       <div class="list-group">
-        <data-ng-include src="getTrackTemplate(track)" data-ng-repeat="track in playlist.tracks"></data-ng-include>
+        <data-ng-include data-ng-repeat="track in playlist.tracks" src="getTrackTemplate(track)"></data-ng-include>
       </div>
     </accordion-group>
   </accordion>
