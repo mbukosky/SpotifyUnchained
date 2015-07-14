@@ -42,6 +42,13 @@ This command does a few things:
 * If you're running in a development environment, it will then also install development dependencies needed for testing and running your application.
 * Finally, when the install process is over, npm will initiate a bower install command to install all the front-end modules needed for the application
 
+## Start up MongoDB
+Before you can start up the application, you need to spin up the local MongoDB
+
+```
+./mongod --dbpath ~/data/db/
+```
+
 ## Running Your Application
 After the install process is over, you'll be able to run your application using Grunt, just run grunt default task:
 
