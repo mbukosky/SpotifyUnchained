@@ -9,14 +9,14 @@ var mongoose = require('mongoose'),
   Playlist = mongoose.model('Playlist'),
   _ = require('lodash');
 
-var getRecentTuesday = function() {
+var getRecentFriday = function() {
   return moment()
-    .isoWeekday(2)
+    .isoWeekday(5)
     .format('MM.DD.YYYY');
 };
 
-var getNewTuesdayTitle = function() {
-  return 'New.Music.Tuesday.' + getRecentTuesday();
+var getNewFridayTitle = function() {
+  return 'New.Music.Friday.' + getRecentFriday();
 };
 
 /**
@@ -25,7 +25,7 @@ var getNewTuesdayTitle = function() {
 exports.create = function(req, res, tracks) {
   var playlist = new Playlist(tracks);
 
-  playlist.title = getNewTuesdayTitle();
+  playlist.title = getNewFridayTitle();
   playlist.tracks = tracks;
 
   var upsertData = playlist.toObject();
