@@ -2,9 +2,9 @@
 
 module.exports = {
   app: {
-    title: 'Unchaining Spotify - Archives of Spotify\'s New Music Tuesday',
-    description: 'Archives of Spotify\'s New Music Tuesday',
-    keywords: 'Spotify, playlist, new music tuesday, archive, Node.js, AngularJS'
+    title: 'Unchaining Spotify - Archives of Spotify\'s New Music Tuesday & Friday',
+    description: 'Archives of Spotify\'s New Music Tuesday & Friday',
+    keywords: 'Spotify, playlist, new music tuesday, new music friday, archive, Node.js, AngularJS'
   },
   port: process.env.PORT || 3000,
   templateEngine: 'swig',
