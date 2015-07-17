@@ -11,7 +11,9 @@ var mongoose = require('mongoose'),
 
 var getRecentFriday = function() {
   return moment()
-    .isoWeekday(5)
+    .subtract(5, 'days')
+    .startOf('week')
+    .add(5, 'days')
     .format('MM.DD.YYYY');
 };
 
