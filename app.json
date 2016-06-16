@@ -1,0 +1,42 @@
+{
+  "name": "SpotifyUnchained",
+  "description": "",
+  "scripts": {
+  },
+  "env": {
+    "BUILDPACK_URL": {
+      "required": true
+    },
+    "MONGOLAB_URI": {
+      "required": true
+    },
+    "NEW_RELIC_LICENSE_KEY": {
+      "required": true
+    },
+    "NEW_RELIC_LOG": {
+      "required": true
+    },
+    "NODE_ENV": {
+      "required": true
+    },
+    "SESSION_SECRET": {
+      "generator": "secret"
+    },
+    "SPOTIFY_CLIENT_ID": {
+      "required": true
+    },
+    "SPOTIFY_CLIENT_SECRET": {
+      "required": true
+    }
+  },
+  "formation": {
+  },
+  "addons": [
+
+  ],
+  "buildpacks": [
+    {
+      "url": "https://github.com/mbuchetics/heroku-buildpack-nodejs-grunt.git"
+    }
+  ]
+}
