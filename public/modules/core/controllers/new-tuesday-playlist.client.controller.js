@@ -7,7 +7,10 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
     $scope.saved = {};
     $scope.loaded = false;
 
-    $scope.data = SpotifyPlaylist.query({}, function() {
+    $scope.data = SpotifyPlaylist.query({
+      page: 1,
+      size: 5
+    }, function() {
       $scope.loaded = true;
     });
 

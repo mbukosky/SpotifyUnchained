@@ -75,7 +75,11 @@ exports.delete = function(req, res) {
  * List of Spotifies
  */
 exports.list = function(req, res) {
-  Playlist.find().sort('-published_date').exec(function(err, playlists) {
+  //TODO: lodash numbers
+  var pagesize = req.query.size || 5;
+  var page = req.query.page || 1;
+
+  Playlist.find().sort('-published_date').skip(pagesize * (page - 1)).limit(pagesize).exec(function(err, playlists) {
     if (err) {
       return res.status(400).send({
         message: errorHandler.getErrorMessage(err)
