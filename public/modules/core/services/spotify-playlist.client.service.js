@@ -2,6 +2,11 @@
 
 angular.module('core').factory('SpotifyPlaylist', ['$resource',
   function($resource) {
-    return $resource('spotify', {});
+    return $resource('spotify', {}, {
+      'query': {
+        method: 'GET',
+        isArray: false
+      }
+    });
   }
 ]);

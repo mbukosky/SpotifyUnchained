@@ -79,13 +79,18 @@ exports.list = function(req, res) {
   var pagesize = req.query.size || 5;
   var page = req.query.page || 1;
 
+  var count = 46; //TODO: Replace with DB Call
+
   Playlist.find().sort('-published_date').skip(pagesize * (page - 1)).limit(pagesize).exec(function(err, playlists) {
     if (err) {
       return res.status(400).send({
         message: errorHandler.getErrorMessage(err)
       });
     } else {
-      res.json(playlists);
+      res.json({
+        count: count,
+        items: playlists
+      });
     }
   });
 };

@@ -18,12 +18,14 @@
     </div>
   </div>
 
+  <dir-pagination-controls on-page-change="pageChanged(newPageNumber)"></dir-pagination-controls>
+
   <div class="text-center loading" ng-hide="loaded">
     <i class="fa fa-4x fa-cog fa-spin"></i>
   </div>
 
   <accordion close-others="oneAtATime">
-    <accordion-group data-ng-repeat="playlist in data">
+    <accordion-group dir-paginate="playlist in data.items | itemsPerPage: playlistsPerPage" total-items="data.count" current-page="pagination.current">
       <accordion-heading>
         {{playlist.title}}
         <i class="pull-right fa fa-cloud-download" data-ng-class="{'saved': saved[playlist.title]}" data-ng-click="onSavePlaylist(playlist.title, playlist.tracks, $event)" data-ng-show="{{user}}" title="save playlist"></i>
