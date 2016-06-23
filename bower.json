@@ -16,7 +16,8 @@
     "angular-ui-router": "~0.2.13",
     "angular-spotify": "~0.11.0",
     "angular-remote-logger": "~0.2.1",
-    "ng-onload": "~0.0.2"
+    "ng-onload": "~0.0.2",
+    "angular-utils-pagination": "~0.11.1"
   },
   "resolutions": {
     "angular": "1.3.20"
