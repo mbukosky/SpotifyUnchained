@@ -102,7 +102,7 @@ exports.oauthCallback = function(strategy) {
           return res.redirect('/#!/signin');
         }
 
-        return res.redirect(redirectURL || '/');
+        return res.redirect(typeof redirectURL === 'string' ? redirectURL : '/');
       });
     })(req, res, next);
   };
