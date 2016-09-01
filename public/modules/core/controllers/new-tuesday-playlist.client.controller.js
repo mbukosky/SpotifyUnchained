@@ -7,7 +7,7 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
     $scope.saved = {};
     $scope.loaded = false;
 
-    $scope.playlistsPerPage = 5;
+    $scope.playlistsPerPage = 10;
     $scope.pagination = {
       current: 1
     };
