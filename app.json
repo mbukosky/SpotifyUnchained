@@ -4,9 +4,6 @@
   "scripts": {
   },
   "env": {
-    "BUILDPACK_URL": {
-      "required": true
-    },
     "MONGOLAB_URI": {
       "required": true
     },

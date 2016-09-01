@@ -7,7 +7,8 @@ var mongoose = require('mongoose'),
   moment = require('moment'),
   errorHandler = require('./errors.server.controller'),
   Playlist = mongoose.model('Playlist'),
-  _ = require('lodash');
+  _ = require('lodash'),
+  async = require('async');
 
 var getRecentFriday = function() {
   return moment()
@@ -71,17 +72,32 @@ exports.delete = function(req, res) {
 
 };
 
+function getPlaylists(pagesize, page, callback) {
+  Playlist.find().sort('-published_date').skip(pagesize * (page - 1)).limit(pagesize).exec(callback);
+}
+
+function getPlaylistCount(callback) {
+  Playlist.count().exec(callback);
+}
+
 /**
  * List of Spotifies
  */
 exports.list = function(req, res) {
-  Playlist.find().sort('-published_date').exec(function(err, playlists) {
+  //TODO: lodash numbers
+  var pagesize = req.query.size || 5;
+  var page = req.query.page || 1;
+
+  async.parallel({
+    count: getPlaylistCount,
+    items: async.apply(getPlaylists, pagesize, page)
+  }, function (err, results) {
     if (err) {
       return res.status(400).send({
         message: errorHandler.getErrorMessage(err)
       });
-    } else {
-      res.json(playlists);
     }
+
+    res.json(results);
   });
 };

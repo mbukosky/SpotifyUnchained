@@ -28,7 +28,8 @@ module.exports = {
         'public/lib/angular-bootstrap/ui-bootstrap-tpls.js',
         'public/lib/angular-spotify/dist/angular-spotify.min.js',
         'public/lib/angular-remote-logger/dist/angular-remote-logger.min.js',
-        'public/lib/ng-onload/release/ng-onload.min.js'
+        'public/lib/ng-onload/release/ng-onload.min.js',
+        'public/lib/angular-utils-pagination/dirPagination.js'
       ]
     },
     css: [

@@ -7,9 +7,28 @@ angular.module('core').controller('NewTuesdayPlaylistController', ['$scope', '$h
     $scope.saved = {};
     $scope.loaded = false;
 
-    $scope.data = SpotifyPlaylist.query({}, function() {
-      $scope.loaded = true;
-    });
+    $scope.playlistsPerPage = 10;
+    $scope.pagination = {
+      current: 1
+    };
+
+    var getPlaylists = function(page) {
+      $scope.data = SpotifyPlaylist.query({
+        page: page,
+        size: $scope.playlistsPerPage
+      }, function() {
+        $scope.loaded = true;
+      });
+    };
+
+    // Always load the first page
+    getPlaylists(1);
+
+    $scope.pageChanged = function(newPage) {
+      $scope.loaded = false;
+
+      getPlaylists(newPage);
+    };
 
     //TODO: Move this code into the view?
     $scope.getTrackTemplate = function(track) {
