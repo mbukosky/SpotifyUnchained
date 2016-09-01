@@ -40,7 +40,7 @@
     "passport": "~0.2.0",
     "passport-oauth2": "^1.1.2",
     "passport-oauth2-refresh": "^0.3.0",
-    "passport-spotify": "^0.1.0",
+    "passport-spotify": "^0.3.0",
     "request": "^2.53.0",
     "spotify-web-api-node": "^2.0.1",
     "swig": "~1.4.1"
