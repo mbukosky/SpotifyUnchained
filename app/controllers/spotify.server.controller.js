@@ -66,7 +66,7 @@ exports.sync = function(req, res) {
       };
 
       request.get(options, function(error, response, body) {
-        saveTracks(body);
+        //saveTracks(body);
       });
     }
 
