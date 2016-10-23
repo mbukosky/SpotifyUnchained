@@ -25,16 +25,24 @@ var authOptions = {
 var saveTracks = function(data) {
 
   var tracks = [];
-  data.items.forEach(function(item) {
-    tracks.push({
-      id: item.track.id,
-      name: item.track.name,
-      artist: item.track.artists[0].name,
-      added_at: item.added_at,
-      open_url: item.track.external_urls.spotify,
-      uri: item.track.uri
+
+  try {
+    data.items.forEach(function(item) {
+        if(!_.isNull(item.track)) {
+          tracks.push({
+            id: item.track.id,
+            name: item.track.name,
+            artist: item.track.artists[0].name,
+            added_at: item.added_at,
+            open_url: item.track.external_urls.spotify,
+            uri: item.track.uri
+          });
+      }
     });
-  });
+  } catch (err) {
+    console.error('Unable to read track json', err);
+    return;
+  }
 
   var req = function() {};
   var res = {
@@ -66,7 +74,7 @@ exports.sync = function(req, res) {
       };
 
       request.get(options, function(error, response, body) {
-        //saveTracks(body);
+        saveTracks(body);
       });
     }
 
