@@ -9,7 +9,7 @@ var request = require('request'),
 
 var client_id = process.env.SPOTIFY_CLIENT_ID || 'client';
 var client_secret = process.env.SPOTIFY_CLIENT_SECRET || 'secret';
-var playlist_id = '1yHZ5C3penaxRdWR7LRIOb';
+var playlist_id = '37i9dQZF1DX4JAvHpjipBk';
 
 var authOptions = {
   url: 'https://accounts.spotify.com/api/token',
