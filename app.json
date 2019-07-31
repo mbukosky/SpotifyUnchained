@@ -3,6 +3,7 @@
   "description": "",
   "scripts": {
   },
+  "stack": "heroku-18",
   "env": {
     "MONGOLAB_URI": {
       "required": true
