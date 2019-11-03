@@ -1,0 +1,26 @@
+{
+  "name": "angular-remote-logger",
+  "version": "0.2.1",
+  "dependencies": {
+    "angular": "1.3.x"
+  },
+  "devDependencies": {
+    "angular-mocks": "1.3.x"
+  },
+  "main": "dist/angular-remote-logger.min.js",
+  "ignore": [
+    "gulp",
+    "src",
+    "test",
+    ".bowerrc",
+    ".gitignore",
+    ".jshintrc",
+    ".editorconfig",
+    "bower.json",
+    "gulpfile.js",
+    "LICENSE",
+    "package.json",
+    "README.md",
+    ".travis.yml"
+  ]
+}
