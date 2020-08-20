@@ -2,22 +2,22 @@ html {
   height: 100%;
 }
 body {
-  position: relative;
-  min-height: 100%;
-  margin: 0;
-  padding-bottom: 6rem;
   background-color: #2e2f33;
+  margin: 0;
+  min-height: 100%;
+  padding-bottom: 6rem;
+  position: relative;
 }
 footer {
-  position: absolute;
   border-top: 1px solid #eee;
-  margin: 20px 0 10px 0;
-  padding-top: 5px;
-  color: #9d9d9d;
-  right: 0;
   bottom: 0;
+  color: #9d9d9d;
   left: 0;
+  margin: 20px 0 10px 0;
   padding: 1rem;
+  padding-top: 5px;
+  position: absolute;
+  right: 0;
 }
 .content {
   margin-top: 50px;
@@ -35,8 +35,8 @@ footer {
   border-color: #78FA89;
 }
 .accordion-toggle {
-  cursor: pointer;
   color: #84bd00;
+  cursor: pointer;
 }
 .new-music h1 {
   color: #fff;
@@ -48,7 +48,7 @@ footer {
   color: #84bd00;
 }
 .fa-cog {
-  line-height:90px;
+  line-height: 90px;
 }
 .fa {
   cursor: pointer;
