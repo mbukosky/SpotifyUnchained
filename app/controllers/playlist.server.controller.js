@@ -73,7 +73,8 @@ exports.delete = function(req, res) {
 };
 
 function getPlaylists(pagesize, page, callback) {
-  Playlist.find().sort('-published_date').skip(pagesize * (page - 1)).limit(pagesize).exec(callback);
+  Playlist.find().sort('-published_date').skip(pagesize * (page - 1))
+  .limit(Number(pagesize)).exec(callback);
 }
 
 function getPlaylistCount(callback) {
@@ -93,6 +94,7 @@ exports.list = function(req, res) {
     items: async.apply(getPlaylists, pagesize, page)
   }, function (err, results) {
     if (err) {
+      console.log(err);
       return res.status(400).send({
         message: errorHandler.getErrorMessage(err)
       });
