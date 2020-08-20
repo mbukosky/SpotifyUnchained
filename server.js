@@ -26,7 +26,7 @@ var init = require('./config/init')(),
  */
 
 // Bootstrap db connection
-mongoose.connect(config.db, function(err) {
+mongoose.connect(config.db, { useNewUrlParser: true, useUnifiedTopology: true }, function (err) {
   if (err) {
     console.error(chalk.red('Could not connect to MongoDB!'));
     console.log(chalk.red(err));
