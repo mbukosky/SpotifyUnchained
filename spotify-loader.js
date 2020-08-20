@@ -5,7 +5,7 @@
 // Load up my private env
 require('./config/env/heroku')();
 
-var config = require('./config/config'),
+let config = require('./config/config'),
   mongoose = require('mongoose'),
   path = require('path'),
   chalk = require('chalk'),
@@ -17,7 +17,7 @@ var config = require('./config/config'),
  * Database, models, and helpers
  */
 
-mongoose.connect(config.db, function(err) {
+mongoose.connect(config.db, { useNewUrlParser: true, useUnifiedTopology: true }, function (err) {
   if (err) {
     console.error(chalk.red('Could not connect to MongoDB!'));
     console.log(chalk.red(err));
@@ -25,11 +25,11 @@ mongoose.connect(config.db, function(err) {
 });
 
 require(path.resolve('./app/models/playlist.server.model.js'));
-var Playlist = mongoose.model('Playlist');
+let Playlist = mongoose.model('Playlist');
 
-var getPublishedDate = function(title) {
-  var onlyDigits = title.replace(/([A-Z])\w+/g, '');
-  var m = moment(onlyDigits);
+let getPublishedDate = function (title) {
+  let onlyDigits = title.replace(/([A-Z])\w+/g, '');
+  let m = moment(onlyDigits);
 
   if (m.isValid()) {
     return m.format('MM.DD.YYYY');
@@ -38,23 +38,23 @@ var getPublishedDate = function(title) {
   }
 };
 
-var create = function(title, tracks, done) {
-  var playlist = new Playlist(tracks);
+let create = function (title, tracks, done) {
+  let playlist = new Playlist(tracks);
 
   playlist.title = title
   playlist.tracks = tracks;
   playlist.published_date = getPublishedDate(title);
 
-  var upsertData = playlist.toObject();
+  let upsertData = playlist.toObject();
 
   delete upsertData._id;
 
   Playlist.update({
-      title: playlist.title
-    }, upsertData, {
-      upsert: true
-    },
-    function(err) {
+    title: playlist.title
+  }, upsertData, {
+    upsert: true
+  },
+    function (err) {
       if (err) {
         done(err);
       } else {
@@ -67,16 +67,16 @@ var create = function(title, tracks, done) {
  * Spotify Api
  */
 
-var spotifyApi = new SpotifyWebApi({
+let spotifyApi = new SpotifyWebApi({
   clientId: config.spotify.clientID,
   clientSecret: config.spotify.clientSecret,
   redirectUri: config.spotify.callbackURL
 });
 
-var savePlaylist = function(data) {
+let savePlaylist = function (data) {
 
-  var tracks = [];
-  data.tracks.items.forEach(function(item) {
+  let tracks = [];
+  data.tracks.items.forEach(function (item) {
     tracks.push({
       id: item.track.id,
       name: item.track.name,
@@ -87,8 +87,8 @@ var savePlaylist = function(data) {
     });
   });
 
-  var title = data.name;
-  create(title, tracks, function(data) {
+  let title = data.name;
+  create(title, tracks, function (data) {
     console.log('[' + chalk.green(title) + ']' + ' saved!');
   });
 };
@@ -99,21 +99,24 @@ var savePlaylist = function(data) {
  */
 
 spotifyApi.clientCredentialsGrant()
-  .then(function(data) {
+  .then(function (data) {
     console.log('The access token is ' + chalk.yellow(data.body['access_token']));
 
     // Save the access token so that it's used in future calls
     spotifyApi.setAccessToken(data.body['access_token']);
 
     // Loop over the accounts and save each playlist
-    accounts.forEach(function(acct) {
-      spotifyApi.getPlaylist(acct.user, acct.playlist).then(function(data) {
+    accounts.forEach(function (acct) {
+      spotifyApi.getPlaylist(acct.playlist).then(function (data) {
         // Upsert to the database
         savePlaylist(data.body);
-      });
+      })
+        .catch(error => {
+          console.log(error)
+        });
     });
 
   })
-  .catch(function(error) {
-    console.log(chalk.red('Something went wrong when retrieving an access token'), err);
+  .catch(function (error) {
+    console.log(chalk.red('Something went wrong when retrieving an access token'), error);
   });
