@@ -15,7 +15,7 @@ var fs = require('fs'),
   cookieParser = require('cookie-parser'),
   helmet = require('helmet'),
   passport = require('passport'),
-  mongoStore = require('connect-mongo')({
+  MongoStore = require('connect-mongo')({
     session: session
   }),
   flash = require('connect-flash'),
@@ -23,7 +23,7 @@ var fs = require('fs'),
   consolidate = require('consolidate'),
   path = require('path');
 
-module.exports = function(db) {
+module.exports = function(mongoose) {
   // Initialize express app
   var app = express();
 
@@ -89,8 +89,8 @@ module.exports = function(db) {
     saveUninitialized: true,
     resave: true,
     secret: config.sessionSecret,
-    store: new mongoStore({
-      db: db.connection.db,
+    store: new MongoStore({
+      mongooseConnection: mongoose.connection,
       collection: config.sessionCollection
     })
   }));
@@ -103,10 +103,10 @@ module.exports = function(db) {
   app.use(flash());
 
   // Use helmet to secure Express headers
-  app.use(helmet.xframe());
+  app.use(helmet.frameguard());
   app.use(helmet.xssFilter());
-  app.use(helmet.nosniff());
-  app.use(helmet.ienoopen());
+  app.use(helmet.noSniff());
+  app.use(helmet.ieNoOpen());
   app.disable('x-powered-by');
 
   // Setting the app router and static folder
