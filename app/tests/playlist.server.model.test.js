@@ -47,8 +47,8 @@ describe('Playlist Model Unit Tests:', function() {
 	});
 
 	afterEach(function(done) { 
-		Playlist.remove().exec();
-		User.remove().exec();
+		Playlist.deleteMany().exec();
+		User.deleteMany().exec();
 
 		done();
 	});

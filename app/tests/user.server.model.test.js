@@ -69,7 +69,7 @@ describe('User Model Unit Tests:', function() {
 	});
 
 	after(function(done) {
-		User.remove().exec();
+		User.deleteMany().exec();
 		done();
 	});
 });

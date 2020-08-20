@@ -35,7 +35,7 @@ exports.create = function(req, res, tracks) {
 
   delete upsertData._id;
 
-  Playlist.update({
+  Playlist.updateOne({
       title: playlist.title
     }, upsertData, {
       upsert: true
@@ -78,7 +78,7 @@ function getPlaylists(pagesize, page, callback) {
 }
 
 function getPlaylistCount(callback) {
-  Playlist.count().exec(callback);
+  Playlist.countDocuments().exec(callback);
 }
 
 /**

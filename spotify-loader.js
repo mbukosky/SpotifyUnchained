@@ -49,7 +49,7 @@ let create = function (title, tracks, done) {
 
   delete upsertData._id;
 
-  Playlist.update({
+  Playlist.updateOne({
     title: playlist.title
   }, upsertData, {
     upsert: true
