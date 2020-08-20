@@ -9,6 +9,7 @@
   },
   "scripts": {
     "postinstall": "bower install --config.interactive=false",
+    "build": "grunt build",
     "start": "grunt",
     "test": "grunt test"
   },
