@@ -1,4 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
+import { TrackItem } from '../api-format';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-track',
@@ -7,9 +9,17 @@ import { Component, OnInit } from '@angular/core';
 })
 export class TrackComponent implements OnInit {
 
-  constructor() { }
+  @Input() track: TrackItem;
+
+  constructor(private sanitizer: DomSanitizer) {
+    this.sanitizer = sanitizer;
+  }
 
   ngOnInit(): void {
+  }
+
+  safeTrackUrl(): SafeUrl {
+    return this.sanitizer.bypassSecurityTrustResourceUrl('https://open.spotify.com/embed/track/' + this.track.id);
   }
 
 }
