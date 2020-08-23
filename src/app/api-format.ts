@@ -6,6 +6,7 @@ export interface ApiResponse {
 export interface PlaylistItem {
     title: string;
     published_date: string;
+    _id: string;
     tracks: TrackItem[];
 }
 

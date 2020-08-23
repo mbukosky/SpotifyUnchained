@@ -15,13 +15,17 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { PlaylistComponent } from './playlist/playlist.component';
 
 
 @NgModule({
   declarations: [
     AppComponent,
     TrackComponent,
-    PlaylistsComponent
+    PlaylistsComponent,
+    PlaylistComponent
   ],
   imports: [
     BrowserModule,
@@ -33,8 +37,10 @@ import { MatTableModule } from '@angular/material/table';
     MatIconModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
-    MatTableModule,
     MatSortModule,
+    MatSnackBarModule,
+    MatTableModule,
+    MatTooltipModule
   ],
   providers: [],
   bootstrap: [AppComponent]
