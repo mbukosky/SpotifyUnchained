@@ -25,6 +25,8 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 
 import { FlexLayoutModule } from '@angular/flex-layout';
+import { HeaderComponent } from './header/header.component';
+import { FooterComponent } from './footer/footer.component';
 
 
 @NgModule({
@@ -33,7 +35,9 @@ import { FlexLayoutModule } from '@angular/flex-layout';
     TrackComponent,
     PlaylistsComponent,
     PlaylistComponent,
-    ToolbarComponent
+    ToolbarComponent,
+    HeaderComponent,
+    FooterComponent
   ],
   imports: [
     BrowserModule,

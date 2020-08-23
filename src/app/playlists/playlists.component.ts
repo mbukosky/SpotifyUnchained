@@ -28,7 +28,7 @@ export class PlaylistsComponent implements AfterViewInit, OnInit {
 
   ngOnInit(): void {
     this.dataSource = new PlaylistsDataSource(this.playlistService);
-    this.dataSource.loadPlaylists(0, 5, 'desc');
+    this.dataSource.loadPlaylists(0, 10, 'desc');
   }
 
   ngAfterViewInit(): void {
