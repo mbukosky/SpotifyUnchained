@@ -72,8 +72,10 @@ exports.delete = function(req, res) {
 
 };
 
-function getPlaylists(pagesize, page, callback) {
-  Playlist.find().sort('-published_date').skip(pagesize * (page - 1))
+function getPlaylists(pagesize, page, sort, callback) {
+  const sortKey = sort === 'asc' ? 'published_date' : '-published_date';
+
+  Playlist.find().sort(sortKey).skip(pagesize * (page - 1))
   .limit(Number(pagesize)).exec(callback);
 }
 
@@ -86,12 +88,13 @@ function getPlaylistCount(callback) {
  */
 exports.list = function(req, res) {
   //TODO: lodash numbers
-  var pagesize = req.query.size || 5;
-  var page = req.query.page || 1;
+  const pagesize = req.query.size || 5;
+  const page = req.query.page || 1;
+  const sort = req.query.sort || 'asc';
 
   async.parallel({
     count: getPlaylistCount,
-    items: async.apply(getPlaylists, pagesize, page)
+    items: async.apply(getPlaylists, pagesize, page, sort)
   }, function (err, results) {
     if (err) {
       console.log(err);
