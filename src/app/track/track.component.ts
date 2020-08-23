@@ -10,6 +10,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 export class TrackComponent implements OnInit {
 
   @Input() track: TrackItem;
+  playClicked = false;
 
   constructor(private sanitizer: DomSanitizer) {
     this.sanitizer = sanitizer;
@@ -20,6 +21,10 @@ export class TrackComponent implements OnInit {
 
   safeTrackUrl(): SafeUrl {
     return this.sanitizer.bypassSecurityTrustResourceUrl('https://open.spotify.com/embed/track/' + this.track.id);
+  }
+
+  clickPlayButton(): void {
+    this.playClicked = true;
   }
 
 }
