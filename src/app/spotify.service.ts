@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, from, BehaviorSubject } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
@@ -19,6 +19,9 @@ export class SpotifyService {
   private initializedUser = false;
 
   private userSubject: BehaviorSubject<SpotifyApi.CurrentUsersProfileResponse>
+    = new BehaviorSubject(null);
+  private playlistsSubject:
+    BehaviorSubject<SpotifyApi.ListOfCurrentUsersPlaylistsResponse>
     = new BehaviorSubject(null);
 
   constructor(private httpClient: HttpClient) { }
@@ -93,13 +96,12 @@ export class SpotifyService {
   }
 
   initializeUser(): void {
-    this.httpClient.get<SpotifyApi.CurrentUsersProfileResponse>
-      (this.apiBase + '/me', {
-        headers: this.getAuthHeader(),
-      }).subscribe(profile => {
-        console.log(profile);
-        this.userSubject.next(profile);
-      });
+    this.downloadUserInfo().subscribe(profile => {
+      this.userSubject.next(profile);
+    });
+    this.downloadUserSavedPlaylists().subscribe(playlists => {
+      this.playlistsSubject.next(playlists);
+    });
   }
 
   getCurrentUser(): Observable<SpotifyApi.CurrentUsersProfileResponse> {
@@ -108,6 +110,26 @@ export class SpotifyService {
       this.initializeUser();
     }
     return this.userSubject.asObservable();
+  }
+
+  getUserSavedPlaylists(): Observable<SpotifyApi.ListOfCurrentUsersPlaylistsResponse> {
+    return this.playlistsSubject.asObservable();
+  }
+
+  private downloadUserInfo(): Observable<SpotifyApi.CurrentUsersProfileResponse> {
+    return this.httpClient.get<SpotifyApi.CurrentUsersProfileResponse>
+      (this.apiBase + '/me', {
+        headers: this.getAuthHeader(),
+      });
+  }
+
+  private downloadUserSavedPlaylists():
+    Observable<SpotifyApi.ListOfCurrentUsersPlaylistsResponse> {
+    // TODO: do more requests if a user has over 50 playlists
+    return this.httpClient.get<SpotifyApi.ListOfCurrentUsersPlaylistsResponse>(this.apiBase + '/me/playlists', {
+      headers: this.getAuthHeader(),
+      params: new HttpParams().set('limit', '50'),
+    });
   }
 
   private openDialog(uri: string, name: string, options: string, cb): Window {
