@@ -3,10 +3,12 @@
         <mat-panel-title>
             {{playlist.title}}
         </mat-panel-title>
-        <mat-icon *ngIf="(userHasPlaylist() | async) === false; else saved" (click)="savePlaylist()"
+        <mat-spinner *ngIf=loading [diameter]="16"></mat-spinner>
+        <mat-icon *ngIf="!loading && (userHasPlaylist() | async) === false; else saved" (click)="savePlaylist()"
             matTooltip="Save playlist to your Spotify account">cloud_download</mat-icon>
         <ng-template #saved>
-            <mat-icon class="saved" matTooltip="This playlist is saved to your Spotify account">cloud_download
+            <mat-icon *ngIf=!loading class="saved" matTooltip="This playlist is saved to your Spotify account">
+                cloud_download
             </mat-icon>
         </ng-template>
     </mat-expansion-panel-header>

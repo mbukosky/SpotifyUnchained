@@ -2,7 +2,7 @@ import { Component, OnInit, Input } from '@angular/core';
 import { PlaylistItem } from '../api-format';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SpotifyService } from '../spotify.service';
-import { map, filter } from 'rxjs/operators';
+import { map, filter, switchMap } from 'rxjs/operators';
 import { Observable, of } from 'rxjs';
 
 @Component({
@@ -14,15 +14,37 @@ export class PlaylistComponent implements OnInit {
 
   @Input() playlist: PlaylistItem;
 
+  loading = false;
+
   constructor(private snackBar: MatSnackBar, private spotify: SpotifyService) { }
 
   ngOnInit(): void {
   }
 
   savePlaylist(): void {
-    this.snackBar.open('Saving playlist is currently unsupported', 'OK', {
-      duration: 2000,
-    });
+    event.stopPropagation();
+    this.loading = true;
+    this.spotify.createPlaylist(this.playlist.title)
+      .pipe(
+        switchMap(playlistResp => {
+          const uris = this.playlist.tracks.map(track => track.uri);
+          // TODO: make multiple requests if more than 100 tracks
+          return this.spotify.addPlaylistTracks(playlistResp.id, uris);
+        })).subscribe(addResp => {
+          console.log(addResp);
+          this.loading = false;
+          this.snackBar.open('Saved tracks to playlist', 'OK', {
+            duration: 2000,
+          });
+        },
+          err => {
+            this.snackBar.open('You must be signed in to save a playlist', 'OK', {
+              duration: 2000,
+            });
+            console.error(err);
+            this.loading = false;
+          },
+        );
   }
 
   userHasPlaylist(): Observable<boolean> {
