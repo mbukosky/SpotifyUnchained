@@ -1,3 +1,4 @@
 export const environment = {
-  production: true
+  production: true,
+  spotifyClientId: $ENV.SPOTIFY_CLIENT_ID
 };

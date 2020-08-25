@@ -4,8 +4,11 @@
         <fa-icon [icon]=item.icon></fa-icon>
     </a>
     <span fxFlex fxLayoutAlign="center center">Spotify Unchained</span>
-    <a>
+    <a *ngIf=!isLoggedIn() (click)='login()'>
         Sign in
+    </a>
+    <a *ngIf="isLoggedIn() && (getUser() | async) as user" (click)='logout()'>
+        {{user.display_name}} (sign out)
     </a>
     <ng-container>
         <button mat-icon-button [matMenuTriggerFor]="dropMenu" fxHide fxShow.xs fxShow.sm>
