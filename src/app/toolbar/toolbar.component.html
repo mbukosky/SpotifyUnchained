@@ -3,12 +3,13 @@
         [fxShow.xs]="item.showOnMobile" [fxShow.sm]="item.showOnTablet">
         <fa-icon [icon]=item.icon></fa-icon>
     </a>
-    <span fxFlex fxLayoutAlign="center center">Spotify Unchained</span>
+    <div></div>
+    <span fxFlex>Spotify Unchained</span>
     <a *ngIf=!isLoggedIn() (click)='login()'>
-        Sign in
+        <span class="mat-h3">Sign in</span>
     </a>
     <a *ngIf="isLoggedIn() && (getUser() | async) as user" (click)='logout()'>
-        {{user.display_name}} (sign out)
+        <span class="mat-h3">{{user.display_name}} (sign out)</span>
     </a>
     <ng-container>
         <button mat-icon-button [matMenuTriggerFor]="dropMenu" fxHide fxShow.xs fxShow.sm>
@@ -17,7 +18,6 @@
         <mat-menu #dropMenu="matMenu">
             <ng-container *ngFor="let item of menuItems">
                 <div [fxShow]="!item.showOnDesktop" [fxShow.sm]="!item.showOnTablet" [fxShow.xs]="!item.showOnMobile">
-
                     <a href="{{item.link}}" target="_blank">
                         <button mat-menu-item>
                             <fa-icon [icon]=item.icon></fa-icon>
@@ -25,22 +25,7 @@
                         </button>
                     </a>
                 </div>
-
             </ng-container>
-        </mat-menu>
-        <mat-menu #menu="matMenu">
-            <button mat-menu-item>
-                <mat-icon>dialpad</mat-icon>
-                <span>Redial</span>
-            </button>
-            <button mat-menu-item disabled>
-                <mat-icon>voicemail</mat-icon>
-                <span>Check voice mail</span>
-            </button>
-            <button mat-menu-item>
-                <mat-icon>notifications_off</mat-icon>
-                <span>Disable alerts</span>
-            </button>
         </mat-menu>
     </ng-container>
 </mat-toolbar>
