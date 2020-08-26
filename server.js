@@ -42,9 +42,6 @@ mongoose.connect(config.db,
 // Init the express application
 var app = require('./config/express')(mongoose);
 
-// Bootstrap passport config
-require('./config/passport')();
-
 // Start the app by listening on <port>
 app.listen(config.port);
 

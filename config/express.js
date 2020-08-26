@@ -14,7 +14,6 @@ var fs = require('fs'),
   methodOverride = require('method-override'),
   cookieParser = require('cookie-parser'),
   helmet = require('helmet'),
-  passport = require('passport'),
   MongoStore = require('connect-mongo')({
     session: session
   }),
@@ -94,10 +93,6 @@ module.exports = function(mongoose) {
       collection: config.sessionCollection
     })
   }));
-
-  // use passport session
-  app.use(passport.initialize());
-  app.use(passport.session());
 
   // connect flash for flash messages
   app.use(flash());
