@@ -3,15 +3,16 @@
 /**
  * Module dependencies.
  */
-const fetch = require('node-fetch');
+const nodeFetch = require('node-fetch');
 const playlist = require('./playlist.server.controller');
+const url = require('url');
 const _ = require('lodash');
 
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || 'client';
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || 'secret';
 const PLAYLIST_ID = '37i9dQZF1DX4JAvHpjipBk';
 
-const params = new URLSearchParams();
+const params = new url.URLSearchParams();
 params.append('grant_type', 'client_credentials');
 
 const authOptions = {
@@ -55,11 +56,22 @@ const saveTracks = function (data) {
   playlist.create(req, res, tracks);
 };
 
+const downloadAdditionalTracks = async (body, options) => {
+  let nextUrl = body.next;
+  while (nextUrl) {
+    console.log('Downloading additional page', nextUrl);
+    const nextPageRes = await nodeFetch(nextUrl, options);
+    const nextPage = await nextPageRes.json();
+    nextUrl = nextPage.next;
+    body.items = body.items.concat(nextPage.items);
+  }
+};
+
 /**
  * Sync a Spotify playlist by fetching the results and saving them to the database
  */
 exports.sync = () => {
-  return fetch('https://accounts.spotify.com/api/token', authOptions)
+  return nodeFetch('https://accounts.spotify.com/api/token', authOptions)
     .then(async (res) => {
       const body = await res.json();
       const token = body.access_token;
@@ -73,7 +85,7 @@ exports.sync = () => {
         },
       };
 
-      const playlistRes = await fetch(url, options);
+      const playlistRes = await nodeFetch(url, options);
       if (!playlistRes.ok) {
         throw (playlistRes.statusText);
       }
@@ -86,15 +98,4 @@ exports.sync = () => {
     .catch((err) => {
       console.error('Error downloading playlists:', err);
     });
-}
-
-const downloadAdditionalTracks = async (body, options) => {
-  let nextUrl = body.next;
-  while (nextUrl) {
-    console.log('Downloading additional page', nextUrl);
-    const nextPageRes = await fetch(nextUrl, options);
-    const nextPage = await nextPageRes.json();
-    nextUrl = nextPage.next;
-    body.items = body.items.concat(nextPage.items);
-  }
-}
+};

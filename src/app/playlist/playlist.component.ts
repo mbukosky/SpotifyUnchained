@@ -23,7 +23,6 @@ export class PlaylistComponent implements OnInit {
   }
 
   savePlaylist(): void {
-    event.stopPropagation();
     this.loading = true;
     this.spotify.createPlaylist(this.playlist.title)
       .pipe(
