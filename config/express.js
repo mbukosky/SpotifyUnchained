@@ -4,7 +4,6 @@
  * Module dependencies.
  */
 var fs = require('fs'),
-  http = require('http'),
   https = require('https'),
   express = require('express'),
   morgan = require('morgan'),
@@ -19,7 +18,6 @@ var fs = require('fs'),
   }),
   flash = require('connect-flash'),
   config = require('./config'),
-  consolidate = require('consolidate'),
   path = require('path');
 
 module.exports = function(mongoose) {
@@ -55,20 +53,10 @@ module.exports = function(mongoose) {
   // Showing stack errors
   app.set('showStackError', true);
 
-  // Set swig as the template engine
-  app.engine('server.view.html', consolidate[config.templateEngine]);
-
-  // Set views path and view engine
-  app.set('view engine', 'server.view.html');
-  app.set('views', './app/views');
-
   // Environment dependent middleware
   if (process.env.NODE_ENV === 'development') {
     // Enable logger (morgan)
     app.use(morgan('dev'));
-
-    // Disable views cache
-    app.set('view cache', false);
   } else if (process.env.NODE_ENV === 'production') {
     app.locals.cache = 'memory';
   }
@@ -121,14 +109,14 @@ module.exports = function(mongoose) {
     console.error(err.stack);
 
     // Error page
-    res.status(500).render('500', {
-      error: err.stack
+    res.status(500).send({
+      error: 'Internal error'
     });
   });
 
   // Assume 404 since no middleware responded
-  app.use(function(req, res) {
-    res.status(404).render('404', {
+  app.use(function (req, res) {
+    res.status(404).send({
       url: req.originalUrl,
       error: 'Not Found'
     });
