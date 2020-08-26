@@ -3,14 +3,12 @@
 /**
  * Module dependencies.
  */
-const mongoose = require('mongoose'),
-  moment = require('moment'),
-  errorHandler = require('./errors.server.controller'),
-  Playlist = mongoose.model('Playlist'),
-  _ = require('lodash'),
-  async = require('async');
+const mongoose = require('mongoose');
+const moment = require('moment');
+const errorHandler = require('./errors.server.controller');
+const Playlist = mongoose.model('Playlist');
 
-const getRecentFriday = function () {
+const getRecentFriday = () => {
   return moment()
     .subtract(5, 'days')
     .startOf('week')
@@ -18,7 +16,7 @@ const getRecentFriday = function () {
     .format('MM.DD.YYYY');
 };
 
-const getNewFridayTitle = function () {
+const getNewFridayTitle = () => {
   return 'New.Music.Friday.' + getRecentFriday();
 };
 
@@ -39,49 +37,11 @@ exports.create = function (req, res, tracks) {
     title: playlist.title
   }, upsertData, {
     upsert: true
-  },
-    function (err) {
-      if (err) {
-        return res.status(400).send({
-          message: errorHandler.getErrorMessage(err)
-        });
-      } else {
-        res.json(playlist);
-      }
-    });
+  }).then(() => res.json(playlist))
+    .catch((err) => res.status(400).send({
+      message: errorHandler.getErrorMessage(err)
+    }));
 };
-
-/**
- * Show the current Spotify
- */
-exports.read = function (req, res) {
-
-};
-
-/**
- * Update a Spotify
- */
-exports.update = function (req, res) {
-
-};
-
-/**
- * Delete an Spotify
- */
-exports.delete = function (req, res) {
-
-};
-
-function getPlaylists(pagesize, page, sort, callback) {
-  const sortKey = sort === 'asc' ? 'published_date' : '-published_date';
-
-  Playlist.find().sort(sortKey).skip(pagesize * (page - 1))
-    .limit(Number(pagesize)).exec(callback);
-}
-
-function getPlaylistCount(callback) {
-  Playlist.countDocuments().exec(callback);
-}
 
 /**
  * List of Spotifies
@@ -92,17 +52,21 @@ exports.list = function (req, res) {
   const page = req.query.page || 1;
   const sort = req.query.sort || 'asc';
 
-  async.parallel({
-    count: getPlaylistCount,
-    items: async.apply(getPlaylists, pagesize, page, sort)
-  }, function (err, results) {
-    if (err) {
-      console.log(err);
-      return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
-      });
-    }
+  const sortKey = sort === 'asc' ? 'published_date' : '-published_date';
 
-    res.json(results);
+  Promise.all([
+    Playlist.countDocuments(),
+    Playlist.find().sort(sortKey).skip(pagesize * (page - 1))
+      .limit(Number(pagesize))
+  ]).then(([count, playlists]) => {
+    res.json({
+      count,
+      items: playlists,
+    });
+  }).catch((err) => {
+    console.log(err);
+    return res.status(400).send({
+      message: errorHandler.getErrorMessage(err),
+    });
   });
 };

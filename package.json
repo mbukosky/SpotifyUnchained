@@ -34,7 +34,6 @@
     "@fortawesome/free-regular-svg-icons": "^5.13.0",
     "@fortawesome/free-solid-svg-icons": "^5.13.0",
     "@types/lodash": "^4.14.160",
-    "async": "^3.2.0",
     "chalk": "^4.1.0",
     "compression": "^1.7.4",
     "express": "^4.17.1",
