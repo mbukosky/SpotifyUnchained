@@ -48,11 +48,7 @@ export class ToolbarComponent implements OnInit {
   }
 
   login(): void {
-    this.spotify.login().subscribe((token) => {
-      console.log('logged in');
-    },
-      err => console.error(err),
-      () => { });
+    this.spotify.login();
   }
 
   getUser(): Observable<SpotifyApi.CurrentUsersProfileResponse> {

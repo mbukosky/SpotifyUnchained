@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, from, BehaviorSubject, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { tap } from 'rxjs/operators';
+import { Location } from '@angular/common';
 
 @Injectable({
   providedIn: 'root'
@@ -13,11 +14,12 @@ export class SpotifyService {
   private tokenName = 'spotify-token';
   private expirationName = 'spotify-token-expiration';
   private clientId = environment.spotifyClientId;
-  private redirectUri = window.location.origin + '/callback.html';
+  private redirectUri = window.location.origin;
   private scope = 'playlist-read-private playlist-modify-private';
 
   private authToken: string;
-  private initializedUser = false;
+  private loggedIn = false;
+  private timeout: number;
 
   private userSubject: BehaviorSubject<SpotifyApi.CurrentUsersProfileResponse>
     = new BehaviorSubject(null);
@@ -25,73 +27,61 @@ export class SpotifyService {
     BehaviorSubject<SpotifyApi.ListOfCurrentUsersPlaylistsResponse>
     = new BehaviorSubject(null);
 
-  constructor(private httpClient: HttpClient) { }
-
-  isLoggedIn(): boolean {
-    const token = localStorage.getItem(this.tokenName);
-    if (token) {
-      const expiration = localStorage
-        .getItem(this.expirationName);
-      if (expiration && Number(expiration) > new Date().getTime() + 120) {
-        this.authToken = token;
-        return true;
+  constructor(private httpClient: HttpClient, private location: Location) {
+    // TODO: this probably isn't the best location to do this
+    window.onload = () => {
+      // Save token from hash if available
+      const hash = window.location.hash;
+      if (window.location.search.substring(1).indexOf('error') !== -1) {
+        location.replaceState('/');
+      } else if (hash) {
+        const spotifyToken = window.location.hash.split('&')[0].split('=')[1];
+        const expiration = new Date().getTime() +
+          (1000 * Number(window.location.hash.split('&')[2].split('=')[1]));
+        localStorage.setItem('spotify-token', spotifyToken);
+        localStorage.setItem('spotify-token-expiration', String(expiration));
+        location.replaceState('/');
       }
-    }
-    return false;
+      // Load token and initialize user
+      const token = localStorage.getItem(this.tokenName);
+      if (token) {
+        const expiration = localStorage
+          .getItem(this.expirationName);
+        const currentTime = new Date().getTime();
+        if (expiration && Number(expiration) > currentTime + 120000) {
+          const remainingTime = Number(expiration) - currentTime - 100000;
+          console.log(`Token expires in ${remainingTime} ms`);
+          this.timeout = setTimeout(() => this.logout(), remainingTime);
+          this.authToken = token;
+          this.loggedIn = true;
+          this.initializeUser();
+          return true;
+        }
+      }
+    };
   }
 
-  // tslint:disable-next-line: max-line-length
-  // This is based on https://github.com/eduardolima93/angular2-spotify/blob/41c7fd7df9fc34666646639fb3085245ae2c45a8/angular2-spotify.ts
-  login(): Observable<string> {
-    const promise = new Promise<string>((resolve, reject) => {
-      const w = 400;
-      const h = 500;
-      const left = (screen.width / 2) - (w / 2);
-      const top = (screen.height / 2) - (h / 2);
+  isLoggedIn(): boolean {
+    return this.loggedIn;
+  }
 
-      const params = {
-        client_id: this.clientId,
-        redirect_uri: this.redirectUri,
-        scope: this.scope || '',
-        response_type: 'token'
-      };
-      let authCompleted = false;
-      const authWindow = this.openDialog(
-        'https://accounts.spotify.com/authorize?' + this.toQueryString(params),
-        'Spotify',
-        'menubar=no,location=no,resizable=yes,scrollbars=yes,status=no,width=' + w + ',height=' + h + ',top=' + top + ',left=' + left,
-        () => {
-          if (!authCompleted) {
-            return reject('Login rejected error');
-          }
-        }
-      );
-
-      const storageChanged = (e) => {
-        if (e.key === this.tokenName) {
-          if (authWindow) {
-            authWindow.close();
-          }
-          authCompleted = true;
-
-          this.authToken = e.newValue;
-          window.removeEventListener('storage', storageChanged, false);
-          this.initializedUser = true;
-          this.initializeUser();
-
-          return resolve(e.newValue);
-        }
-      };
-      window.addEventListener('storage', storageChanged, false);
-    });
-
-    return from(promise);
+  login(): void {
+    const params = {
+      client_id: this.clientId,
+      redirect_uri: this.redirectUri,
+      scope: this.scope || '',
+      response_type: 'token'
+    };
+    window.location.href = 'https://accounts.spotify.com/authorize?' +
+      this.toQueryString(params);
   }
 
   logout(): void {
     // TODO: logout from spotify.com as well?
+    console.log('logout');
     this.userSubject.next(null);
-    this.initializedUser = false;
+    this.loggedIn = false;
+    clearTimeout(this.timeout);
     localStorage.removeItem(this.tokenName);
     localStorage.removeItem(this.expirationName);
   }
@@ -106,10 +96,6 @@ export class SpotifyService {
   }
 
   getCurrentUser(): Observable<SpotifyApi.CurrentUsersProfileResponse> {
-    if (this.isLoggedIn() && !this.initializedUser) {
-      this.initializedUser = true;
-      this.initializeUser();
-    }
     return this.userSubject.asObservable();
   }
 
@@ -169,19 +155,6 @@ export class SpotifyService {
       headers: this.getAuthHeader(),
       params: new HttpParams().set('limit', '50'),
     }).pipe(tap(playlists => this.playlistsSubject.next(playlists)));
-  }
-
-  private openDialog(uri: string, name: string, options: string, cb): Window {
-    const win = window.open(uri, name, options);
-    const interval = window.setInterval(() => {
-      try {
-        if (!win || win.closed) {
-          window.clearInterval(interval);
-          cb(win);
-        }
-      } catch (e) { }
-    }, 1000000);
-    return win;
   }
 
   private toQueryString(obj): string {
