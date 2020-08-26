@@ -3,7 +3,8 @@ import { PlaylistItem } from '../api-format';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SpotifyService } from '../spotify.service';
 import { map, filter, switchMap } from 'rxjs/operators';
-import { Observable, of } from 'rxjs';
+import { Observable, of, forkJoin } from 'rxjs';
+import * as _ from 'lodash';
 
 @Component({
   selector: 'app-playlist',
@@ -28,8 +29,10 @@ export class PlaylistComponent implements OnInit {
       .pipe(
         switchMap(playlistResp => {
           const uris = this.playlist.tracks.map(track => track.uri);
-          // TODO: make multiple requests if more than 100 tracks
-          return this.spotify.addPlaylistTracks(playlistResp.id, uris);
+          // Split into groups of max 100
+          const uriChunks = _.chunk(uris, 100);
+          return forkJoin(uriChunks.map(uriChunk =>
+            this.spotify.addPlaylistTracks(playlistResp.id, uriChunk)));
         })).subscribe(addResp => {
           console.log(addResp);
           this.loading = false;
