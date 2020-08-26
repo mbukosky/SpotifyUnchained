@@ -2,9 +2,9 @@ import { Component, OnInit, Input } from '@angular/core';
 import { PlaylistItem } from '../api-format';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SpotifyService } from '../spotify.service';
-import { map, filter, switchMap } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 import { Observable, of, forkJoin } from 'rxjs';
-import * as _ from 'lodash';
+import { chunk } from 'lodash';
 
 @Component({
   selector: 'app-playlist',
@@ -30,7 +30,7 @@ export class PlaylistComponent implements OnInit {
         switchMap(playlistResp => {
           const uris = this.playlist.tracks.map(track => track.uri);
           // Split into groups of max 100
-          const uriChunks = _.chunk(uris, 100);
+          const uriChunks = chunk(uris, 100);
           return forkJoin(uriChunks.map(uriChunk =>
             this.spotify.addPlaylistTracks(playlistResp.id, uriChunk)));
         })).subscribe(addResp => {
