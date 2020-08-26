@@ -4,7 +4,7 @@
  * Lets set the environment variable for heroku
  * This file is not checked into source control
  */
-var envs_exist = require('fs').existsSync('./config/env/heroku.js');
+const envs_exist = require('fs').existsSync('./config/env/heroku.js');
 if (envs_exist) {
   require('./config/env/heroku.js')();
 }
@@ -15,7 +15,7 @@ require('newrelic');
 /**
  * Module dependencies.
  */
-var init = require('./config/init')(),
+const init = require('./config/init')(),
   config = require('./config/config'),
   mongoose = require('mongoose'),
   chalk = require('chalk');
@@ -40,7 +40,7 @@ mongoose.connect(config.db,
   });
 
 // Init the express application
-var app = require('./config/express')(mongoose);
+const app = require('./config/express')(mongoose);
 
 // Start the app by listening on <port>
 app.listen(config.port);

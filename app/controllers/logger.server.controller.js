@@ -8,8 +8,8 @@
  * Create a Log
  * { message: 'xxx', logType: 'warn' }
  */
-exports.log = function(req, res) {
-  var msg = req.body;
+exports.log = function (req, res) {
+  const msg = req.body;
 
   if (!msg) {
     res.status(400).send({

@@ -3,13 +3,13 @@
 /**
  * Module dependencies.
  */
-var mongoose = require('mongoose'),
+const mongoose = require('mongoose'),
   Schema = mongoose.Schema;
 
 /**
  * Playlist Schema
  */
-var PlaylistSchema = new Schema({
+const PlaylistSchema = new Schema({
   title: {
     type: String
   },

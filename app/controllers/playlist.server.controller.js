@@ -3,14 +3,14 @@
 /**
  * Module dependencies.
  */
-var mongoose = require('mongoose'),
+const mongoose = require('mongoose'),
   moment = require('moment'),
   errorHandler = require('./errors.server.controller'),
   Playlist = mongoose.model('Playlist'),
   _ = require('lodash'),
   async = require('async');
 
-var getRecentFriday = function() {
+const getRecentFriday = function () {
   return moment()
     .subtract(5, 'days')
     .startOf('week')
@@ -18,29 +18,29 @@ var getRecentFriday = function() {
     .format('MM.DD.YYYY');
 };
 
-var getNewFridayTitle = function() {
+const getNewFridayTitle = function () {
   return 'New.Music.Friday.' + getRecentFriday();
 };
 
 /**
  * Create a Spotify
  */
-exports.create = function(req, res, tracks) {
-  var playlist = new Playlist(tracks);
+exports.create = function (req, res, tracks) {
+  const playlist = new Playlist(tracks);
 
   playlist.title = getNewFridayTitle();
   playlist.tracks = tracks;
 
-  var upsertData = playlist.toObject();
+  const upsertData = playlist.toObject();
 
   delete upsertData._id;
 
   Playlist.updateOne({
-      title: playlist.title
-    }, upsertData, {
-      upsert: true
-    },
-    function(err) {
+    title: playlist.title
+  }, upsertData, {
+    upsert: true
+  },
+    function (err) {
       if (err) {
         return res.status(400).send({
           message: errorHandler.getErrorMessage(err)
@@ -54,21 +54,21 @@ exports.create = function(req, res, tracks) {
 /**
  * Show the current Spotify
  */
-exports.read = function(req, res) {
+exports.read = function (req, res) {
 
 };
 
 /**
  * Update a Spotify
  */
-exports.update = function(req, res) {
+exports.update = function (req, res) {
 
 };
 
 /**
  * Delete an Spotify
  */
-exports.delete = function(req, res) {
+exports.delete = function (req, res) {
 
 };
 
@@ -76,7 +76,7 @@ function getPlaylists(pagesize, page, sort, callback) {
   const sortKey = sort === 'asc' ? 'published_date' : '-published_date';
 
   Playlist.find().sort(sortKey).skip(pagesize * (page - 1))
-  .limit(Number(pagesize)).exec(callback);
+    .limit(Number(pagesize)).exec(callback);
 }
 
 function getPlaylistCount(callback) {
@@ -86,7 +86,7 @@ function getPlaylistCount(callback) {
 /**
  * List of Spotifies
  */
-exports.list = function(req, res) {
+exports.list = function (req, res) {
   //TODO: lodash numbers
   const pagesize = req.query.size || 5;
   const page = req.query.page || 1;
