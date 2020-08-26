@@ -9,4 +9,4 @@
 
     HTML5, CSS3
     jQuery, Modernizr
-    AngularJS, Node, MongoDB
+    Angular, Node, MongoDB
