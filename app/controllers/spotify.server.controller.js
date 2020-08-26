@@ -3,40 +3,41 @@
 /**
  * Module dependencies.
  */
-var request = require('request'),
-  playlist = require('./playlist.server.controller'),
-  _ = require('lodash');
+const fetch = require('node-fetch');
+const playlist = require('./playlist.server.controller');
+const _ = require('lodash');
 
-var client_id = process.env.SPOTIFY_CLIENT_ID || 'client';
-var client_secret = process.env.SPOTIFY_CLIENT_SECRET || 'secret';
-var playlist_id = '37i9dQZF1DX4JAvHpjipBk';
+const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || 'client';
+const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || 'secret';
+const PLAYLIST_ID = '37i9dQZF1DX4JAvHpjipBk';
 
-var authOptions = {
-  url: 'https://accounts.spotify.com/api/token',
+const params = new URLSearchParams();
+params.append('grant_type', 'client_credentials');
+
+const authOptions = {
+  method: 'POST',
+  body: params,
   headers: {
-    'Authorization': 'Basic ' + (Buffer.from(client_id + ':' + client_secret).toString('base64'))
+    'Authorization': 'Basic ' +
+      (Buffer.from(CLIENT_ID + ':' + CLIENT_SECRET).toString('base64')),
   },
-  form: {
-    grant_type: 'client_credentials'
-  },
-  json: true
 };
 
-var saveTracks = function(data) {
+const saveTracks = function (data) {
 
-  var tracks = [];
+  const tracks = [];
 
   try {
-    data.items.forEach(function(item) {
-        if(!_.isNull(item.track)) {
-          tracks.push({
-            id: item.track.id,
-            name: item.track.name,
-            artist: item.track.artists[0].name,
-            added_at: item.added_at,
-            open_url: item.track.external_urls.spotify,
-            uri: item.track.uri
-          });
+    data.items.forEach(function (item) {
+      if (!_.isNull(item.track)) {
+        tracks.push({
+          id: item.track.id,
+          name: item.track.name,
+          artist: item.track.artists[0].name,
+          added_at: item.added_at,
+          open_url: item.track.external_urls.spotify,
+          uri: item.track.uri
+        });
       }
     });
   } catch (err) {
@@ -44,9 +45,9 @@ var saveTracks = function(data) {
     return;
   }
 
-  var req = function() {};
-  var res = {
-    json: function(playlist) {
+  const req = function () { };
+  const res = {
+    json: function (playlist) {
       console.log('Saved ' + playlist.title);
     }
   };
@@ -57,27 +58,43 @@ var saveTracks = function(data) {
 /**
  * Sync a Spotify playlist by fetching the results and saving them to the database
  */
-exports.sync = function(req, res) {
-  request.post(authOptions, function(error, response, body) {
-    if (!error && response.statusCode === 200) {
-
-      // use the access token to access the Spotify Web API
-      var token = body.access_token;
+exports.sync = () => {
+  return fetch('https://accounts.spotify.com/api/token', authOptions)
+    .then(async (res) => {
+      const body = await res.json();
+      const token = body.access_token;
       console.log('TOKEN: ' + token);
 
-      var options = {
-        url: 'https://api.spotify.com/v1/users/spotify/playlists/' + playlist_id + '/tracks',
+      const url = 'https://api.spotify.com/v1/users/spotify/playlists/' + PLAYLIST_ID + '/tracks';
+
+      const options = {
         headers: {
-          'Authorization': 'Bearer ' + token
+          'Authorization': 'Bearer ' + token,
         },
-        json: true
       };
 
-      request.get(options, function(error, response, body) {
-        saveTracks(body);
-      });
-    }
+      const playlistRes = await fetch(url, options);
+      if (!playlistRes.ok) {
+        throw (playlistRes.statusText);
+      }
+      const playlistBody = await playlistRes.json();
+      if (playlistBody.next) {
+        await downloadAdditionalTracks(playlistBody, options);
+      }
+      saveTracks(playlistBody);
+    })
+    .catch((err) => {
+      console.error('Error downloading playlists:', err);
+    });
+}
 
-    //TODO: Added error logging
-  });
-};
+const downloadAdditionalTracks = async (body, options) => {
+  let nextUrl = body.next;
+  while (nextUrl) {
+    console.log('Downloading additional page', nextUrl);
+    const nextPageRes = await fetch(nextUrl, options);
+    const nextPage = await nextPageRes.json();
+    nextUrl = nextPage.next;
+    body.items = body.items.concat(nextPage.items);
+  }
+}
