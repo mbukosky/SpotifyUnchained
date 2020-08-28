@@ -9,7 +9,7 @@ describe('ToolbarComponent', () => {
   let component: ToolbarComponent;
   let fixture: ComponentFixture<ToolbarComponent>;
 
-  const spotify = jasmine.createSpyObj('SpotifyService', ['getCurrentUser', 'isLoggedIn', 'login', 'logout']);
+  const spotify = jasmine.createSpyObj('SpotifyService', ['getCurrentUser', 'isLoggedIn', 'login', 'logout', 'loadOrSaveToken']);
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({

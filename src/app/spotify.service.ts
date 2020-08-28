@@ -27,38 +27,36 @@ export class SpotifyService {
     BehaviorSubject<SpotifyApi.ListOfCurrentUsersPlaylistsResponse>
     = new BehaviorSubject(null);
 
-  constructor(private httpClient: HttpClient, private location: Location) {
-    // TODO: this probably isn't the best location to do this
-    window.onload = () => {
-      // Save token from hash if available
-      const hash = window.location.hash;
-      if (window.location.search.substring(1).indexOf('error') !== -1) {
-        location.replaceState('/');
-      } else if (hash) {
-        const spotifyToken = window.location.hash.split('&')[0].split('=')[1];
-        const expiration = new Date().getTime() +
-          (1000 * Number(window.location.hash.split('&')[2].split('=')[1]));
-        localStorage.setItem('spotify-token', spotifyToken);
-        localStorage.setItem('spotify-token-expiration', String(expiration));
-        location.replaceState('/');
+  constructor(private httpClient: HttpClient, private location: Location) { }
+
+  loadOrSaveToken(): void {
+    // Save token from hash if available
+    const hash = window.location.hash;
+    if (window.location.search.substring(1).indexOf('error') !== -1) {
+      this.location.replaceState('/');
+    } else if (hash) {
+      const spotifyToken = window.location.hash.split('&')[0].split('=')[1];
+      const expiration = new Date().getTime() +
+        (1000 * Number(window.location.hash.split('&')[2].split('=')[1]));
+      localStorage.setItem('spotify-token', spotifyToken);
+      localStorage.setItem('spotify-token-expiration', String(expiration));
+      this.location.replaceState('/');
+    }
+    // Load token and initialize user
+    const token = localStorage.getItem(this.tokenName);
+    if (token) {
+      const expiration = localStorage
+        .getItem(this.expirationName);
+      const currentTime = new Date().getTime();
+      if (expiration && Number(expiration) > currentTime + 120000) {
+        const remainingTime = Number(expiration) - currentTime - 100000;
+        console.log(`Token expires in ${remainingTime} ms`);
+        this.timeout = setTimeout(() => this.logout(), remainingTime);
+        this.authToken = token;
+        this.loggedIn = true;
+        this.initializeUser();
       }
-      // Load token and initialize user
-      const token = localStorage.getItem(this.tokenName);
-      if (token) {
-        const expiration = localStorage
-          .getItem(this.expirationName);
-        const currentTime = new Date().getTime();
-        if (expiration && Number(expiration) > currentTime + 120000) {
-          const remainingTime = Number(expiration) - currentTime - 100000;
-          console.log(`Token expires in ${remainingTime} ms`);
-          this.timeout = setTimeout(() => this.logout(), remainingTime);
-          this.authToken = token;
-          this.loggedIn = true;
-          this.initializeUser();
-          return true;
-        }
-      }
-    };
+    }
   }
 
   isLoggedIn(): boolean {

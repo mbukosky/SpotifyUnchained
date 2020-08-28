@@ -41,6 +41,7 @@ export class ToolbarComponent implements OnInit {
   constructor(private spotify: SpotifyService) { }
 
   ngOnInit(): void {
+    this.spotify.loadOrSaveToken();
   }
 
   isLoggedIn(): boolean {
