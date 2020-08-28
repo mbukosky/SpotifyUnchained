@@ -1,12 +1,12 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { PlaylistsComponent } from './playlists.component';
+import { PlaylistTableComponent } from './playlist-table.component';
 import { PlaylistService } from '../playlist.service';
 import { of } from 'rxjs';
 
-describe('PlaylistsComponent', () => {
-  let component: PlaylistsComponent;
-  let fixture: ComponentFixture<PlaylistsComponent>;
+describe('PlaylistTableComponent', () => {
+  let component: PlaylistTableComponent;
+  let fixture: ComponentFixture<PlaylistTableComponent>;
 
   const playlistService = jasmine.createSpyObj('PlaylistsService', ['getPlaylists', 'getTotalItems']);
   const mockPlaylistResponse = {};
@@ -14,14 +14,14 @@ describe('PlaylistsComponent', () => {
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [PlaylistsComponent],
+      declarations: [PlaylistTableComponent],
       providers: [{ provide: PlaylistService, useValue: playlistService }]
     })
       .compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(PlaylistsComponent);
+    fixture = TestBed.createComponent(PlaylistTableComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

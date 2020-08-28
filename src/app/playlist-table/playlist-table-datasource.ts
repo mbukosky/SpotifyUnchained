@@ -11,7 +11,7 @@ import { PlaylistService } from '../playlist.service';
  * encapsulate all logic for fetching and manipulating the displayed data
  * (including sorting, pagination, and filtering).
  */
-export class PlaylistsDataSource extends DataSource<PlaylistItem> {
+export class PlaylistTableDataSource extends DataSource<PlaylistItem> {
   paginator: MatPaginator;
   sort: MatSort;
 

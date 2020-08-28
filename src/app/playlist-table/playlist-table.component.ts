@@ -3,21 +3,21 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTable } from '@angular/material/table';
 import { PlaylistItem } from '../api-format';
-import { PlaylistsDataSource } from './playlists-datasource';
+import { PlaylistTableDataSource } from './playlist-table-datasource';
 import { PlaylistService } from '../playlist.service';
 import { merge } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
 @Component({
-  selector: 'app-playlists',
-  templateUrl: './playlists.component.html',
-  styleUrls: ['./playlists.component.css']
+  selector: 'app-playlist-table',
+  templateUrl: './playlist-table.component.html',
+  styleUrls: ['./playlist-table.component.css']
 })
-export class PlaylistsComponent implements AfterViewInit, OnInit {
+export class PlaylistTableComponent implements AfterViewInit, OnInit {
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
   @ViewChild(MatTable) table: MatTable<PlaylistItem>;
-  dataSource: PlaylistsDataSource;
+  dataSource: PlaylistTableDataSource;
 
   /** Columns displayed in the table. Columns IDs can be added, removed, or reordered. */
   displayedColumns = ['name'];
@@ -27,7 +27,7 @@ export class PlaylistsComponent implements AfterViewInit, OnInit {
   }
 
   ngOnInit(): void {
-    this.dataSource = new PlaylistsDataSource(this.playlistService);
+    this.dataSource = new PlaylistTableDataSource(this.playlistService);
     this.dataSource.loadPlaylists(0, 10, 'desc');
   }
 

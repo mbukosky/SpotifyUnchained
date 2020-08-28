@@ -6,7 +6,7 @@ import { NgModule } from '@angular/core';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { TrackComponent } from './track/track.component';
-import { PlaylistsComponent } from './playlists/playlists.component';
+import { PlaylistTableComponent } from './playlist-table/playlist-table.component';
 import { PlaylistComponent } from './playlist/playlist.component';
 import { ToolbarComponent } from './toolbar/toolbar.component';
 
@@ -33,8 +33,8 @@ import { FooterComponent } from './footer/footer.component';
   declarations: [
     AppComponent,
     TrackComponent,
-    PlaylistsComponent,
     PlaylistComponent,
+    PlaylistTableComponent,
     ToolbarComponent,
     HeaderComponent,
     FooterComponent
