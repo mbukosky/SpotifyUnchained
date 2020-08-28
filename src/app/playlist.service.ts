@@ -8,7 +8,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class PlaylistService {
-  private totalItems: number;
+  private totalItems = 0;
 
   constructor(private httpClient: HttpClient) {
 

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, from, BehaviorSubject, throwError } from 'rxjs';
+import { Observable, BehaviorSubject, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { tap } from 'rxjs/operators';
 import { Location } from '@angular/common';
@@ -21,9 +21,9 @@ export class SpotifyService {
   private loggedIn = false;
   private timeout: number;
 
-  private userSubject: BehaviorSubject<SpotifyApi.CurrentUsersProfileResponse>
+  userSubject: BehaviorSubject<SpotifyApi.CurrentUsersProfileResponse>
     = new BehaviorSubject(null);
-  private playlistsSubject:
+  playlistsSubject:
     BehaviorSubject<SpotifyApi.ListOfCurrentUsersPlaylistsResponse>
     = new BehaviorSubject(null);
 

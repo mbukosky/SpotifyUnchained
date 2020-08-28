@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { PlaylistService } from './playlist.service';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpErrorResponse } from '@angular/common/http';
 
 describe('PlaylistService', () => {
   let service: PlaylistService;
@@ -30,9 +31,7 @@ describe('PlaylistService', () => {
       (resp) => {
         expect(resp.length).toEqual(0);
       },
-      (error) => {
-        fail(error);
-      }
+      fail
     );
 
     const mockResponse = {
@@ -41,8 +40,23 @@ describe('PlaylistService', () => {
     };
 
     const requestWrapper = httpTestingController.expectOne({ url: '/spotify?page=1&size=5&sort=asc' });
+    expect(requestWrapper.request.method).toEqual('GET');
     requestWrapper.flush(mockResponse);
 
     expect(service.getTotalItems()).toEqual(0);
+  });
+
+  it('should throw an error when there is a request error', () => {
+
+    service.getPlaylists(0, 5, 'asc').subscribe(
+      fail,
+      (error: HttpErrorResponse) => {
+        expect(error.status).toEqual(404);
+      }
+    );
+
+    const requestWrapper = httpTestingController.expectOne({ url: '/spotify?page=1&size=5&sort=asc' });
+    expect(requestWrapper.request.method).toEqual('GET');
+    requestWrapper.flush('404', { status: 404, statusText: 'Not Found' });
   });
 });
