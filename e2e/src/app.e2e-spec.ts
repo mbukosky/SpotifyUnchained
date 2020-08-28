@@ -8,9 +8,9 @@ describe('workspace-project App', () => {
     page = new AppPage();
   });
 
-  it('should display welcome message', () => {
+  it('should display page title', () => {
     page.navigateTo();
-    expect(page.getTitleText()).toEqual('SpotifyUnchained app is running!');
+    expect(page.getTitleText()).toEqual('Spotify Unchained');
   });
 
   afterEach(async () => {
