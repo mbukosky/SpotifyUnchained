@@ -27,6 +27,7 @@ import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { FlexLayoutModule } from '@angular/flex-layout';
 import { HeaderComponent } from './header/header.component';
 import { FooterComponent } from './footer/footer.component';
+import { MatButtonModule } from '@angular/material/button';
 
 
 @NgModule({
@@ -44,6 +45,7 @@ import { FooterComponent } from './footer/footer.component';
     HttpClientModule,
     AppRoutingModule,
     BrowserAnimationsModule,
+    MatButtonModule,
     MatCardModule,
     MatDividerModule,
     MatExpansionModule,

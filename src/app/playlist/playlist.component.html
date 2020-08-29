@@ -4,12 +4,15 @@
             {{playlist.title}}
         </mat-panel-title>
         <mat-spinner *ngIf=loading [diameter]="16"></mat-spinner>
-        <mat-icon *ngIf="!loading && (userHasPlaylist() | async) === false; else saved" (click)="savePlaylist(); $event.stopPropagation()"
-            matTooltip="Save playlist to your Spotify account">cloud_download</mat-icon>
+        <button mat-icon-button *ngIf="!loading && (userHasPlaylist() | async) === false; else saved"
+            (click)="savePlaylist(); $event.stopPropagation()" matTooltip="Save playlist to your Spotify account">
+            <mat-icon>cloud_download</mat-icon>
+        </button>
+
         <ng-template #saved>
-            <mat-icon *ngIf=!loading class="saved" matTooltip="This playlist is saved to your Spotify account">
-                cloud_download
-            </mat-icon>
+            <button mat-icon-button color="primary" *ngIf=!loading matTooltip="This playlist is saved to your Spotify account">
+                <mat-icon>cloud_download</mat-icon>
+            </button>
         </ng-template>
     </mat-expansion-panel-header>
 

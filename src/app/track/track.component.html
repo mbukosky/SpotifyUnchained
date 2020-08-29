@@ -1,6 +1,10 @@
 <mat-card class="example-card">
   <mat-card-header *ngIf="!playClicked">
-    <mat-icon (click)=clickPlayButton() *ngIf="!playClicked">play_circle_outline</mat-icon>
+    <div mat-card-avatar>
+      <button mat-icon-button color="primary" (click)=clickPlayButton()>
+        <mat-icon>play_circle_outline</mat-icon>
+      </button>
+    </div>
     <mat-card-title>{{track.name}}</mat-card-title>
     <mat-card-subtitle>{{track.artist}}</mat-card-subtitle>
   </mat-card-header>

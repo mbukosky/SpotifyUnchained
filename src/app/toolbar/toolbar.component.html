@@ -1,19 +1,19 @@
-<mat-toolbar fxLayout="row" fxLayoutGap="8px">
-    <a *ngFor="let item of menuItems" href="{{item.link}}" target="_blank" [fxShow]="item.showOnDesktop"
+<mat-toolbar color="primary" fxLayout="row" fxLayoutGap="8px">
+    <a mat-icon-button *ngFor="let item of menuItems" href="{{item.link}}" target="_blank" [fxShow]="item.showOnDesktop"
         [fxShow.xs]="item.showOnMobile" [fxShow.sm]="item.showOnTablet">
         <fa-icon [icon]=item.icon></fa-icon>
     </a>
     <div></div>
     <span fxFlex>Spotify Unchained</span>
-    <a *ngIf=!isLoggedIn() (click)='login()'>
-        <span class="mat-h3">Sign in</span>
-    </a>
-    <a *ngIf="isLoggedIn()" (click)='logout()'>
+    <button mat-button *ngIf=!isLoggedIn() (click)='login()'>
+        <span class="mat-h2">Sign in</span>
+    </button>
+    <button mat-button *ngIf="isLoggedIn()" (click)='logout()'>
         <span *ngIf="(getUser() | async) as user" class="mat-h3">
             {{user.display_name}}
         </span>
         <span class="mat-h4">(sign out)</span>
-    </a>
+    </button>
     <ng-container>
         <button mat-icon-button [matMenuTriggerFor]="dropMenu" fxHide fxShow.xs fxShow.sm>
             <mat-icon>more_vert</mat-icon>
