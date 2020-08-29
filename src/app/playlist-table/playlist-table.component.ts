@@ -11,7 +11,7 @@ import { tap } from 'rxjs/operators';
 @Component({
   selector: 'app-playlist-table',
   templateUrl: './playlist-table.component.html',
-  styleUrls: ['./playlist-table.component.css']
+  styleUrls: ['./playlist-table.component.scss']
 })
 export class PlaylistTableComponent implements AfterViewInit, OnInit {
   @ViewChild(MatPaginator) paginator: MatPaginator;

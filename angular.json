@@ -14,7 +14,7 @@
           "builder": "@angular-builders/custom-webpack:browser",
           "options": {
             "customWebpackConfig": {
-              "path":"custom-webpack.config.js"
+              "path": "custom-webpack.config.js"
             },
             "outputPath": "dist/SpotifyUnchained",
             "index": "src/index.html",
@@ -30,7 +30,7 @@
             ],
             "styles": [
               "./node_modules/@angular/material/prebuilt-themes/deeppurple-amber.css",
-              "src/styles.css"
+              "src/styles.scss"
             ],
             "scripts": []
           },
@@ -87,7 +87,7 @@
           "builder": "@angular-builders/custom-webpack:karma",
           "options": {
             "customWebpackConfig": {
-              "path":"custom-webpack.config.js"
+              "path": "custom-webpack.config.js"
             },
             "main": "src/test.ts",
             "polyfills": "src/polyfills.ts",
@@ -99,7 +99,7 @@
             ],
             "styles": [
               "./node_modules/@angular/material/prebuilt-themes/purple-green.css",
-              "src/styles.css"
+              "src/styles.scss"
             ],
             "scripts": []
           }
@@ -132,5 +132,10 @@
       }
     }
   },
-  "defaultProject": "SpotifyUnchained"
+  "defaultProject": "SpotifyUnchained",
+  "schematics": {
+    "@schematics/angular:component": {
+      "styleext": "scss"
+    }
+  }
 }
