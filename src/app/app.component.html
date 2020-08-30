@@ -1,0 +1,9 @@
+<div [class.darkMode]="isDarkMode() | async" class="mat-app-background wrapper">
+    <app-toolbar></app-toolbar>
+    <div class="container">
+        <app-header></app-header>
+        <app-playlist-table></app-playlist-table>
+    </div>
+    <div class="push"></div>
+</div>
+<app-footer [class.darkMode]="isDarkMode() | async" class="footer"></app-footer>

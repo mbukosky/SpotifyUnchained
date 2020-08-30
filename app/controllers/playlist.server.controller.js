@@ -3,14 +3,12 @@
 /**
  * Module dependencies.
  */
-var mongoose = require('mongoose'),
-  moment = require('moment'),
-  errorHandler = require('./errors.server.controller'),
-  Playlist = mongoose.model('Playlist'),
-  _ = require('lodash'),
-  async = require('async');
+const mongoose = require('mongoose');
+const moment = require('moment');
+const errorHandler = require('./errors.server.controller');
+const Playlist = mongoose.model('Playlist');
 
-var getRecentFriday = function() {
+const getRecentFriday = () => {
   return moment()
     .subtract(5, 'days')
     .startOf('week')
@@ -18,86 +16,57 @@ var getRecentFriday = function() {
     .format('MM.DD.YYYY');
 };
 
-var getNewFridayTitle = function() {
+const getNewFridayTitle = () => {
   return 'New.Music.Friday.' + getRecentFriday();
 };
 
 /**
  * Create a Spotify
  */
-exports.create = function(req, res, tracks) {
-  var playlist = new Playlist(tracks);
+exports.create = function (req, res, tracks) {
+  const playlist = new Playlist(tracks);
 
   playlist.title = getNewFridayTitle();
   playlist.tracks = tracks;
 
-  var upsertData = playlist.toObject();
+  const upsertData = playlist.toObject();
 
   delete upsertData._id;
 
-  Playlist.update({
-      title: playlist.title
-    }, upsertData, {
-      upsert: true
-    },
-    function(err) {
-      if (err) {
-        return res.status(400).send({
-          message: errorHandler.getErrorMessage(err)
-        });
-      } else {
-        res.json(playlist);
-      }
-    });
+  Playlist.updateOne({
+    title: playlist.title
+  }, upsertData, {
+    upsert: true
+  }).then(() => res.json(playlist))
+    .catch((err) => res.status(400).send({
+      message: errorHandler.getErrorMessage(err)
+    }));
 };
-
-/**
- * Show the current Spotify
- */
-exports.read = function(req, res) {
-
-};
-
-/**
- * Update a Spotify
- */
-exports.update = function(req, res) {
-
-};
-
-/**
- * Delete an Spotify
- */
-exports.delete = function(req, res) {
-
-};
-
-function getPlaylists(pagesize, page, callback) {
-  Playlist.find().sort('-published_date').skip(pagesize * (page - 1)).limit(pagesize).exec(callback);
-}
-
-function getPlaylistCount(callback) {
-  Playlist.count().exec(callback);
-}
 
 /**
  * List of Spotifies
  */
-exports.list = function(req, res) {
+exports.list = function (req, res) {
   //TODO: lodash numbers
-  var pagesize = req.query.size || 5;
-  var page = req.query.page || 1;
+  const pagesize = req.query.size || 5;
+  const page = req.query.page || 1;
+  const sort = req.query.sort || 'asc';
 
-  async.parallel({
-    count: getPlaylistCount,
-    items: async.apply(getPlaylists, pagesize, page)
-  }, function (err, results) {
-    if (err) {
-      return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
-      });
-    }
+  const sortKey = sort === 'asc' ? 'published_date' : '-published_date';
 
-    res.json(results);
+  Promise.all([
+    Playlist.countDocuments(),
+    Playlist.find().sort(sortKey).skip(pagesize * (page - 1))
+      .limit(Number(pagesize))
+  ]).then(([count, playlists]) => {
+    res.json({
+      count,
+      items: playlists,
+    });
+  }).catch((err) => {
+    console.log(err);
+    return res.status(400).send({
+      message: errorHandler.getErrorMessage(err),
+    });
   });
 };

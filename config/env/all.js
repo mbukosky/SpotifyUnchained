@@ -7,7 +7,6 @@ module.exports = {
     keywords: 'Spotify, playlist, new music tuesday, new music friday, archive, Node.js, AngularJS'
   },
   port: process.env.PORT || 3000,
-  templateEngine: 'swig',
   sessionSecret: process.env.SESSION_SECRET || 'MEAN',
   sessionCollection: 'sessions',
   assets: {

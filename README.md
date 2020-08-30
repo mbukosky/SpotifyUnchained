@@ -17,16 +17,10 @@ This is not an official Spotify application. I am a developer, Spotify user, and
 Make sure you have installed all these prerequisites on your development machine.
 * Node.js - [Download & Install Node.js](http://www.nodejs.org/download/) and the npm package manager, if you encounter any problems, you can also use this [GitHub Gist](https://gist.github.com/isaacs/579814) to install Node.js.
 * MongoDB - [Download & Install MongoDB](http://www.mongodb.org/downloads), and make sure it's running on the default port (27017).
-* Bower - You're going to use the [Bower Package Manager](http://bower.io/) to manage your front-end packages, in order to install it make sure you've installed Node.js and npm, then install bower globally using npm:
+* Angular CLI - You're going to use the [Angular CLI](https://angular.io/cli) to manage your front-end packages, in order to install it make sure you've installed Node.js and npm, then install the cli globally using npm:
 
 ```
-$ npm install -g bower
-```
-
-* Grunt - You're going to use the [Grunt Task Runner](http://gruntjs.com/) to automate your development process, in order to install it make sure you've installed Node.js and npm, then install grunt globally using npm:
-
-```
-$ sudo npm install -g grunt-cli
+$ npm install -g @angular/cli
 ```
 
 ## Quick Install
@@ -40,7 +34,6 @@ $ npm install
 This command does a few things:
 * First it will install the dependencies needed for the application to run.
 * If you're running in a development environment, it will then also install development dependencies needed for testing and running your application.
-* Finally, when the install process is over, npm will initiate a bower install command to install all the front-end modules needed for the application
 
 ## Start up MongoDB
 Before you can start up the application, you need to spin up the local MongoDB
@@ -49,17 +42,32 @@ Before you can start up the application, you need to spin up the local MongoDB
 ./mongod --dbpath ~/data/db/
 ```
 
-## Running Your Application
-After the install process is over, you'll be able to run your application using Grunt, just run grunt default task:
+## Running Your Application (development)
+To start the Express server containing the API run the start script. This will start the Express server on port 3000 by default
 
 ```
-$ grunt
+$ npm start
+```
+The start a development Angular server, use the Angular CLI. By default, this will run on port 4200 and create a reverse proxy to the API running on port 3000.
+```
+$ ng serve
 ```
 
-Your application should run on the 3000 port so in your browser just go to [http://localhost:3000](http://localhost:3000)
+In your browser just go to [http://localhost:4200](http://localhost:4200)
 
 That's it! your application should be running by now, to proceed with your development check the other sections in this documentation.
 If you encounter any problem try the Troubleshooting section.
+
+## Running Your Application (production)
+First, build the angular client. This will output to the `dist/` directory. 
+```
+$ ng build --prod
+```
+Then start up the Express server. The express server will serve everything in the `dist/` directory as static files.
+```
+$ npm start
+```
+The complete server should now be running.
 
 ## Community
 * The [original](https://community.spotify.com/t5/Music-Chat/New-Music-Tuesday-Archive/m-p/1037048#M20850) Spotify form

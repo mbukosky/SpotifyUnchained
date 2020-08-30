@@ -1,0 +1,26 @@
+<mat-expansion-panel hideToggle>
+    <mat-expansion-panel-header>
+        <mat-panel-title>
+            <span style="line-height: 300%">{{playlist.title}}</span>
+        </mat-panel-title>
+        <mat-spinner *ngIf=loading [diameter]="16"></mat-spinner>
+        <button mat-icon-button *ngIf="!loading && (userHasPlaylist() | async) === false; else saved"
+            (click)="savePlaylist(); $event.stopPropagation()" matTooltip="Save playlist to your Spotify account">
+            <mat-icon>cloud_download</mat-icon>
+        </button>
+
+        <ng-template #saved>
+            <button mat-icon-button color="primary" *ngIf=!loading matTooltip="This playlist is saved to your Spotify account">
+                <mat-icon>cloud_download</mat-icon>
+            </button>
+        </ng-template>
+    </mat-expansion-panel-header>
+
+    <ng-template matExpansionPanelContent>
+        <div class="mat-app-background" fxLayout="row wrap" fxLayoutAlign="center">
+            <app-track *ngFor="let track of playlist.tracks" [track]="track">
+            </app-track>
+        </div>
+    </ng-template>
+
+</mat-expansion-panel>
