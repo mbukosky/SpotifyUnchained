@@ -17,7 +17,7 @@
     </mat-expansion-panel-header>
 
     <ng-template matExpansionPanelContent>
-        <div fxLayout="row wrap" fxLayoutAlign="center">
+        <div class="mat-app-background" fxLayout="row wrap" fxLayoutAlign="center">
             <app-track *ngFor="let track of playlist.tracks" [track]="track">
             </app-track>
         </div>
