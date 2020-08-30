@@ -1,9 +1,11 @@
-<div class="wrapper">
-    <app-toolbar></app-toolbar>
-    <div class="container">
-        <app-header></app-header>
-        <app-playlist-table></app-playlist-table>
+<div [class.darkMode]="isDarkMode() | async" id="entire-page" class="mat-app-background">
+    <div class="wrapper">
+        <app-toolbar></app-toolbar>
+        <div class="container">
+            <app-header></app-header>
+            <app-playlist-table></app-playlist-table>
+        </div>
+        <div class="push"></div>
     </div>
-    <div class="push"></div>
+    <app-footer class="footer"></app-footer>
 </div>
-<app-footer class="footer"></app-footer>

@@ -1,4 +1,6 @@
 import { Component } from '@angular/core';
+import { ThemeService } from './theme.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -7,4 +9,10 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'SpotifyUnchained';
+
+  constructor(private themeService: ThemeService) { }
+
+  isDarkMode(): Observable<boolean> {
+    return this.themeService.isDarkMode();
+  }
 }

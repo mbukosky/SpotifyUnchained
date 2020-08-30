@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { faGithub, faTwitter, faPaypal } from '@fortawesome/free-brands-svg-icons';
 import { MenuItem } from './menu-item';
 import { SpotifyService } from '../spotify.service';
+import { ThemeService } from '../theme.service';
 import { Observable } from 'rxjs';
 
 @Component({
@@ -38,7 +39,7 @@ export class ToolbarComponent implements OnInit {
     }
   ];
 
-  constructor(private spotify: SpotifyService) { }
+  constructor(private spotify: SpotifyService, private themeService: ThemeService) { }
 
   ngOnInit(): void {
     this.spotify.loadOrSaveToken();
@@ -58,5 +59,17 @@ export class ToolbarComponent implements OnInit {
 
   logout(): void {
     this.spotify.logout();
+  }
+
+  isDarkMode(): Observable<boolean> {
+    return this.themeService.isDarkMode();
+  }
+
+  setDarkMode(): void {
+    this.themeService.setDarkMode();
+  }
+
+  setLightMode(): void {
+    this.themeService.setLightMode();
   }
 }
