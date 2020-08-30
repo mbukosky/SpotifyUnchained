@@ -1,7 +1,7 @@
 <mat-expansion-panel hideToggle>
     <mat-expansion-panel-header>
         <mat-panel-title>
-            {{playlist.title}}
+            <span style="line-height: 300%">{{playlist.title}}</span>
         </mat-panel-title>
         <mat-spinner *ngIf=loading [diameter]="16"></mat-spinner>
         <button mat-icon-button *ngIf="!loading && (userHasPlaylist() | async) === false; else saved"

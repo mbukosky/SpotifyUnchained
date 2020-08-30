@@ -37,7 +37,7 @@
                     </a>
                 </div>
             </ng-container>
-            <div [fxShow.xs]=true [fxShow.sm]=false>
+            <div fxHide fxShow.xs>
                 <button mat-menu-item *ngIf="(isDarkMode() | async)" (click)=setLightMode()
                     matTooltip="Switch to light mode">
                     <mat-icon style="color: black">wb_sunny</mat-icon>
