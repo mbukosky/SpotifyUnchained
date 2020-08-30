@@ -8,8 +8,12 @@ export class ThemeService {
 
   private darkMode = new BehaviorSubject(false);
 
-  // TODO: load previous setting from storage
-  constructor() { }
+  constructor() {
+    const setting = localStorage.getItem('darkMode');
+    if (setting === 'true') {
+      this.darkMode.next(true);
+    }
+  }
 
   isDarkMode(): Observable<boolean> {
     return this.darkMode.asObservable();
@@ -18,10 +22,12 @@ export class ThemeService {
   setLightMode(): void {
     console.log('Setting light mode');
     this.darkMode.next(false);
+    localStorage.setItem('darkMode', 'false');
   }
 
   setDarkMode(): void {
     console.log('Setting dark mode');
     this.darkMode.next(true);
+    localStorage.setItem('darkMode', 'true');
   }
 }
