@@ -14,10 +14,11 @@
         </span>
         <span class="mat-h4">(sign out)</span>
     </button>
-    <button *ngIf="(isDarkMode() | async)" (click)=setLightMode() mat-icon-button matTooltip="Switch to light mode">
+    <button [fxShow.xs]=false *ngIf="(isDarkMode() | async)" (click)=setLightMode() mat-icon-button
+        matTooltip="Switch to light mode">
         <mat-icon>wb_sunny</mat-icon>
     </button>
-    <button *ngIf="(isDarkMode() | async) === false" (click)=setDarkMode() mat-icon-button
+    <button [fxShow.xs]=false *ngIf="(isDarkMode() | async) === false" (click)=setDarkMode() mat-icon-button
         matTooltip="Switch to dark mode">
         <mat-icon>brightness_3</mat-icon>
     </button>
@@ -30,12 +31,24 @@
                 <div [fxShow]="!item.showOnDesktop" [fxShow.sm]="!item.showOnTablet" [fxShow.xs]="!item.showOnMobile">
                     <a href="{{item.link}}" target="_blank">
                         <button mat-menu-item>
-                            <fa-icon [icon]=item.icon></fa-icon>
-                            {{item.label}}
+                            <fa-icon class=mat-icon [icon]=item.icon></fa-icon>
+                            <span>{{item.label}}</span>
                         </button>
                     </a>
                 </div>
             </ng-container>
+            <div [fxShow.xs]=true [fxShow.sm]=false>
+                <button mat-menu-item *ngIf="(isDarkMode() | async)" (click)=setLightMode()
+                    matTooltip="Switch to light mode">
+                    <mat-icon style="color: black">wb_sunny</mat-icon>
+                    <span>Theme</span>
+                </button>
+                <button mat-menu-item *ngIf="(isDarkMode() | async) === false" (click)=setDarkMode()
+                    matTooltip="Switch to dark mode">
+                    <mat-icon style="color: black">brightness_3</mat-icon>
+                    <span>Theme</span>
+                </button>
+            </div>
         </mat-menu>
     </ng-container>
 </mat-toolbar>
