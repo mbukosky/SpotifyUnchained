@@ -1,6 +1,12 @@
 language: node_js
 node_js:
-  - "6.17.1"
+  - "12.18.3"
+before_script:
+  - npm install -g @angular/cli
+script:
+  - npm install
+  - npm run lint
+  - npm run test-headless
 env:
   - NODE_ENV=travis
 services:
