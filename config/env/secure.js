@@ -2,7 +2,7 @@
 
 module.exports = {
   port: 443,
-  db: process.env.MONGOHQ_URL || process.env.MONGOLAB_URI || 'mongodb://localhost/spotifyunchained',
+  db: process.env.MONGOHQ_URL || process.env.DB_URI || 'mongodb://localhost/spotifyunchained',
   assets: {
     lib: {
       css: [
