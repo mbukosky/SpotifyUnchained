@@ -5,7 +5,7 @@
   },
   "stack": "heroku-18",
   "env": {
-    "MONGOLAB_URI": {
+    "DB_URI": {
       "required": true
     },
     "NEW_RELIC_LICENSE_KEY": {
