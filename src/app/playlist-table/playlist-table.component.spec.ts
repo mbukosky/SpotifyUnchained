@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
 import { PlaylistTableComponent } from './playlist-table.component';
 import { PlaylistService } from '../playlist.service';
@@ -12,7 +12,7 @@ xdescribe('PlaylistTableComponent', () => {
   const mockPlaylistResponse = {};
   playlistService.getPlaylists.and.returnValue(of(mockPlaylistResponse));
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [PlaylistTableComponent],
       providers: [{ provide: PlaylistService, useValue: playlistService }]
