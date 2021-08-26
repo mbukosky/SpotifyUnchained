@@ -3,7 +3,7 @@
   "description": "",
   "scripts": {
   },
-  "stack": "heroku-18",
+  "stack": "heroku-20",
   "env": {
     "DB_URI": {
       "required": true
