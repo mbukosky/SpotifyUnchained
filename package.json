@@ -44,7 +44,7 @@
     "helmet": "^4.6.0",
     "lodash": "^4.17.21",
     "moment": "^2.29.1",
-    "mongoose": "^5.13.13",
+    "mongoose": "^5.13.15",
     "morgan": "^1.10.0",
     "newrelic": "^8.6.0",
     "node-fetch": "^2.6.6",
