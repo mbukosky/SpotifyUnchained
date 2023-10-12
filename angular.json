@@ -116,7 +116,6 @@
       }
     }
   },
-  "defaultProject": "SpotifyUnchained",
   "schematics": {
     "@schematics/angular:component": {
       "styleext": "scss"
