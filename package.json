@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "author": "Michael Bukosky",
   "engines": {
-    "node": "12.x",
-    "npm": "6.14.x"
+    "node": "18.x",
+    "npm": "9.8.x"
   },
   "scripts": {
     "ng": "ng",
