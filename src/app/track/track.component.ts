@@ -7,16 +7,13 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
   templateUrl: './track.component.html',
   styleUrls: ['./track.component.scss']
 })
-export class TrackComponent implements OnInit {
+export class TrackComponent {
 
   @Input() track: TrackItem;
   playClicked = false;
 
   constructor(private sanitizer: DomSanitizer) {
     this.sanitizer = sanitizer;
-  }
-
-  ngOnInit(): void {
   }
 
   safeTrackUrl(): SafeUrl {
