@@ -11,16 +11,13 @@ import { chunk } from 'lodash';
   templateUrl: './playlist.component.html',
   styleUrls: ['./playlist.component.scss']
 })
-export class PlaylistComponent implements OnInit {
+export class PlaylistComponent {
 
   @Input() playlist: PlaylistItem;
 
   loading = false;
 
   constructor(private snackBar: MatSnackBar, private spotify: SpotifyService) { }
-
-  ngOnInit(): void {
-  }
 
   savePlaylist(): void {
     this.loading = true;
