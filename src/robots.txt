@@ -1,3 +1,6 @@
 # robotstxt.org/
 
 User-agent: *
+Allow: /
+
+Sitemap: https://spotifyunchained.herokuapp.com/sitemap.xml
