@@ -3,4 +3,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://spotifyunchained.herokuapp.com/sitemap.xml
+Sitemap: https://spotifyunchained.com/sitemap.xml
