@@ -1,5 +1,8 @@
 'use strict';
 
+// Load environment variables from .env file
+require('dotenv').config();
+
 /**
  * Lets set the environment variable for heroku
  * This file is not checked into source control

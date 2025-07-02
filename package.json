@@ -10,6 +10,7 @@
   "scripts": {
     "ng": "ng",
     "start": "node server.js",
+    "dev": "npm start",
     "build": "ng build --configuration production",
     "test": "ng test",
     "test-headless": "ng test --watch=false --browsers=ChromeHeadless",
@@ -37,6 +38,7 @@
     "@types/lodash": "^4.14.170",
     "chalk": "^4.1.1",
     "compression": "^1.7.4",
+    "dotenv": "^17.0.1",
     "express": "^4.17.1",
     "forever": "^4.0.1",
     "glob": "^7.1.7",

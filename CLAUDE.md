@@ -47,17 +47,19 @@ SpotifyUnchained is a web application that automatically archives Spotify's "New
 - Angular CLI: `npm install -g @angular/cli`
 
 ### Environment Variables
-Create environment-specific configuration files or set these variables:
+Create a `.env` file in the project root with your local environment variables:
 
 **Required for Spotify Integration:**
 - `SPOTIFY_CLIENT_ID` - Your Spotify app client ID
 - `SPOTIFY_CLIENT_SECRET` - Your Spotify app client secret
+- `DB_URI` - MongoDB connection string
 
 **Optional:**
 - `PORT` - Server port (default: 3000)
 - `NODE_ENV` - Environment (development/production/test/secure)
 - `SESSION_SECRET` - Express session secret
 - `MAILER_*` - Email configuration variables
+- `SKIP_SPOTIFY_SYNC` - Set to `true` to disable automatic Spotify sync (useful for local development)
 
 ### Installation & Setup
 
@@ -71,11 +73,21 @@ Create environment-specific configuration files or set these variables:
    ./mongod --dbpath ~/data/db/
    ```
 
-3. **Development Mode:**
+3. **Create .env file:**
+   Create a `.env` file in the project root with your environment variables:
+   ```bash
+   SPOTIFY_CLIENT_ID=your_client_id
+   SPOTIFY_CLIENT_SECRET=your_client_secret
+   DB_URI=your_mongodb_connection_string
+   NODE_ENV=production
+   SKIP_SPOTIFY_SYNC=true
+   ```
+
+4. **Development Mode:**
    
    **Terminal 1 - Start Express API server:**
    ```bash
-   npm start  # Runs on port 3000
+   npm start  # or npm run dev - Runs on port 3000
    ```
    
    **Terminal 2 - Start Angular dev server:**
@@ -85,7 +97,7 @@ Create environment-specific configuration files or set these variables:
    
    Access application at: http://localhost:4200
 
-4. **Production Mode:**
+5. **Production Mode:**
    ```bash
    npm run build        # Build Angular app
    npm start           # Start Express server (serves built app)
@@ -96,6 +108,7 @@ Create environment-specific configuration files or set these variables:
 | Command | Description |
 |---------|-------------|
 | `npm start` | Start Express server |
+| `npm run dev` | Start Express server (alias for npm start) |
 | `npm run build` | Build Angular app for production |
 | `npm test` | Run Angular unit tests |
 | `npm run test-headless` | Run tests in headless Chrome |
@@ -215,9 +228,12 @@ npm run lint               # Runs JSHint (backend) + ESLint (frontend)
 ## Common Development Tasks
 
 ### Adding New Environment Variables
-1. Add to `custom-webpack.config.js` for frontend access
-2. Add to appropriate `config/env/*.js` file for backend
-3. Update this documentation
+1. Add to `.env` file for local development
+2. Add to `custom-webpack.config.js` for frontend access
+3. Add to appropriate `config/env/*.js` file for backend
+4. Update this documentation
+
+**Note**: The `.env` file is automatically loaded at application startup and should not be committed to version control.
 
 ### Database Operations
 - Connect to local MongoDB: `mongodb://localhost/spotifyunchained-dev`
