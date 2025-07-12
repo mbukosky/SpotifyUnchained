@@ -69,12 +69,18 @@ module.exports = function (mongoose) {
     });
   });
 
-  // Assume 404 since no middleware responded
+  // Handle 404s - serve Angular SPA for non-API routes
   app.use(function (req, res) {
-    res.status(404).send({
-      url: req.originalUrl,
-      error: 'Not Found'
-    });
+    // Return JSON 404 for API routes
+    if (req.path.startsWith('/spotify') || req.path.startsWith('/api')) {
+      return res.status(404).send({
+        url: req.originalUrl,
+        error: 'Not Found'
+      });
+    }
+    
+    // Serve Angular app for all other routes (SPA fallback)
+    res.sendFile(path.resolve('./dist/SpotifyUnchained/index.html'));
   });
 
   if (process.env.NODE_ENV === 'secure') {
