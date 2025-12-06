@@ -29,6 +29,9 @@ module.exports = function (mongoose) {
     level: 9
   }));
 
+  // Parse JSON request bodies
+  app.use(express.json());
+
   // Showing stack errors
   app.set('showStackError', true);
 

@@ -70,6 +70,96 @@ const downloadAdditionalTracks = async (body, options) => {
 /**
  * Sync a Spotify playlist by fetching the results and saving them to the database
  */
+/**
+ * Exchange authorization code for access token (PKCE flow)
+ */
+exports.exchangeToken = async (req, res) => {
+  const { code, code_verifier, redirect_uri } = req.body;
+
+  if (!code || !code_verifier || !redirect_uri) {
+    return res.status(400).json({ error: 'Missing required parameters' });
+  }
+
+  const tokenParams = new url.URLSearchParams();
+  tokenParams.append('grant_type', 'authorization_code');
+  tokenParams.append('code', code);
+  tokenParams.append('redirect_uri', redirect_uri);
+  tokenParams.append('client_id', CLIENT_ID);
+  tokenParams.append('client_secret', CLIENT_SECRET);
+  tokenParams.append('code_verifier', code_verifier);
+
+  try {
+    const response = await nodeFetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      body: tokenParams,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Spotify token exchange error:', data);
+      return res.status(response.status).json({ error: data.error_description || 'Token exchange failed' });
+    }
+
+    res.json({
+      access_token: data.access_token,
+      expires_in: data.expires_in,
+      refresh_token: data.refresh_token
+    });
+  } catch (err) {
+    console.error('Token exchange error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+/**
+ * Refresh access token using refresh token
+ */
+exports.refreshToken = async (req, res) => {
+  const { refresh_token } = req.body;
+
+  if (!refresh_token) {
+    return res.status(400).json({ error: 'Missing refresh_token' });
+  }
+
+  const tokenParams = new url.URLSearchParams();
+  tokenParams.append('grant_type', 'refresh_token');
+  tokenParams.append('refresh_token', refresh_token);
+  tokenParams.append('client_id', CLIENT_ID);
+
+  try {
+    const response = await nodeFetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      body: tokenParams,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Spotify token refresh error:', data);
+      return res.status(response.status).json({ error: data.error_description || 'Token refresh failed' });
+    }
+
+    res.json({
+      access_token: data.access_token,
+      expires_in: data.expires_in,
+      refresh_token: data.refresh_token || refresh_token
+    });
+  } catch (err) {
+    console.error('Token refresh error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+/**
+ * Sync a Spotify playlist by fetching the results and saving them to the database
+ */
 exports.sync = () => {
   return nodeFetch('https://accounts.spotify.com/api/token', authOptions)
     .then(async (res) => {
