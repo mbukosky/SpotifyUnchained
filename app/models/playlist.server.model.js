@@ -13,6 +13,12 @@ const PlaylistSchema = new Schema({
   title: {
     type: String
   },
+  region: {
+    type: String,
+    required: true,
+    enum: ['US', 'UK'],
+    default: 'US'
+  },
   published_date: {
     type: Date,
     default: Date.now
@@ -42,5 +48,7 @@ const PlaylistSchema = new Schema({
     }
   }]
 });
+
+PlaylistSchema.index({ region: 1, published_date: -1 });
 
 mongoose.model('Playlist', PlaylistSchema);

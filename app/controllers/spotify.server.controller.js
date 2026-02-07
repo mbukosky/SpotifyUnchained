@@ -10,7 +10,10 @@ const _ = require('lodash');
 
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || 'client';
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || 'secret';
-const PLAYLIST_ID = '37i9dQZF1DX4JAvHpjipBk';
+const PLAYLIST_IDS = {
+  'US': '37i9dQZF1DX4JAvHpjipBk',
+  'UK': '37i9dQZF1DX4W3aJJYCDfV'
+};
 
 const params = new url.URLSearchParams();
 params.append('grant_type', 'client_credentials');
@@ -24,7 +27,7 @@ const authOptions = {
   },
 };
 
-const saveTracks = function (data) {
+const saveTracks = function (data, region) {
 
   const tracks = [];
 
@@ -53,7 +56,7 @@ const saveTracks = function (data) {
     }
   };
 
-  playlist.create(req, res, tracks);
+  playlist.create(req, res, tracks, region);
 };
 
 const downloadAdditionalTracks = async (body, options) => {
@@ -157,8 +160,27 @@ exports.refreshToken = async (req, res) => {
   }
 };
 
+const syncPlaylist = async (region, token) => {
+  const playlistUrl = 'https://api.spotify.com/v1/users/spotify/playlists/' + PLAYLIST_IDS[region] + '/tracks';
+  const options = {
+    headers: {
+      'Authorization': 'Bearer ' + token,
+    },
+  };
+
+  const playlistRes = await nodeFetch(playlistUrl, options);
+  if (!playlistRes.ok) {
+    throw (playlistRes.statusText);
+  }
+  const playlistBody = await playlistRes.json();
+  if (playlistBody.next) {
+    await downloadAdditionalTracks(playlistBody, options);
+  }
+  saveTracks(playlistBody, region);
+};
+
 /**
- * Sync a Spotify playlist by fetching the results and saving them to the database
+ * Sync Spotify playlists by fetching the results and saving them to the database
  */
 exports.sync = () => {
   return nodeFetch('https://accounts.spotify.com/api/token', authOptions)
@@ -167,23 +189,9 @@ exports.sync = () => {
       const token = body.access_token;
       console.log('TOKEN: ' + token);
 
-      const url = 'https://api.spotify.com/v1/users/spotify/playlists/' + PLAYLIST_ID + '/tracks';
-
-      const options = {
-        headers: {
-          'Authorization': 'Bearer ' + token,
-        },
-      };
-
-      const playlistRes = await nodeFetch(url, options);
-      if (!playlistRes.ok) {
-        throw (playlistRes.statusText);
+      for (const region of Object.keys(PLAYLIST_IDS)) {
+        await syncPlaylist(region, token);
       }
-      const playlistBody = await playlistRes.json();
-      if (playlistBody.next) {
-        await downloadAdditionalTracks(playlistBody, options);
-      }
-      saveTracks(playlistBody);
     })
     .catch((err) => {
       console.error('Error downloading playlists:', err);

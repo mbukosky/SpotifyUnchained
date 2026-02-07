@@ -3,7 +3,9 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { ToolbarComponent } from './toolbar.component';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { SpotifyService } from '../spotify.service';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('ToolbarComponent', () => {
   let component: ToolbarComponent;
@@ -13,7 +15,7 @@ describe('ToolbarComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      imports: [MatMenuModule, MatToolbarModule],
+      imports: [MatMenuModule, MatToolbarModule, MatButtonToggleModule, HttpClientTestingModule],
       declarations: [ToolbarComponent],
       providers: [{ provide: SpotifyService, useValue: spotify }]
     })

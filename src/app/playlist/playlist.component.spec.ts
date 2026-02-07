@@ -32,7 +32,8 @@ describe('PlaylistComponent', () => {
       title: 'A title',
       tracks: [],
       published_date: '2020-01-01T07:00:00.000Z',
-      _id: '0'
+      _id: '0',
+      region: 'US'
     };
     fixture.detectChanges();
   });
