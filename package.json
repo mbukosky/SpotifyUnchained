@@ -51,7 +51,7 @@
     "newrelic": "^8.17.1",
     "node-fetch": "^2.7.0",
     "node-schedule": "^2.1.1",
-    "nodemailer": "^6.10.1",
+    "nodemailer": "^7.0.11",
     "rxjs": "^6.6.7",
     "spotify-web-api-node": "^5.0.2",
     "tslib": "^2.8.1",
