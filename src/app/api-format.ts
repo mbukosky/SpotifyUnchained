@@ -7,6 +7,7 @@ export interface PlaylistItem {
     title: string;
     published_date: string;
     _id: string;
+    region: string;
     tracks: TrackItem[];
 }
 

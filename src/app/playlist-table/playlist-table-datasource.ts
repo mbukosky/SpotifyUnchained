@@ -41,10 +41,10 @@ export class PlaylistTableDataSource extends DataSource<PlaylistItem> {
     this.loadingSubject.complete();
   }
 
-  loadPlaylists(pageNumber: number, pageSize: number, sort: string): void {
+  loadPlaylists(pageNumber: number, pageSize: number, sort: string, region?: string): void {
     this.loadingSubject.next(true);
 
-    this.playlistService.getPlaylists(pageNumber, pageSize, sort).pipe(
+    this.playlistService.getPlaylists(pageNumber, pageSize, sort, region).pipe(
       catchError(() => of([])), finalize(() => this.loadingSubject.next(false))
     ).subscribe((playlists) => this.playlistsSubject.next(playlists));
   }

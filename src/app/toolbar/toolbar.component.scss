@@ -9,3 +9,15 @@ fa-icon {
 .mat-menu-item .mat-icon {
     margin-right: 8px;
 }
+
+.region-toggle {
+    margin: 0 8px;
+
+    .mat-button-toggle {
+        font-size: 12px;
+    }
+}
+
+.active-region {
+    font-weight: bold;
+}

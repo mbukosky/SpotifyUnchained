@@ -16,17 +16,18 @@ const getRecentFriday = () => {
     .format('MM.DD.YYYY');
 };
 
-const getNewFridayTitle = () => {
-  return 'New.Music.Friday.' + getRecentFriday();
+const getNewFridayTitle = (region) => {
+  return 'New.Music.Friday.' + region + '.' + getRecentFriday();
 };
 
 /**
  * Create a Spotify
  */
-exports.create = function (req, res, tracks) {
+exports.create = function (req, res, tracks, region) {
   const playlist = new Playlist(tracks);
 
-  playlist.title = getNewFridayTitle();
+  playlist.title = getNewFridayTitle(region);
+  playlist.region = region;
   playlist.tracks = tracks;
 
   const upsertData = playlist.toObject();
@@ -34,7 +35,8 @@ exports.create = function (req, res, tracks) {
   delete upsertData._id;
 
   Playlist.updateOne({
-    title: playlist.title
+    title: playlist.title,
+    region: playlist.region
   }, upsertData, {
     upsert: true
   }).then(() => res.json(playlist))
@@ -51,12 +53,18 @@ exports.list = function (req, res) {
   const pagesize = req.query.size || 5;
   const page = req.query.page || 1;
   const sort = req.query.sort || 'asc';
+  const region = req.query.region;
 
   const sortKey = sort === 'asc' ? 'published_date' : '-published_date';
 
+  const filter = {};
+  if (region) {
+    filter.region = region;
+  }
+
   Promise.all([
-    Playlist.countDocuments(),
-    Playlist.find().sort(sortKey).skip(pagesize * (page - 1))
+    Playlist.countDocuments(filter),
+    Playlist.find(filter).sort(sortKey).skip(pagesize * (page - 1))
       .limit(Number(pagesize))
   ]).then(([count, playlists]) => {
     res.json({

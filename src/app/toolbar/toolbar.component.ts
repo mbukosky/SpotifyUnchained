@@ -3,6 +3,7 @@ import { faGithub, faTwitter, faPaypal } from '@fortawesome/free-brands-svg-icon
 import { MenuItem } from './menu-item';
 import { SpotifyService } from '../spotify.service';
 import { ThemeService } from '../theme.service';
+import { PlaylistService } from '../playlist.service';
 import { Observable } from 'rxjs';
 
 @Component({
@@ -39,7 +40,11 @@ export class ToolbarComponent implements OnInit {
     }
   ];
 
-  constructor(private spotify: SpotifyService, private themeService: ThemeService) { }
+  constructor(
+    private spotify: SpotifyService,
+    private themeService: ThemeService,
+    private playlistService: PlaylistService
+  ) { }
 
   ngOnInit(): void {
     this.spotify.loadOrSaveToken();
@@ -71,5 +76,13 @@ export class ToolbarComponent implements OnInit {
 
   setLightMode(): void {
     this.themeService.setLightMode();
+  }
+
+  getSelectedRegion(): string {
+    return this.playlistService.getSelectedRegion();
+  }
+
+  onRegionChange(region: string): void {
+    this.playlistService.setSelectedRegion(region);
   }
 }
