@@ -56,6 +56,36 @@
   --shadow-card-hover: 0 8px 40px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
+/* --- Region Accent Colors --- */
+.playlist-card[data-region="US"],
+.playlist-card[data-region="ALL"],
+.playlist-card:not([data-region]) {
+  --accent: var(--gold);
+  --accent-dim: var(--gold-dim);
+  --accent-glow: var(--gold-glow);
+  --accent-subtle: var(--gold-subtle);
+  --accent-border: rgba(212, 168, 83, 0.15);
+  --accent-border-hover: rgba(212, 168, 83, 0.35);
+}
+
+.playlist-card[data-region="UK"] {
+  --accent: #6ba3d6;
+  --accent-dim: rgba(107, 163, 214, 0.6);
+  --accent-glow: rgba(107, 163, 214, 0.15);
+  --accent-subtle: rgba(107, 163, 214, 0.08);
+  --accent-border: rgba(107, 163, 214, 0.15);
+  --accent-border-hover: rgba(107, 163, 214, 0.35);
+}
+
+[data-theme="light"] .playlist-card[data-region="UK"] {
+  --accent: #4a82b5;
+  --accent-dim: rgba(74, 130, 181, 0.6);
+  --accent-glow: rgba(74, 130, 181, 0.12);
+  --accent-subtle: rgba(74, 130, 181, 0.08);
+  --accent-border: rgba(74, 130, 181, 0.2);
+  --accent-border-hover: rgba(74, 130, 181, 0.4);
+}
+
 /* --- Reset & Base --- */
 *,
 *::before,
@@ -253,6 +283,14 @@ h1, h2, h3 {
   color: #fff;
 }
 
+.region-btn[data-region="UK"].active {
+  background: #6ba3d6;
+}
+
+[data-theme="light"] .region-btn[data-region="UK"].active {
+  background: #4a82b5;
+}
+
 .theme-toggle {
   width: 36px;
   height: 36px;
@@ -369,7 +407,7 @@ h1, h2, h3 {
   background: var(--bg-card);
   backdrop-filter: var(--backdrop-blur);
   -webkit-backdrop-filter: var(--backdrop-blur);
-  border: 1px solid var(--bg-card-border);
+  border: 1px solid var(--accent-border, var(--bg-card-border));
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-card);
   overflow: hidden;
@@ -385,12 +423,12 @@ h1, h2, h3 {
 .playlist-card:nth-child(5) { animation-delay: 0.5s; }
 
 .playlist-card:hover {
-  border-color: var(--bg-card-border-hover);
+  border-color: var(--accent-border-hover, var(--bg-card-border-hover));
   box-shadow: var(--shadow-card-hover);
 }
 
 .playlist-card.expanded {
-  border-color: var(--bg-card-border-hover);
+  border-color: var(--accent-border-hover, var(--bg-card-border-hover));
 }
 
 /* --- Playlist Header (clickable) --- */
@@ -480,7 +518,12 @@ h1, h2, h3 {
 
 .playlist-card.expanded .playlist-chevron {
   transform: rotate(180deg);
-  color: var(--gold);
+  color: var(--accent, var(--gold));
+}
+
+.playlist-title .region-accent {
+  color: var(--accent, var(--gold));
+  font-weight: 700;
 }
 
 /* --- Track List --- */
@@ -522,11 +565,11 @@ h1, h2, h3 {
 }
 
 .track-item:hover {
-  background: var(--gold-subtle);
+  background: var(--accent-subtle, var(--gold-subtle));
 }
 
 .track-item-active {
-  background: var(--gold-subtle);
+  background: var(--accent-subtle, var(--gold-subtle));
 }
 
 .track-number {
@@ -543,9 +586,9 @@ h1, h2, h3 {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  border: 1.5px solid var(--gold);
+  border: 1.5px solid var(--accent, var(--gold));
   background: transparent;
-  color: var(--gold);
+  color: var(--accent, var(--gold));
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -556,10 +599,10 @@ h1, h2, h3 {
 }
 
 .track-play-btn:hover {
-  background: var(--gold);
+  background: var(--accent, var(--gold));
   color: #0d1117;
   transform: scale(1.1);
-  box-shadow: 0 0 20px var(--gold-glow);
+  box-shadow: 0 0 20px var(--accent-glow, var(--gold-glow));
 }
 
 [data-theme="light"] .track-play-btn:hover {
@@ -567,7 +610,7 @@ h1, h2, h3 {
 }
 
 .track-play-btn.active {
-  background: var(--gold);
+  background: var(--accent, var(--gold));
   color: #0d1117;
 }
 
@@ -614,7 +657,7 @@ h1, h2, h3 {
 }
 
 .track-open-link:hover {
-  color: var(--gold);
+  color: var(--accent, var(--gold));
 }
 
 /* --- Spotify Embed Container --- */

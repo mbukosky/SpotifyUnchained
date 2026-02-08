@@ -20,6 +20,15 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
+function RegionTitle({ title, region }) {
+  const parts = title.replace(/\./g, ' . ').split(/\b(US|UK)\b/);
+  return parts.map((part, i) =>
+    (part === 'US' || part === 'UK')
+      ? <span key={i} className="region-accent">{part}</span>
+      : part
+  );
+}
+
 export default function PlaylistCard({ playlist, index }) {
   const [expanded, setExpanded] = useState(false);
   const [activeTrack, setActiveTrack] = useState(null);
@@ -30,12 +39,13 @@ export default function PlaylistCard({ playlist, index }) {
     setActiveTrack(prev => prev === trackId ? null : trackId);
   };
 
-  const displayTitle = playlist.title.replace(/\./g, ' . ');
+  const region = playlist.region || 'US';
 
   return (
     <article
       className={`playlist-card${expanded ? ' expanded' : ''}`}
       style={{ animationDelay: `${(index + 1) * 0.1}s` }}
+      data-region={region}
     >
       <div
         className="playlist-header"
@@ -47,23 +57,22 @@ export default function PlaylistCard({ playlist, index }) {
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(prev => !prev); } }}
       >
         <svg className="playlist-vinyl-icon" viewBox="0 0 44 44" fill="none" aria-hidden="true">
-          <circle cx="22" cy="22" r="20" stroke="var(--gold)" strokeWidth="1" opacity="0.5" />
-          <circle cx="22" cy="22" r="14" stroke="var(--gold)" strokeWidth="0.5" opacity="0.3" />
-          <circle cx="22" cy="22" r="8" stroke="var(--gold)" strokeWidth="0.5" opacity="0.3" />
-          <circle cx="22" cy="22" r="3" fill="var(--gold)" opacity="0.6" />
+          <circle cx="22" cy="22" r="20" stroke="var(--accent)" strokeWidth="1" opacity="0.5" />
+          <circle cx="22" cy="22" r="14" stroke="var(--accent)" strokeWidth="0.5" opacity="0.3" />
+          <circle cx="22" cy="22" r="8" stroke="var(--accent)" strokeWidth="0.5" opacity="0.3" />
+          <circle cx="22" cy="22" r="3" fill="var(--accent)" opacity="0.6" />
           <circle cx="22" cy="22" r="1" fill="var(--bg-primary)" />
         </svg>
         <div className="playlist-info">
-          <h3 className="playlist-title">{displayTitle}</h3>
+          <h3 className="playlist-title"><RegionTitle title={playlist.title} region={region} /></h3>
           <div className="playlist-meta">
-            <span className="region-badge">{playlist.region || 'US'}</span>
             <span>{formatDate(playlist.published_date)}</span>
             <span>{playlist.tracks.length} tracks</span>
           </div>
         </div>
         <svg className="playlist-waveform" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true">
           {waveformBars.map(b => (
-            <rect key={b.key} x={b.x} y={b.y} width="2.5" height={b.h} rx="1.25" fill="var(--gold)" opacity="0.5" />
+            <rect key={b.key} x={b.x} y={b.y} width="2.5" height={b.h} rx="1.25" fill="var(--accent)" opacity="0.5" />
           ))}
         </svg>
         <PlaylistDownload playlist={playlist} />

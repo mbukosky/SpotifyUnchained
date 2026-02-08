@@ -32,6 +32,7 @@ export default function Header() {
               <button
                 key={r}
                 className={`region-btn${region === r ? ' active' : ''}`}
+                data-region={r}
                 onClick={() => changeRegion(r)}
               >
                 {r}
