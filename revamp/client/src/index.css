@@ -317,6 +317,7 @@ h1, h2, h3 {
 [data-theme="light"] .icon-moon { display: none; }
 [data-theme="light"] .icon-sun { display: block; }
 
+.paypal-link,
 .github-link {
   width: 36px;
   height: 36px;
@@ -330,6 +331,7 @@ h1, h2, h3 {
   transition: all var(--transition-smooth);
 }
 
+.paypal-link:hover,
 .github-link:hover {
   color: var(--gold);
   border-color: var(--gold-dim);

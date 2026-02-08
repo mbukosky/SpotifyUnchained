@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { getCurrentUser } from '../lib/spotify';
 
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
@@ -25,7 +25,9 @@ async function computeCodeChallenge(verifier) {
     .replace(/=+$/, '');
 }
 
-export function useSpotifyAuth() {
+const SpotifyAuthContext = createContext(null);
+
+export function SpotifyAuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(() => localStorage.getItem(TOKEN_KEY));
   const [refreshToken, setRefreshToken] = useState(() => localStorage.getItem(REFRESH_KEY));
   const [expiresAt, setExpiresAt] = useState(() => {
@@ -141,5 +143,17 @@ export function useSpotifyAuth() {
     return () => clearTimeout(timer);
   }, [expiresAt, refreshToken, refreshAccessToken]);
 
-  return { user, isAuthenticated, loading, login, logout, accessToken };
+  const value = { user, isAuthenticated, loading, login, logout, accessToken };
+
+  return (
+    <SpotifyAuthContext.Provider value={value}>
+      {children}
+    </SpotifyAuthContext.Provider>
+  );
+}
+
+export function useSpotifyAuth() {
+  const ctx = useContext(SpotifyAuthContext);
+  if (!ctx) throw new Error('useSpotifyAuth must be used within SpotifyAuthProvider');
+  return ctx;
 }
