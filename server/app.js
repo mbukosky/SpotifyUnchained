@@ -31,7 +31,7 @@ app.use(helmet({
       ],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https://www.google-analytics.com", "https://i.scdn.co", "https://cdn.ko-fi.com"],
+      imgSrc: ["'self'", "data:", "https://www.google-analytics.com", "https://i.scdn.co", "https://cdn.ko-fi.com", "https://storage.ko-fi.com"],
       frameSrc: ["https://open.spotify.com"],
       connectSrc: [
         "'self'",
