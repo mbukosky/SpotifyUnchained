@@ -5,14 +5,15 @@
   "private": true,
   "description": "Archive Spotify's New Music Friday playlists before they refresh",
   "engines": {
-    "node": ">=18.0.0"
+    "node": "22.x"
   },
   "scripts": {
     "dev": "concurrently \"bun run dev:server\" \"bun run dev:client\"",
     "dev:server": "node --watch --loader newrelic/esm-loader.mjs server/index.js",
     "dev:client": "cd client && bunx vite",
     "build": "cd client && bun install && bun run vite-build",
-    "start": "node --loader newrelic/esm-loader.mjs server/index.js"
+    "start": "node --loader newrelic/esm-loader.mjs server/index.js",
+    "heroku-postbuild": "echo 'Node.js buildpack: skipping build (handled by Bun buildpack)'"
   },
   "dependencies": {
     "compression": "^1.7.4",
