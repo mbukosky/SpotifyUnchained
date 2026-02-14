@@ -2,8 +2,8 @@
   "name": "SpotifyUnchained",
   "stack": "heroku-22",
   "buildpacks": [
-    { "url": "https://github.com/jmlow/heroku-buildpack-bun" },
-    { "url": "heroku/nodejs" }
+    { "url": "heroku/nodejs" },
+    { "url": "https://github.com/jakeg/heroku-buildpack-bun" }
   ],
   "env": {
     "DB_URI": { "required": true },

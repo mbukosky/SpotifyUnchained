@@ -11,9 +11,8 @@
     "dev": "concurrently \"bun run dev:server\" \"bun run dev:client\"",
     "dev:server": "node --watch --loader newrelic/esm-loader.mjs server/index.js",
     "dev:client": "cd client && bunx vite",
-    "build": "cd client && bun run vite-build",
-    "start": "node --loader newrelic/esm-loader.mjs server/index.js",
-    "heroku-postbuild": "cd client && bun install && bun run vite-build"
+    "build": "cd client && bun install && bun run vite-build",
+    "start": "node --loader newrelic/esm-loader.mjs server/index.js"
   },
   "dependencies": {
     "compression": "^1.7.4",
