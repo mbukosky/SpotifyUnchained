@@ -1,29 +1,20 @@
-# See http://help.github.com/ignore-files/ for more about ignoring files.
+# Dependencies
+node_modules/
 
-# compiled output
-/dist
-/tmp
-/out-tsc
-# Only exists if Bazel was run
-/bazel-out
+# Build output
+client/dist/
 
-# dependencies
-/node_modules
+# Environment variables
+.env
+.env.prod
 
-# profiling files
-chrome-profiler-events*.json
-speed-measure-plugin*.json
+# Logs
+newrelic_agent.log
+npm-debug.log
+yarn-error.log
 
-# IDEs and editors
+# IDE
 /.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
-
-# IDE - VSCode
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
@@ -31,26 +22,9 @@ speed-measure-plugin*.json
 !.vscode/extensions.json
 .history/*
 
-# misc
-/.angular/cache
-/.sass-cache
-/connect.lock
-/coverage
-/libpeerconnection.log
-npm-debug.log
-yarn-error.log
-testem.log
-/typings
-newrelic_agent.log
-config/env/heroku.j
-newrelic_agent.log
-config/env/heroku.jss
-
-# System Files
+# System files
 .DS_Store
 Thumbs.db
 
-# Environment variables
-.env
-
-
+# Claude Code
+.claude/plans
