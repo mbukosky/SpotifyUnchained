@@ -2,264 +2,160 @@
 
 ## Project Overview
 
-SpotifyUnchained is a web application that automatically archives Spotify's "New Music Friday" playlists before they refresh weekly. This ensures music lovers never lose track of previously featured songs. The application consists of an Angular frontend and a Node.js/Express backend with MongoDB for data persistence.
+SpotifyUnchained is a web application that automatically archives Spotify's "New Music Friday" playlists before they refresh weekly. This ensures music lovers never lose track of previously featured songs.
 
 **Key Features:**
-- Automatically archives Spotify's New Music Friday playlist
+- Automatically archives Spotify's New Music Friday playlist (US & UK regions)
 - Web interface to browse historical playlist archives
-- Material Design UI with dark/light theme support
-- RESTful API for playlist data
-- Scheduled playlist synchronization
+- Spotify OAuth (PKCE) integration for playlist export
+- Dark theme UI with per-region accent colors
+- RESTful API with pagination and sorting
+- Scheduled playlist synchronization via node-cron
 
 ## Architecture
 
 ### Tech Stack
-- **Frontend**: Angular 14 with Angular Material
-- **Backend**: Node.js with Express.js
-- **Database**: MongoDB with Mongoose ODM
-- **Build Tools**: Angular CLI with custom Webpack configuration
-- **Testing**: Jasmine, Karma, Protractor (E2E)
-- **Linting**: ESLint + TSLint for TypeScript, JSHint for Node.js
-- **Deployment**: Heroku-ready with Procfile
+- **Frontend**: React 19 + Vite + Tailwind CSS 4
+- **Backend**: Node.js with Express.js (ESM)
+- **Database**: MongoDB with Mongoose 7
+- **Package Manager**: Bun
+- **Monitoring**: New Relic APM + Google Analytics 4
+- **Deployment**: Heroku (Bun + Node.js buildpacks)
 
 ### Project Structure
 ```
-├── src/app/                    # Angular application source
-│   ├── components/             # Angular components
-│   ├── services/              # Angular services
-│   └── environments/          # Environment configurations
-├── app/                       # Express.js backend
-│   ├── controllers/           # Route handlers
+├── client/                    # React frontend (Vite)
+│   ├── src/
+│   │   ├── components/       # React components
+│   │   ├── hooks/            # Custom hooks (useSpotifyAuth, etc.)
+│   │   ├── lib/              # Utility libraries (spotify API client)
+│   │   └── pages/            # Page components
+│   ├── index.html            # Entry HTML (GA4 + New Relic snippets)
+│   └── vite.config.js        # Vite configuration
+├── server/                    # Express.js backend (ESM)
+│   ├── app.js                # Express app setup (helmet, CORS, rate limiting)
+│   ├── config.js             # Configuration + env var validation
+│   ├── index.js              # Server entry point
+│   ├── controllers/          # Route handlers
 │   ├── models/               # Mongoose schemas
 │   └── routes/               # API route definitions
-├── config/                    # Server configuration
-│   ├── env/                  # Environment-specific configs
-│   └── express.js            # Express app setup
-└── dist/                     # Built Angular app (production)
+├── scripts/                   # Utility scripts
+├── package.json              # Root package.json (Bun scripts)
+├── bun.lock                  # Bun lockfile
+├── Procfile                  # Heroku: web: bun run start
+├── newrelic.cjs              # New Relic configuration
+└── docker-compose.yml        # Local MongoDB via Docker
 ```
 
 ## Development Setup
 
 ### Prerequisites
-- Node.js 18.x
-- npm 9.8.x
-- MongoDB (running on default port 27017)
-- Angular CLI: `npm install -g @angular/cli`
+- Node.js >= 18.x
+- Bun (package manager)
+- MongoDB (running on default port 27017, or use `docker compose up -d`)
 
 ### Environment Variables
-Create a `.env` file in the project root with your local environment variables:
+Copy `.env.example` to `.env` and fill in values.
 
-**Required for Spotify Integration:**
+**Required:**
+- `DB_URI` - MongoDB connection string
 - `SPOTIFY_CLIENT_ID` - Your Spotify app client ID
 - `SPOTIFY_CLIENT_SECRET` - Your Spotify app client secret
-- `DB_URI` - MongoDB connection string
 
 **Optional:**
 - `PORT` - Server port (default: 3000)
-- `NODE_ENV` - Environment (development/production/test/secure)
-- `SESSION_SECRET` - Express session secret
-- `MAILER_*` - Email configuration variables
-- `SKIP_SPOTIFY_SYNC` - Set to `true` to disable automatic Spotify sync (useful for local development)
+- `NODE_ENV` - Environment (development/production)
+- `SKIP_SPOTIFY_SYNC` - Set to `true` to disable automatic sync
+- `ALLOWED_ORIGINS` - Comma-separated CORS origins
+- `ALLOWED_REDIRECT_URIS` - Comma-separated OAuth redirect URIs
+- `NEW_RELIC_LICENSE_KEY` - New Relic APM license key
+- `NEW_RELIC_LOG` - New Relic log level
 
 ### Installation & Setup
 
 1. **Install dependencies:**
    ```bash
-   npm install
+   bun install
+   cd client && bun install
    ```
 
-2. **Start MongoDB:**
+2. **Start MongoDB (via Docker):**
    ```bash
-   ./mongod --dbpath ~/data/db/
+   docker compose up -d
    ```
 
-3. **Create .env file:**
-   Create a `.env` file in the project root with your environment variables:
+3. **Development Mode:**
    ```bash
-   SPOTIFY_CLIENT_ID=your_client_id
-   SPOTIFY_CLIENT_SECRET=your_client_secret
-   DB_URI=your_mongodb_connection_string
-   NODE_ENV=production
-   SKIP_SPOTIFY_SYNC=true
+   bun run dev    # Starts both server (port 3000) and client (Vite dev server)
    ```
 
-4. **Development Mode:**
-   
-   **Terminal 1 - Start Express API server:**
+4. **Production Mode:**
    ```bash
-   npm start  # or npm run dev - Runs on port 3000
-   ```
-   
-   **Terminal 2 - Start Angular dev server:**
-   ```bash
-   ng serve  # Runs on port 4200 with proxy to API
-   ```
-   
-   Access application at: http://localhost:4200
-
-5. **Production Mode:**
-   ```bash
-   npm run build        # Build Angular app
-   npm start           # Start Express server (serves built app)
+   bun run build   # Build React client
+   bun run start   # Start Express server (serves built client)
    ```
 
 ## Available Scripts
 
 | Command | Description |
 |---------|-------------|
-| `npm start` | Start Express server |
-| `npm run dev` | Start Express server (alias for npm start) |
-| `npm run build` | Build Angular app for production |
-| `npm test` | Run Angular unit tests |
-| `npm run test-headless` | Run tests in headless Chrome |
-| `npm run lint` | Lint both backend (JSHint) and frontend (ESLint) |
-| `npm run e2e` | Run end-to-end tests |
-| `ng serve` | Start Angular dev server with proxy |
-| `ng build --configuration production` | Production build |
+| `bun run dev` | Start both server and client in dev mode (concurrently) |
+| `bun run dev:server` | Start Express server with --watch |
+| `bun run dev:client` | Start Vite dev server |
+| `bun run build` | Build React client for production |
+| `bun run start` | Start Express server (production) |
 
 ## API Endpoints
 
 ### Playlist API
 - `GET /spotify` - List archived playlists
-  - Query params: `page`, `size`, `sort` (asc/desc)
+  - Query params: `page`, `size`, `sort` (asc/desc), `region` (US/UK)
   - Returns paginated playlist data with track information
+
+### Spotify OAuth API
+- `POST /api/spotify/token` - Exchange authorization code for tokens (PKCE)
+- `POST /api/spotify/refresh` - Refresh access token
 
 ## Database Schema
 
 ### Playlist Model
 ```javascript
 {
-  title: String,                    // e.g., "New.Music.Friday.12.08.2023"
-  published_date: Date,             // Auto-generated from title
-  tracks: [
-    {
-      id: String,                   // Spotify track ID
-      name: String,                 // Track name
-      artist: String,               // Primary artist
-      added_at: Date,               // When added to playlist
-      open_url: String,             // Spotify web URL
-      uri: String,                  // Spotify URI
-      created: Date                 // Document creation time
-    }
-  ]
+  title: String,          // e.g., "New.Music.Friday.US.02.14.2026"
+  region: String,         // "US" or "UK"
+  published_date: Date,
+  tracks: [{
+    id: String,           // Spotify track ID
+    name: String,
+    artist: String,
+    added_at: Date,
+    open_url: String,     // Spotify web URL
+    uri: String,          // Spotify URI
+  }]
 }
 ```
 
-## Configuration Files
+## Security
 
-### Angular Configuration
-- **angular.json** - Angular CLI configuration with custom webpack
-- **tsconfig.json** - TypeScript compiler options
-- **proxy.conf.json** - Development proxy config (routes /spotify to backend)
-- **custom-webpack.config.js** - Injects environment variables into build
+- **Helmet** with Content Security Policy (CSP)
+- **CORS** restricted to configured origins
+- **Rate limiting** on API routes and `/spotify` endpoint
+- **OAuth state parameter** for CSRF protection
+- **Tokens in sessionStorage** (cleared on tab close)
+- **Body size limit** (10kb) on JSON parsing
+- **Env var validation** at startup (fail-fast)
+- **Sanitized error responses** (no raw upstream errors exposed)
 
-### Backend Configuration
-- **config/config.js** - Main configuration loader
-- **config/env/** - Environment-specific settings
-  - `all.js` - Base configuration
-  - `development.js` - Local development
-  - `production.js` - Production settings
-  - `secure.js` - HTTPS configuration
+## Deployment
 
-### Linting & Testing
-- **.eslintrc.json** - ESLint configuration for Angular
-- **tslint.json** - TSLint rules (legacy, being phased out)
-- **karma.conf.js** - Karma test runner configuration
-- **e2e/protractor.conf.js** - End-to-end test configuration
+### Heroku
+- **Buildpacks**: `jmlow/heroku-buildpack-bun` + `heroku/nodejs`
+- **Stack**: heroku-22
+- **Procfile**: `web: bun run start`
+- Configure env vars in Heroku dashboard or via `heroku config:set`
+- `heroku-postbuild` script handles client build
 
-## Key Components
-
-### Frontend (Angular)
-- **PlaylistTableComponent** - Main data table with pagination/sorting
-- **PlaylistComponent** - Individual playlist display
-- **TrackComponent** - Individual track display
-- **ToolbarComponent** - Navigation and controls
-- **ThemeService** - Dark/light mode management
-- **PlaylistService** - HTTP client for API communication
-
-### Backend (Express)
-- **playlist.server.controller.js** - Playlist CRUD operations
-- **spotify.server.controller.js** - Spotify API integration
-- **playlist.server.model.js** - Mongoose schema definition
-
-## Build & Deployment
-
-### Development Build
-Angular development server automatically proxies API calls to Express server via `proxy.conf.json`.
-
-### Production Build
-1. `ng build --configuration production` creates optimized bundle in `dist/`
-2. Express server serves static files from `dist/SpotifyUnchained/`
-3. Environment variables injected via custom webpack configuration
-
-### Heroku Deployment
-- **Procfile** - Defines web process: `./node_modules/.bin/forever -m 5 server.js`
-- Configure environment variables in Heroku dashboard
-- MongoDB via add-on (e.g., MongoDB Atlas)
-
-## Spotify Integration
-
-### Authentication
-Uses Spotify Client Credentials flow for server-to-server access (no user login required).
-
-### Playlist Synchronization
-- **Manual**: Run `node spotify-loader.js` to sync playlists from `spotify-playlist.json`
-- **Automatic**: Scheduler can be implemented using `node-schedule` package
-- **Current Target**: New Music Friday playlist ID: `37i9dQZF1DX4JAvHpjipBk`
-
-## Testing
-
-### Unit Tests
+### Local MongoDB
 ```bash
-npm test                    # Interactive mode
-npm run test-headless      # CI mode
+docker compose up -d   # MongoDB 5.0 on port 27017
 ```
-
-### E2E Tests
-```bash
-npm run e2e
-```
-
-### Linting
-```bash
-npm run lint               # Runs JSHint (backend) + ESLint (frontend)
-```
-
-## Common Development Tasks
-
-### Adding New Environment Variables
-1. Add to `.env` file for local development
-2. Add to `custom-webpack.config.js` for frontend access
-3. Add to appropriate `config/env/*.js` file for backend
-4. Update this documentation
-
-**Note**: The `.env` file is automatically loaded at application startup and should not be committed to version control.
-
-### Database Operations
-- Connect to local MongoDB: `mongodb://localhost/spotifyunchained-dev`
-- View data: Use MongoDB Compass or CLI
-- Reset database: Drop `spotifyunchained-dev` database
-
-### Debugging
-- Backend: Use Node.js debugger or console.log
-- Frontend: Use Angular DevTools browser extension
-- Network: Check proxy configuration in `proxy.conf.json`
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Port conflicts**: Ensure ports 3000 (API) and 4200 (Angular) are available
-2. **MongoDB connection**: Verify MongoDB is running and accessible
-3. **Proxy errors**: Check `proxy.conf.json` configuration
-4. **Build errors**: Clear `node_modules` and reinstall dependencies
-5. **Spotify API**: Verify client credentials are set correctly
-
-### Logs
-- Express server logs to console
-- Angular dev server shows compilation status
-- Network requests visible in browser DevTools
-
----
-
-*This guide covers the essential information for developing and maintaining the SpotifyUnchained application. For additional details, refer to the source code and official documentation for the respective technologies.*
