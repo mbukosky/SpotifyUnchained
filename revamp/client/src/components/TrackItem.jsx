@@ -16,7 +16,7 @@ export default function TrackItem({ track, index, isPlaying, onTogglePlay, autop
     const handleLoad = () => {
       // Small delay to let the embed initialize, then send play command
       setTimeout(() => {
-        iframe.contentWindow?.postMessage({ command: 'toggle' }, '*');
+        iframe.contentWindow?.postMessage({ command: 'toggle' }, 'https://open.spotify.com');
       }, 500);
     };
 

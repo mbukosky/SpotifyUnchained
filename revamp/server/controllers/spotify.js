@@ -1,8 +1,20 @@
 import config from '../config.js';
 
+const allowedRedirectUris = (process.env.ALLOWED_REDIRECT_URIS || 'http://localhost:5173/callback,http://localhost:3000/callback')
+  .split(',')
+  .map(u => u.trim());
+
 export async function exchangeToken(req, res) {
   try {
     const { code, code_verifier, redirect_uri } = req.body;
+
+    if (!code || !code_verifier || !redirect_uri) {
+      return res.status(400).json({ error: 'Missing required parameters: code, code_verifier, redirect_uri' });
+    }
+
+    if (!allowedRedirectUris.includes(redirect_uri)) {
+      return res.status(400).json({ error: 'Invalid redirect_uri' });
+    }
 
     const response = await fetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
@@ -37,6 +49,10 @@ export async function exchangeToken(req, res) {
 export async function refreshToken(req, res) {
   try {
     const { refresh_token } = req.body;
+
+    if (!refresh_token) {
+      return res.status(400).json({ error: 'Missing required parameter: refresh_token' });
+    }
 
     const response = await fetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
