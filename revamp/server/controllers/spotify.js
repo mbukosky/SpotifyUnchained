@@ -32,7 +32,8 @@ export async function exchangeToken(req, res) {
     const data = await response.json();
 
     if (!response.ok) {
-      return res.status(response.status).json(data);
+      console.error('Spotify token exchange error:', data);
+      return res.status(response.status).json({ error: 'Token exchange failed' });
     }
 
     res.json({
@@ -68,7 +69,8 @@ export async function refreshToken(req, res) {
     const data = await response.json();
 
     if (!response.ok) {
-      return res.status(response.status).json(data);
+      console.error('Spotify token refresh error:', data);
+      return res.status(response.status).json({ error: 'Token refresh failed' });
     }
 
     res.json({

@@ -8,6 +8,7 @@ const AUTH_URL = 'https://accounts.spotify.com/authorize';
 const TOKEN_KEY = 'spotify_access_token';
 const REFRESH_KEY = 'spotify_refresh_token';
 const EXPIRES_KEY = 'spotify_expires_at';
+const STATE_KEY = 'spotify_auth_state';
 
 function generateRandomString(length) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
@@ -28,10 +29,10 @@ async function computeCodeChallenge(verifier) {
 const SpotifyAuthContext = createContext(null);
 
 export function SpotifyAuthProvider({ children }) {
-  const [accessToken, setAccessToken] = useState(() => localStorage.getItem(TOKEN_KEY));
-  const [refreshToken, setRefreshToken] = useState(() => localStorage.getItem(REFRESH_KEY));
+  const [accessToken, setAccessToken] = useState(() => sessionStorage.getItem(TOKEN_KEY));
+  const [refreshToken, setRefreshToken] = useState(() => sessionStorage.getItem(REFRESH_KEY));
   const [expiresAt, setExpiresAt] = useState(() => {
-    const v = localStorage.getItem(EXPIRES_KEY);
+    const v = sessionStorage.getItem(EXPIRES_KEY);
     return v ? Number(v) : 0;
   });
   const [user, setUser] = useState(null);
@@ -44,9 +45,9 @@ export function SpotifyAuthProvider({ children }) {
     setAccessToken(access);
     setRefreshToken(refresh);
     setExpiresAt(expiry);
-    localStorage.setItem(TOKEN_KEY, access);
-    if (refresh) localStorage.setItem(REFRESH_KEY, refresh);
-    localStorage.setItem(EXPIRES_KEY, String(expiry));
+    sessionStorage.setItem(TOKEN_KEY, access);
+    if (refresh) sessionStorage.setItem(REFRESH_KEY, refresh);
+    sessionStorage.setItem(EXPIRES_KEY, String(expiry));
   }, []);
 
   const logout = useCallback(() => {
@@ -54,9 +55,9 @@ export function SpotifyAuthProvider({ children }) {
     setRefreshToken(null);
     setExpiresAt(0);
     setUser(null);
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_KEY);
-    localStorage.removeItem(EXPIRES_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(REFRESH_KEY);
+    sessionStorage.removeItem(EXPIRES_KEY);
   }, []);
 
   const refreshAccessToken = useCallback(async () => {
@@ -78,7 +79,9 @@ export function SpotifyAuthProvider({ children }) {
   const login = useCallback(async () => {
     const verifier = generateRandomString(128);
     const challenge = await computeCodeChallenge(verifier);
+    const state = generateRandomString(64);
     sessionStorage.setItem('spotify_code_verifier', verifier);
+    sessionStorage.setItem(STATE_KEY, state);
 
     const params = new URLSearchParams({
       client_id: CLIENT_ID,
@@ -87,6 +90,7 @@ export function SpotifyAuthProvider({ children }) {
       scope: SCOPES,
       code_challenge_method: 'S256',
       code_challenge: challenge,
+      state,
     });
 
     window.location.href = `${AUTH_URL}?${params}`;
@@ -97,6 +101,17 @@ export function SpotifyAuthProvider({ children }) {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     if (!code) return;
+
+    const returnedState = params.get('state');
+    const storedState = sessionStorage.getItem(STATE_KEY);
+    if (!returnedState || returnedState !== storedState) {
+      console.error('OAuth state mismatch — possible CSRF attack');
+      sessionStorage.removeItem(STATE_KEY);
+      sessionStorage.removeItem('spotify_code_verifier');
+      window.history.replaceState({}, '', window.location.pathname);
+      return;
+    }
+    sessionStorage.removeItem(STATE_KEY);
 
     const verifier = sessionStorage.getItem('spotify_code_verifier');
     if (!verifier) return;
