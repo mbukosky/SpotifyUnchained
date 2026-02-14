@@ -46,7 +46,13 @@ app.use(helmet({
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 
-// CORS — restrict to allowed origins
+// Serve static files before CORS (same-origin requests don't need CORS)
+if (config.nodeEnv === 'production') {
+  const clientDist = path.join(__dirname, '../client/dist');
+  app.use(express.static(clientDist));
+}
+
+// CORS — restrict to allowed origins (API routes only)
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:3000')
   .split(',')
   .map(o => o.trim());
@@ -77,10 +83,9 @@ app.use('/api/', apiLimiter);
 app.use(playlistRoutes);
 app.use(spotifyRoutes);
 
+// SPA fallback — serve index.html for unmatched routes
 if (config.nodeEnv === 'production') {
   const clientDist = path.join(__dirname, '../client/dist');
-  app.use(express.static(clientDist));
-
   app.get('*', (req, res) => {
     res.sendFile(path.join(clientDist, 'index.html'));
   });
