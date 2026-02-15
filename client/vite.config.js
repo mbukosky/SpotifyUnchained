@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/spotify': 'http://localhost:3000',
         '/api': 'http://localhost:3000',
+        '/rss': 'http://localhost:3000',
       },
     },
     define: {
