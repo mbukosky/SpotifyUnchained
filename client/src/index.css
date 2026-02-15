@@ -874,7 +874,19 @@ h1, h2, h3 {
 
   .header-controls {
     width: 100%;
-    justify-content: space-between;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .rss-link,
+  .paypal-link,
+  .github-link {
+    display: none;
+  }
+
+  .spotify-user-name {
+    max-width: 80px;
   }
 
   .region-btn {
