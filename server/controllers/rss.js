@@ -1,7 +1,6 @@
 import Playlist from '../models/playlist.js';
 import { escapeXml, buildFeed } from '../lib/rss.js';
-
-const VALID_REGIONS = ['US', 'UK'];
+import { VALID_REGIONS } from '../lib/regions.js';
 const SITE_URL = 'https://spotifyunchained.com';
 
 export async function feed(req, res) {
@@ -16,7 +15,7 @@ export async function feed(req, res) {
       .limit(50)
       .lean();
 
-    const regionLabel = filter.region || 'US & UK';
+    const regionLabel = filter.region || 'All Regions';
     const title = `Spotify Unchained — New Music Friday (${regionLabel})`;
     const description = `Weekly archive of Spotify's New Music Friday playlist (${regionLabel})`;
 

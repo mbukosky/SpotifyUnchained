@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export function usePlaylists({ page = 1, size = 5, sort = 'desc', region = 'ALL' }) {
+export function usePlaylists({ page = 1, size = 5, sort = 'desc', region = 'US' }) {
   const [playlists, setPlaylists] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -11,7 +11,7 @@ export function usePlaylists({ page = 1, size = 5, sort = 'desc', region = 'ALL'
     setError(null);
 
     const params = new URLSearchParams({ page, size, sort });
-    if (region !== 'ALL') params.set('region', region);
+    params.set('region', region);
 
     fetch(`/spotify?${params}`)
       .then(res => {

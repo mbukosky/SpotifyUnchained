@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { VALID_REGIONS } from '../lib/regions.js';
 
 const trackSchema = new mongoose.Schema({
   created: { type: Date, default: Date.now },
@@ -12,7 +13,7 @@ const trackSchema = new mongoose.Schema({
 
 const playlistSchema = new mongoose.Schema({
   title: String,
-  region: { type: String, required: true, enum: ['US', 'UK'], default: 'US' },
+  region: { type: String, required: true, enum: VALID_REGIONS, default: 'US' },
   published_date: { type: Date, default: Date.now },
   tracks: [trackSchema],
 });

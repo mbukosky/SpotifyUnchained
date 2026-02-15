@@ -1,11 +1,7 @@
 import cron from 'node-cron';
 import config from '../config.js';
 import Playlist from '../models/playlist.js';
-
-const PLAYLIST_IDS = {
-  US: '37i9dQZF1DX4JAvHpjipBk',
-  UK: '37i9dQZF1DX4W3aJJYCDfV',
-};
+import { PLAYLIST_IDS } from './regions.js';
 
 function getRecentFriday() {
   const now = new Date();
