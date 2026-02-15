@@ -107,6 +107,8 @@ async function sync() {
   }
 }
 
+export { getRecentFriday, fetchPlaylistTracks, syncPlaylist };
+
 export function startSync() {
   if (config.skipSync) {
     console.log('Spotify sync disabled (SKIP_SPOTIFY_SYNC=true)');

@@ -19,6 +19,7 @@ SpotifyUnchained is a web application that automatically archives Spotify's "New
 - **Backend**: Node.js with Express.js (ESM)
 - **Database**: MongoDB with Mongoose 7
 - **Package Manager**: Bun
+- **Testing**: Vitest
 - **Monitoring**: New Relic APM + Google Analytics 4
 - **Deployment**: Heroku (Bun + Node.js buildpacks)
 
@@ -40,6 +41,7 @@ SpotifyUnchained is a web application that automatically archives Spotify's "New
 │   ├── models/               # Mongoose schemas
 │   └── routes/               # API route definitions
 ├── scripts/                   # Utility scripts
+├── vitest.config.js           # Vitest configuration
 ├── package.json              # Root package.json (Bun scripts)
 ├── bun.lock                  # Bun lockfile
 ├── Procfile                  # Heroku: web: bun run start
@@ -104,6 +106,16 @@ Copy `.env.example` to `.env` and fill in values.
 | `bun run dev:client` | Start Vite dev server |
 | `bun run build` | Build React client for production |
 | `bun run start` | Start Express server (production) |
+| `bun run test` | Run backend tests (Vitest) |
+| `bun run test:watch` | Run tests in watch mode |
+
+## Testing
+
+Backend tests use **Vitest** with test files co-located next to source files (`server/**/*.test.js`). The `vitest.config.js` sets required env vars so `config.js` loads without a real `.env` file.
+
+- **Test pattern**: `server/**/*.test.js`
+- **Coverage areas**: Sync logic (date math, track fetching), playlist controller (pagination, filtering), OAuth controller (token exchange/refresh)
+- **Mocking**: `vi.mock()` for Mongoose models, `vi.stubGlobal('fetch')` for Spotify API calls, `vi.useFakeTimers()` for date-dependent logic
 
 ## API Endpoints
 

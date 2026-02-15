@@ -13,7 +13,9 @@
     "dev:client": "cd client && bunx vite",
     "build": "cd client && bun install && bun run vite-build",
     "start": "node --loader newrelic/esm-loader.mjs server/index.js",
-    "heroku-postbuild": "echo 'Node.js buildpack: skipping build (handled by Bun buildpack)'"
+    "heroku-postbuild": "echo 'Node.js buildpack: skipping build (handled by Bun buildpack)'",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "compression": "^1.7.4",
@@ -27,6 +29,7 @@
     "node-cron": "^3.0.3"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "vitest": "^4.0.18"
   }
 }
