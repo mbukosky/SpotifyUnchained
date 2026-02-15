@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { list } from '../controllers/playlist.js';
+import { feed } from '../controllers/rss.js';
 
 const router = Router();
 
@@ -13,5 +14,6 @@ const playlistLimiter = rateLimit({
 });
 
 router.get('/spotify', playlistLimiter, list);
+router.get('/rss', playlistLimiter, feed);
 
 export default router;
