@@ -4,7 +4,7 @@ const RegionContext = createContext();
 
 export function RegionProvider({ children }) {
   const [region, setRegion] = useState(() => {
-    return localStorage.getItem('selectedRegion') || 'ALL';
+    return localStorage.getItem('selectedRegion') || 'US';
   });
 
   const changeRegion = (r) => {

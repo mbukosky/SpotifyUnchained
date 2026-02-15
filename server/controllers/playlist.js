@@ -1,6 +1,5 @@
 import Playlist from '../models/playlist.js';
-
-const VALID_REGIONS = ['US', 'UK'];
+import { VALID_REGIONS } from '../lib/regions.js';
 
 export async function list(req, res) {
   try {

@@ -58,7 +58,6 @@
 
 /* --- Region Accent Colors --- */
 .playlist-card[data-region="US"],
-.playlist-card[data-region="ALL"],
 .playlist-card:not([data-region]) {
   --accent: var(--gold);
   --accent-dim: var(--gold-dim);
@@ -84,6 +83,78 @@
   --accent-subtle: rgba(74, 130, 181, 0.08);
   --accent-border: rgba(74, 130, 181, 0.2);
   --accent-border-hover: rgba(74, 130, 181, 0.4);
+}
+
+.playlist-card[data-region="CA"] {
+  --accent: #d64545;
+  --accent-dim: rgba(214, 69, 69, 0.6);
+  --accent-glow: rgba(214, 69, 69, 0.15);
+  --accent-subtle: rgba(214, 69, 69, 0.08);
+  --accent-border: rgba(214, 69, 69, 0.15);
+  --accent-border-hover: rgba(214, 69, 69, 0.35);
+}
+
+[data-theme="light"] .playlist-card[data-region="CA"] {
+  --accent: #b53333;
+  --accent-dim: rgba(181, 51, 51, 0.6);
+  --accent-glow: rgba(181, 51, 51, 0.12);
+  --accent-subtle: rgba(181, 51, 51, 0.08);
+  --accent-border: rgba(181, 51, 51, 0.2);
+  --accent-border-hover: rgba(181, 51, 51, 0.4);
+}
+
+.playlist-card[data-region="BR"] {
+  --accent: #4caf50;
+  --accent-dim: rgba(76, 175, 80, 0.6);
+  --accent-glow: rgba(76, 175, 80, 0.15);
+  --accent-subtle: rgba(76, 175, 80, 0.08);
+  --accent-border: rgba(76, 175, 80, 0.15);
+  --accent-border-hover: rgba(76, 175, 80, 0.35);
+}
+
+[data-theme="light"] .playlist-card[data-region="BR"] {
+  --accent: #388e3c;
+  --accent-dim: rgba(56, 142, 60, 0.6);
+  --accent-glow: rgba(56, 142, 60, 0.12);
+  --accent-subtle: rgba(56, 142, 60, 0.08);
+  --accent-border: rgba(56, 142, 60, 0.2);
+  --accent-border-hover: rgba(56, 142, 60, 0.4);
+}
+
+.playlist-card[data-region="MX"] {
+  --accent: #26a69a;
+  --accent-dim: rgba(38, 166, 154, 0.6);
+  --accent-glow: rgba(38, 166, 154, 0.15);
+  --accent-subtle: rgba(38, 166, 154, 0.08);
+  --accent-border: rgba(38, 166, 154, 0.15);
+  --accent-border-hover: rgba(38, 166, 154, 0.35);
+}
+
+[data-theme="light"] .playlist-card[data-region="MX"] {
+  --accent: #00897b;
+  --accent-dim: rgba(0, 137, 123, 0.6);
+  --accent-glow: rgba(0, 137, 123, 0.12);
+  --accent-subtle: rgba(0, 137, 123, 0.08);
+  --accent-border: rgba(0, 137, 123, 0.2);
+  --accent-border-hover: rgba(0, 137, 123, 0.4);
+}
+
+.playlist-card[data-region="DE"] {
+  --accent: #ffb300;
+  --accent-dim: rgba(255, 179, 0, 0.6);
+  --accent-glow: rgba(255, 179, 0, 0.15);
+  --accent-subtle: rgba(255, 179, 0, 0.08);
+  --accent-border: rgba(255, 179, 0, 0.15);
+  --accent-border-hover: rgba(255, 179, 0, 0.35);
+}
+
+[data-theme="light"] .playlist-card[data-region="DE"] {
+  --accent: #e6a000;
+  --accent-dim: rgba(230, 160, 0, 0.6);
+  --accent-glow: rgba(230, 160, 0, 0.12);
+  --accent-subtle: rgba(230, 160, 0, 0.08);
+  --accent-border: rgba(230, 160, 0, 0.2);
+  --accent-border-hover: rgba(230, 160, 0, 0.4);
 }
 
 /* --- Reset & Base --- */
@@ -289,6 +360,38 @@ h1, h2, h3 {
 
 [data-theme="light"] .region-btn[data-region="UK"].active {
   background: #4a82b5;
+}
+
+.region-btn[data-region="CA"].active {
+  background: #d64545;
+}
+
+[data-theme="light"] .region-btn[data-region="CA"].active {
+  background: #b53333;
+}
+
+.region-btn[data-region="BR"].active {
+  background: #4caf50;
+}
+
+[data-theme="light"] .region-btn[data-region="BR"].active {
+  background: #388e3c;
+}
+
+.region-btn[data-region="MX"].active {
+  background: #26a69a;
+}
+
+[data-theme="light"] .region-btn[data-region="MX"].active {
+  background: #00897b;
+}
+
+.region-btn[data-region="DE"].active {
+  background: #ffb300;
+}
+
+[data-theme="light"] .region-btn[data-region="DE"].active {
+  background: #e6a000;
 }
 
 .theme-toggle {
@@ -834,6 +937,11 @@ h1, h2, h3 {
 @media (max-width: 480px) {
   .brand-name {
     font-size: 1.1rem;
+  }
+
+  .region-btn {
+    padding: 4px 8px;
+    font-size: 0.65rem;
   }
 
   .section-header {

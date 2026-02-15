@@ -3,7 +3,7 @@ import { useSpotifyAuth } from '../hooks/useSpotifyAuth';
 import Equalizer from './Equalizer';
 import ThemeToggle from './ThemeToggle';
 
-const REGIONS = ['ALL', 'US', 'UK'];
+const REGIONS = ['US', 'UK', 'CA', 'BR', 'MX', 'DE'];
 
 export default function Header() {
   const { region, changeRegion } = useRegion();

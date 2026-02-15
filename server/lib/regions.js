@@ -1,0 +1,10 @@
+export const PLAYLIST_IDS = {
+  US: '37i9dQZF1DX4JAvHpjipBk',
+  UK: '37i9dQZF1DX4W3aJJYCDfV',
+  CA: '37i9dQZF1DX5DfG8gQdC3F',
+  BR: '37i9dQZF1DX34KNiFQJNVm',
+  MX: '37i9dQZF1DWWZJHBoz7SEG',
+  DE: '37i9dQZF1DWUW2bvSkjcJ6',
+};
+
+export const VALID_REGIONS = Object.keys(PLAYLIST_IDS);

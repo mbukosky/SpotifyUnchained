@@ -100,6 +100,17 @@ describe('playlist controller - list', () => {
     expect(mockSkip).toHaveBeenCalledWith(0);
   });
 
+  it('filters by new region CA', async () => {
+    mockCountDocuments.mockResolvedValue(3);
+    mockLean.mockResolvedValue([]);
+
+    const { req, res } = mockReqRes({ region: 'CA' });
+    await list(req, res);
+
+    expect(mockFind).toHaveBeenCalledWith({ region: 'CA' });
+    expect(mockCountDocuments).toHaveBeenCalledWith({ region: 'CA' });
+  });
+
   it('ignores invalid region values', async () => {
     mockCountDocuments.mockResolvedValue(0);
     mockLean.mockResolvedValue([]);
