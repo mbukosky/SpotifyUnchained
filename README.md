@@ -1,6 +1,6 @@
 # [Unchaining Spotify](https://spotifyunchained.com)
 
-Never lose a playlist again. A simple site that automatically archives Spotify's [New Music Friday](https://open.spotify.com/playlist/37i9dQZF1DX4JAvHpjipBk) playlists (US & UK) before they refresh weekly.
+Never lose a playlist again. A simple site that automatically archives Spotify's [New Music Friday](https://open.spotify.com/playlist/37i9dQZF1DX4JAvHpjipBk) playlists (US,UK,CA,BR,MX,DE) before they refresh weekly.
 
 This is not an official Spotify application. I am a developer, Spotify user, and here is my solution.
 
