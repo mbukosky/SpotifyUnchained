@@ -1,5 +1,3 @@
-$schema = "https://railway.com/railway.schema.json"
-
 [build]
 builder = "RAILPACK"
 buildCommand = "bun run build"
