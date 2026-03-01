@@ -20,7 +20,7 @@ SpotifyUnchained is a web application that automatically archives Spotify's "New
 - **Database**: MongoDB with Mongoose 7
 - **Package Manager**: Bun
 - **Testing**: Vitest
-- **Monitoring**: New Relic APM + Google Analytics 4
+- **Monitoring**: Google Analytics 4
 - **Deployment**: Railway (Railpack)
 
 ### Project Structure
@@ -31,7 +31,7 @@ SpotifyUnchained is a web application that automatically archives Spotify's "New
 │   │   ├── hooks/            # Custom hooks (useSpotifyAuth, etc.)
 │   │   ├── lib/              # Utility libraries (spotify API client)
 │   │   └── pages/            # Page components
-│   ├── index.html            # Entry HTML (GA4 + New Relic snippets)
+│   ├── index.html            # Entry HTML (GA4 snippet)
 │   └── vite.config.js        # Vite configuration
 ├── server/                    # Express.js backend (ESM)
 │   ├── app.js                # Express app setup (helmet, CORS, rate limiting)
@@ -45,7 +45,6 @@ SpotifyUnchained is a web application that automatically archives Spotify's "New
 ├── package.json              # Root package.json (Bun scripts)
 ├── bun.lock                  # Bun lockfile
 ├── railway.toml              # Railway deployment config
-├── newrelic.cjs              # New Relic configuration
 └── docker-compose.yml        # Local MongoDB via Docker
 ```
 
@@ -70,9 +69,6 @@ Copy `.env.example` to `.env` and fill in values.
 - `SKIP_SPOTIFY_SYNC` - Set to `true` to disable automatic sync
 - `ALLOWED_ORIGINS` - Comma-separated CORS origins
 - `ALLOWED_REDIRECT_URIS` - Comma-separated OAuth redirect URIs
-- `NEW_RELIC_LICENSE_KEY` - New Relic APM license key
-- `NEW_RELIC_LOG` - New Relic log level
-
 ### Installation & Setup
 
 1. **Install dependencies:**
