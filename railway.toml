@@ -1,0 +1,10 @@
+[build]
+builder = "RAILPACK"
+buildCommand = "bun run build"
+
+[deploy]
+startCommand = "node --loader newrelic/esm-loader.mjs server/index.js"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
