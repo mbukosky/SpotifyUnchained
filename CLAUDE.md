@@ -21,7 +21,7 @@ SpotifyUnchained is a web application that automatically archives Spotify's "New
 - **Package Manager**: Bun
 - **Testing**: Vitest
 - **Monitoring**: New Relic APM + Google Analytics 4
-- **Deployment**: Heroku (Bun + Node.js buildpacks)
+- **Deployment**: Railway (Railpack)
 
 ### Project Structure
 ```
@@ -44,7 +44,7 @@ SpotifyUnchained is a web application that automatically archives Spotify's "New
 ├── vitest.config.js           # Vitest configuration
 ├── package.json              # Root package.json (Bun scripts)
 ├── bun.lock                  # Bun lockfile
-├── Procfile                  # Heroku: web: bun run start
+├── railway.toml              # Railway deployment config
 ├── newrelic.cjs              # New Relic configuration
 └── docker-compose.yml        # Local MongoDB via Docker
 ```
@@ -160,12 +160,10 @@ Backend tests use **Vitest** with test files co-located next to source files (`s
 
 ## Deployment
 
-### Heroku
-- **Buildpacks**: `jmlow/heroku-buildpack-bun` + `heroku/nodejs`
-- **Stack**: heroku-22
-- **Procfile**: `web: bun run start`
-- Configure env vars in Heroku dashboard or via `heroku config:set`
-- `heroku-postbuild` script handles client build
+### Railway
+- **Builder**: Railpack (auto-detects Bun from `bun.lock`)
+- **Config file**: `railway.toml`
+- Configure env vars in Railway dashboard
 
 ### Local MongoDB
 ```bash

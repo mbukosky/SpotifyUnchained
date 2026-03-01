@@ -10,7 +10,7 @@ This is not an official Spotify application. I am a developer, Spotify user, and
 - **Backend**: Node.js with Express.js (ESM)
 - **Database**: MongoDB with Mongoose 7
 - **Package Manager**: Bun
-- **Deployment**: Heroku
+- **Deployment**: Railway
 
 ## Development Setup
 

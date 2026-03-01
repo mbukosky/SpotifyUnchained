@@ -13,7 +13,6 @@
     "dev:client": "cd client && bunx vite",
     "build": "cd client && bun install && bun run vite-build",
     "start": "node --loader newrelic/esm-loader.mjs server/index.js",
-    "heroku-postbuild": "echo 'Node.js buildpack: skipping build (handled by Bun buildpack)'",
     "test": "vitest run",
     "test:watch": "vitest"
   },
