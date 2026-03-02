@@ -20,8 +20,8 @@ SpotifyUnchained is a web application that automatically archives Spotify's "New
 - **Database**: MongoDB with Mongoose 7
 - **Package Manager**: Bun
 - **Testing**: Vitest
-- **Monitoring**: New Relic APM + Google Analytics 4
-- **Deployment**: Heroku (Bun + Node.js buildpacks)
+- **Monitoring**: Google Analytics 4
+- **Deployment**: Railway (Railpack)
 
 ### Project Structure
 ```
@@ -31,7 +31,7 @@ SpotifyUnchained is a web application that automatically archives Spotify's "New
 │   │   ├── hooks/            # Custom hooks (useSpotifyAuth, etc.)
 │   │   ├── lib/              # Utility libraries (spotify API client)
 │   │   └── pages/            # Page components
-│   ├── index.html            # Entry HTML (GA4 + New Relic snippets)
+│   ├── index.html            # Entry HTML (GA4 snippet)
 │   └── vite.config.js        # Vite configuration
 ├── server/                    # Express.js backend (ESM)
 │   ├── app.js                # Express app setup (helmet, CORS, rate limiting)
@@ -44,8 +44,7 @@ SpotifyUnchained is a web application that automatically archives Spotify's "New
 ├── vitest.config.js           # Vitest configuration
 ├── package.json              # Root package.json (Bun scripts)
 ├── bun.lock                  # Bun lockfile
-├── Procfile                  # Heroku: web: bun run start
-├── newrelic.cjs              # New Relic configuration
+├── railway.toml              # Railway deployment config
 └── docker-compose.yml        # Local MongoDB via Docker
 ```
 
@@ -70,9 +69,6 @@ Copy `.env.example` to `.env` and fill in values.
 - `SKIP_SPOTIFY_SYNC` - Set to `true` to disable automatic sync
 - `ALLOWED_ORIGINS` - Comma-separated CORS origins
 - `ALLOWED_REDIRECT_URIS` - Comma-separated OAuth redirect URIs
-- `NEW_RELIC_LICENSE_KEY` - New Relic APM license key
-- `NEW_RELIC_LOG` - New Relic log level
-
 ### Installation & Setup
 
 1. **Install dependencies:**
@@ -160,12 +156,10 @@ Backend tests use **Vitest** with test files co-located next to source files (`s
 
 ## Deployment
 
-### Heroku
-- **Buildpacks**: `jmlow/heroku-buildpack-bun` + `heroku/nodejs`
-- **Stack**: heroku-22
-- **Procfile**: `web: bun run start`
-- Configure env vars in Heroku dashboard or via `heroku config:set`
-- `heroku-postbuild` script handles client build
+### Railway
+- **Builder**: Railpack (auto-detects Bun from `bun.lock`)
+- **Config file**: `railway.toml`
+- Configure env vars in Railway dashboard
 
 ### Local MongoDB
 ```bash
