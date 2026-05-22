@@ -114,7 +114,7 @@ export function startSync() {
   console.log('Starting initial sync...');
   sync();
 
-  cron.schedule('0 */2 * * *', () => {
+  cron.schedule('0 */8 * * *', () => {
     console.log('Running scheduled sync...');
     sync();
   });

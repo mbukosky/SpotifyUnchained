@@ -19,6 +19,7 @@ const playlistSchema = new mongoose.Schema({
 });
 
 playlistSchema.index({ region: 1, published_date: -1 });
+playlistSchema.index({ title: 1, region: 1 }, { unique: true });
 
 const Playlist = mongoose.model('Playlist', playlistSchema);
 
