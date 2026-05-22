@@ -640,9 +640,8 @@ h1, h2, h3 {
   transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.playlist-card.expanded .track-list {
-  max-height: 2000px;
-}
+/* Expanded max-height is set inline from the measured scrollHeight in
+   PlaylistCard.jsx so long playlists never clip (issue #156). */
 
 .track-list-inner {
   padding: 0 24px 20px;

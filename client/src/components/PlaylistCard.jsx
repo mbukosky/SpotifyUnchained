@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useLayoutEffect } from 'react';
 import TrackItem from './TrackItem';
 import SavePlaylist from './SavePlaylist';
 import PlaylistDownload from './PlaylistDownload';
@@ -34,6 +34,15 @@ function RegionTitle({ title, region }) {
 export default function PlaylistCard({ playlist, index }) {
   const [expanded, setExpanded] = useState(false);
   const [activeTrack, setActiveTrack] = useState(null);
+  const trackListRef = useRef(null);
+  const [maxHeight, setMaxHeight] = useState(0);
+
+  // Measure the real content height so the expand animation never clips long
+  // playlists (a fixed max-height cap clipped lists past ~26 tracks — issue #156).
+  useLayoutEffect(() => {
+    if (!trackListRef.current) return;
+    setMaxHeight(expanded ? trackListRef.current.scrollHeight : 0);
+  }, [expanded, playlist.tracks.length]);
 
   const waveformBars = useMemo(() => generateWaveformBars(), []);
 
@@ -82,7 +91,7 @@ export default function PlaylistCard({ playlist, index }) {
           <path d="M5 7.5 L10 12.5 L15 7.5" />
         </svg>
       </div>
-      <div className="track-list">
+      <div className="track-list" ref={trackListRef} style={{ maxHeight }}>
         <div className="track-list-inner">
           {playlist.tracks.map((track, i) => (
             <TrackItem
