@@ -24,7 +24,7 @@
     "express-rate-limit": "^8.5.2",
     "helmet": "^7.2.0",
     "mongoose": "^8.24.0",
-    "node-cron": "^3.0.3"
+    "node-cron": "^4.2.1"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
