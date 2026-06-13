@@ -630,21 +630,25 @@ body {
 .track-embed-container {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.4s var(--ease-smooth), opacity 0.3s ease;
+  transition: max-height 0.4s var(--ease-smooth), opacity 0.3s ease, transform 0.4s var(--ease-smooth);
   opacity: 0;
-  padding: 0 14px 0 104px;
+  transform: translateY(-6px);
+  /* Even inset matching the track-row's horizontal padding so the glowing
+     embed box fills the row width evenly (issue: dropdown misalignment). */
+  padding: 0 14px;
 }
 
 .track-embed-container.active {
   max-height: 180px;
   opacity: 1;
+  transform: translateY(0);
   padding-bottom: 10px;
 }
 
 .track-embed-container iframe {
   border: none;
   border-radius: 14px;
-  margin-top: 8px;
+  margin-top: 12px;
   display: block;
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--rc) 40%, transparent), 0 8px 40px -8px var(--rc);
   transition: box-shadow 0.3s ease;
@@ -837,7 +841,6 @@ body {
   .archive { padding: 0 24px 80px; }
   .header-inner { padding: 14px 20px; }
   .icon-link { display: none; }
-  .track-embed-container { padding-left: 14px; }
 }
 
 @media (max-width: 480px) {
