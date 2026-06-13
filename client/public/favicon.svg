@@ -1,7 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
-  <circle cx="16" cy="16" r="15" stroke="#C9A84C" stroke-width="1.5" />
-  <circle cx="16" cy="16" r="6" stroke="#C9A84C" stroke-width="1" />
-  <circle cx="16" cy="16" r="2" fill="#C9A84C" />
-  <line x1="16" y1="1" x2="16" y2="10" stroke="#C9A84C" stroke-width="0.5" opacity="0.4" />
-  <line x1="31" y1="16" x2="22" y2="16" stroke="#C9A84C" stroke-width="0.5" opacity="0.4" />
+  <defs>
+    <!-- Approximates the brand-orb conic-gradient (from 180deg: violet -> cyan -> magenta -> violet)
+         using angular pie segments with soft-blended fills. -->
+    <radialGradient id="orb-sheen" cx="0.34" cy="0.3" r="0.55">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.55" />
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Conic wheel: four wedges centered at (16,16), r=15, starting at 180deg (pointing left) -->
+  <!-- 180deg -> 270deg : violet -> cyan -->
+  <path d="M16 16 L1 16 A15 15 0 0 1 16 1 Z" fill="#5b8cff" />
+  <!-- 270deg -> 360deg : cyan -->
+  <path d="M16 16 L16 1 A15 15 0 0 1 31 16 Z" fill="#38e1ff" />
+  <!-- 0deg -> 90deg : cyan -> magenta -->
+  <path d="M16 16 L31 16 A15 15 0 0 1 16 31 Z" fill="#a06bf0" />
+  <!-- 90deg -> 180deg : magenta -> violet -->
+  <path d="M16 16 L16 31 A15 15 0 0 1 1 16 Z" fill="#ff4ecd" />
+
+  <!-- Recolor blend overlay to smooth the wheel toward the brand violet -->
+  <circle cx="16" cy="16" r="15" fill="url(#orb-sheen)" />
+
+  <!-- Dark center hole (mirrors brand-orb::after) -->
+  <circle cx="16" cy="16" r="5.5" fill="#07070e" />
 </svg>
