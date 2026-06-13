@@ -5,23 +5,23 @@ export default function Pagination({ page, size, totalCount, onPageChange, onSiz
 
   return (
     <div className="pagination">
-      <div className="pagination-size">
-        <label htmlFor="pageSize">Items per page:</label>
+      <div className="page-size">
+        <label htmlFor="pageSize">Per page</label>
         <select id="pageSize" value={size} onChange={e => onSizeChange(Number(e.target.value))}>
           {[5, 10, 15, 20].map(n => (
             <option key={n} value={n}>{n}</option>
           ))}
         </select>
       </div>
-      <span className="pagination-info">{start} - {end} of {totalCount} items</span>
-      <div className="pagination-nav">
-        <button disabled={page <= 1} onClick={() => onPageChange(page - 1)} aria-label="Previous page">
-          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M12.5 15 L7.5 10 L12.5 5" />
+      <div className="page-nav">
+        <span className="page-info">{start}–{end} of {totalCount}</span>
+        <button className="page-btn" disabled={page <= 1} onClick={() => onPageChange(page - 1)} aria-label="Previous page">
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12.5 5 L7.5 10 L12.5 15" />
           </svg>
         </button>
-        <button disabled={page >= totalPages} onClick={() => onPageChange(page + 1)} aria-label="Next page">
-          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <button className="page-btn" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)} aria-label="Next page">
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M7.5 5 L12.5 10 L7.5 15" />
           </svg>
         </button>

@@ -26,44 +26,41 @@ export default function TrackItem({ track, index, isPlaying, onTogglePlay, autop
 
   const handleRowClick = (e) => {
     // Don't trigger if clicking the external link
-    if (e.target.closest('.track-open-link')) return;
+    if (e.target.closest('.track-open')) return;
     onTogglePlay(track.id);
   };
 
   return (
     <>
       <div
-        className={`track-item${isPlaying ? ' track-item-active' : ''}`}
+        className={`track-row${isPlaying ? ' playing-row' : ''}`}
+        style={{ '--i': index }}
         data-track-id={track.id}
         onClick={handleRowClick}
         role="button"
         tabIndex={0}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTogglePlay(track.id); } }}
       >
-        <span className="track-number">{String(index + 1).padStart(2, '0')}</span>
+        <span className="track-num">{String(index + 1).padStart(2, '0')}</span>
         <button
-          className={`track-play-btn${isPlaying ? ' active' : ''}`}
+          className={`track-play${isPlaying ? ' playing' : ''}`}
           onClick={(e) => { e.stopPropagation(); onTogglePlay(track.id); }}
           aria-label={isPlaying ? `Pause ${track.name}` : `Play ${track.name}`}
           tabIndex={-1}
         >
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            {isPlaying ? (
-              <>
-                <rect x="6" y="5" width="4" height="14" rx="1" />
-                <rect x="14" y="5" width="4" height="14" rx="1" />
-              </>
-            ) : (
-              <polygon points="6,4 20,12 6,20" />
-            )}
+          <svg className="tri" width="11" height="11" viewBox="0 0 12 12" fill="currentColor">
+            <path d="M3 1.5 L10.5 6 L3 10.5 Z" />
           </svg>
+          <span className="eq-mini" aria-hidden="true">
+            <i style={{ height: '60%' }} /><i style={{ height: '100%' }} /><i style={{ height: '40%' }} />
+          </span>
         </button>
         <div className="track-details">
           <div className="track-name">{track.name}</div>
           <div className="track-artist">{track.artist}</div>
         </div>
-        <a href={track.open_url} target="_blank" rel="noopener noreferrer" className="track-open-link" aria-label={`Open ${track.name} on Spotify`}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <a href={track.open_url} target="_blank" rel="noopener noreferrer" className="track-open" aria-label={`Open ${track.name} on Spotify`}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
             <polyline points="15 3 21 3 21 9" />
             <line x1="10" y1="14" x2="21" y2="3" />
