@@ -25,18 +25,17 @@ export default function SavePlaylist({ playlist }) {
   };
 
   return (
+    <div className="save-row">
     <button
-      className={`save-playlist-btn ${status}`}
+      className={`save-btn ${status}`}
       onClick={handleSave}
       disabled={status === 'loading' || status === 'success'}
       aria-label="Save playlist to Spotify"
     >
       {status === 'idle' && (
         <>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02z" />
           </svg>
           <span>Save to Spotify</span>
         </>
@@ -66,5 +65,6 @@ export default function SavePlaylist({ playlist }) {
         </>
       )}
     </button>
+    </div>
   );
 }

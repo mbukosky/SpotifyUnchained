@@ -1,25 +1,26 @@
-import { ThemeProvider } from './hooks/useTheme';
 import { RegionProvider } from './hooks/useRegion';
 import { SpotifyAuthProvider } from './hooks/useSpotifyAuth';
+import MeshBackground from './components/MeshBackground';
 import Header from './components/Header';
+import Hero from './components/Hero';
 import PlaylistList from './components/PlaylistList';
 import Footer from './components/Footer';
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <RegionProvider>
-        <SpotifyAuthProvider>
-          <div className="grain-overlay" aria-hidden="true" />
+    <RegionProvider>
+      <SpotifyAuthProvider>
+        <MeshBackground />
+        <div className="grain" aria-hidden="true" />
+        <div className="page">
           <Header />
-          <main className="main-content">
-            <div className="container">
-              <PlaylistList />
-            </div>
+          <Hero />
+          <main className="archive">
+            <PlaylistList />
           </main>
           <Footer />
-        </SpotifyAuthProvider>
-      </RegionProvider>
-    </ThemeProvider>
+        </div>
+      </SpotifyAuthProvider>
+    </RegionProvider>
   );
 }

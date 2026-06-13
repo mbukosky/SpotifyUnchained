@@ -19,33 +19,33 @@ export default function PlaylistList() {
 
   return (
     <>
-      <div className="section-header">
-        <div className="section-title-row">
+      <div className="section-head">
+        <div>
           <h2 className="section-title">Archived Playlists</h2>
-          <a className="kofi-link" href="https://ko-fi.com/A1439LK" target="_blank" rel="noopener noreferrer">
-            <img height="32" src="https://cdn.ko-fi.com/cdn/kofi2.png?v=3" alt="Buy Me a Coffee at ko-fi.com" />
-          </a>
+          <p className="section-sub">New Music Friday archives, preserved weekly</p>
         </div>
-        <p className="section-subtitle">New Music Friday archives, preserved weekly</p>
+        <a className="kofi-link" href="https://ko-fi.com/A1439LK" target="_blank" rel="noopener noreferrer">
+          ☕ Buy me a coffee
+        </a>
       </div>
 
       {loading && (
-        <div className="playlist-loading">
+        <div className="loading-state">
           <div className="loading-spinner" />
           <p>Loading playlists...</p>
         </div>
       )}
 
       {error && (
-        <div className="playlist-error">
+        <div className="error-state">
           <p>Failed to load playlists. Please try again.</p>
         </div>
       )}
 
       {!loading && !error && playlists.length === 0 && (
-        <div className="playlist-empty">
-          <p className="playlist-empty-title">No playlists found</p>
-          <p>Try selecting a different region filter.</p>
+        <div className="empty-state">
+          <strong>No playlists found</strong>
+          Try selecting a different region filter.
         </div>
       )}
 
