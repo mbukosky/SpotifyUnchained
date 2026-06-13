@@ -408,11 +408,11 @@ body {
   pointer-events: none;
 }
 
-/* Once the entrance animation finishes its fill-mode would override the
-   inline tilt transform, so PlaylistCard swaps it out for this rule. */
-.pcard.settled { animation: none; opacity: 1; }
-
-.pcard:hover { background: var(--glass-hover); border-color: rgba(255, 255, 255, 0.18); }
+.pcard:hover {
+  background: var(--glass-hover);
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-4px) scale(1.01);
+}
 .pcard:hover::before { opacity: 0.28; }
 
 .pcard.open {
@@ -420,6 +420,9 @@ body {
   border-color: rgba(255, 255, 255, 0.2);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), 0 0 60px -20px var(--rc);
 }
+
+/* When expanded the card is a tall list, so don't lift/scale it on hover. */
+.pcard.open:hover { transform: none; }
 
 .pcard-head {
   display: grid;
@@ -643,6 +646,8 @@ body {
   border-radius: 14px;
   margin-top: 8px;
   display: block;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--rc) 40%, transparent), 0 8px 40px -8px var(--rc);
+  transition: box-shadow 0.3s ease;
 }
 
 /* --- Save playlist button --- */

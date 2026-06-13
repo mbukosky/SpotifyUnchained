@@ -4,8 +4,6 @@ import SavePlaylist from './SavePlaylist';
 import PlaylistDownload from './PlaylistDownload';
 import { REGION_COLORS } from '../lib/regions';
 
-const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
 function generateWaveformBars() {
   const bars = 36;
   const rects = [];
@@ -37,10 +35,6 @@ function RegionTitle({ title }) {
 export default function PlaylistCard({ playlist, index }) {
   const [expanded, setExpanded] = useState(false);
   const [activeTrack, setActiveTrack] = useState(null);
-  // The entrance animation's fill-mode would override the inline tilt
-  // transform, so the tilt only engages once the animation has finished.
-  const [settled, setSettled] = useState(false);
-  const cardRef = useRef(null);
   const trackListRef = useRef(null);
   const [maxHeight, setMaxHeight] = useState(0);
 
@@ -60,30 +54,13 @@ export default function PlaylistCard({ playlist, index }) {
     setActiveTrack(prev => prev === trackId ? null : trackId);
   };
 
-  const handleTilt = (e) => {
-    const card = cardRef.current;
-    if (!card || !settled || expanded || REDUCED_MOTION) return;
-    const r = card.getBoundingClientRect();
-    const dx = (e.clientX - r.left) / r.width - 0.5;
-    const dy = (e.clientY - r.top) / r.height - 0.5;
-    card.style.transform = `rotateX(${(-dy * 3).toFixed(2)}deg) rotateY(${(dx * 3).toFixed(2)}deg) translateZ(4px)`;
-  };
-
-  const resetTilt = () => {
-    if (cardRef.current) cardRef.current.style.transform = '';
-  };
-
   const region = playlist.region || 'US';
 
   return (
     <article
-      ref={cardRef}
-      className={`pcard${expanded ? ' open' : ''}${settled ? ' settled' : ''}`}
+      className={`pcard${expanded ? ' open' : ''}`}
       style={{ animationDelay: `${(index + 1) * 0.08}s`, '--rc': REGION_COLORS[region] }}
       data-region={region}
-      onMouseMove={handleTilt}
-      onMouseLeave={resetTilt}
-      onAnimationEnd={(e) => { if (e.target === e.currentTarget) setSettled(true); }}
     >
       <div
         className="pcard-head"
