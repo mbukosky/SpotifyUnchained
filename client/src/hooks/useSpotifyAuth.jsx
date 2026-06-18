@@ -37,6 +37,10 @@ export function SpotifyAuthProvider({ children }) {
   });
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
+  // True when a refresh failed because the 6-month refresh token expired/was revoked,
+  // so the UI can prompt the user to sign in again. Cleared on a successful sign-in
+  // or a deliberate sign-out.
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const isAuthenticated = !!accessToken && Date.now() < expiresAt;
 
@@ -45,6 +49,7 @@ export function SpotifyAuthProvider({ children }) {
     setAccessToken(access);
     setRefreshToken(refresh);
     setExpiresAt(expiry);
+    setSessionExpired(false);
     sessionStorage.setItem(TOKEN_KEY, access);
     if (refresh) sessionStorage.setItem(REFRESH_KEY, refresh);
     sessionStorage.setItem(EXPIRES_KEY, String(expiry));
@@ -60,6 +65,8 @@ export function SpotifyAuthProvider({ children }) {
     sessionStorage.removeItem(EXPIRES_KEY);
   }, []);
 
+  const dismissSessionExpired = useCallback(() => setSessionExpired(false), []);
+
   const refreshAccessToken = useCallback(async () => {
     if (!refreshToken) return;
     try {
@@ -68,7 +75,13 @@ export function SpotifyAuthProvider({ children }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refresh_token: refreshToken }),
       });
-      if (!res.ok) throw new Error('Refresh failed');
+      if (!res.ok) {
+        // Spotify returns invalid_grant once the 6-month refresh token expires.
+        // Do not retry — discard the token and prompt the user to sign in again.
+        const data = await res.json().catch(() => ({}));
+        if (data?.error === 'invalid_grant') setSessionExpired(true);
+        throw new Error('Refresh failed');
+      }
       const data = await res.json();
       storeTokens(data.access_token, data.refresh_token || refreshToken, data.expires_in);
     } catch {
@@ -158,7 +171,7 @@ export function SpotifyAuthProvider({ children }) {
     return () => clearTimeout(timer);
   }, [expiresAt, refreshToken, refreshAccessToken]);
 
-  const value = { user, isAuthenticated, loading, login, logout, accessToken };
+  const value = { user, isAuthenticated, loading, login, logout, accessToken, sessionExpired, dismissSessionExpired };
 
   return (
     <SpotifyAuthContext.Provider value={value}>
