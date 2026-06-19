@@ -176,17 +176,31 @@ describe('refreshToken', () => {
     });
   });
 
-  it('handles Spotify error responses', async () => {
+  it('surfaces invalid_grant distinctly when the refresh token is expired/revoked', async () => {
     fetch.mockResolvedValueOnce({
       ok: false,
       status: 400,
       json: async () => ({ error: 'invalid_grant' }),
     });
 
-    const { req, res } = mockReqRes({ refresh_token: 'bad-rt' });
+    const { req, res } = mockReqRes({ refresh_token: 'expired-rt' });
     await refreshToken(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'invalid_grant' }));
+  });
+
+  it('returns a generic error for non-invalid_grant Spotify errors', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: async () => ({ error: 'server_error' }),
+    });
+
+    const { req, res } = mockReqRes({ refresh_token: 'some-rt' });
+    await refreshToken(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({ error: 'Token refresh failed' });
   });
 });

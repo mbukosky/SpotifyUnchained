@@ -70,6 +70,11 @@ export async function refreshToken(req, res) {
 
     if (!response.ok) {
       console.error('Spotify token refresh error:', data);
+      // A 6-month-expired or revoked refresh token returns invalid_grant.
+      // Surface it distinctly so the client can prompt re-authorization (do not retry).
+      if (data?.error === 'invalid_grant') {
+        return res.status(response.status).json({ error: 'invalid_grant' });
+      }
       return res.status(response.status).json({ error: 'Token refresh failed' });
     }
 
