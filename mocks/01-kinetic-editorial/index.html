@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SpotifyUnchained — Mock 1: Cinematic Kinetic Editorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;800&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+<style>
+  :root {
+    --ink: #07070e;
+    --ink-2: #0c0c18;
+    --text: #f2f1ff;
+    --text-dim: rgba(242, 241, 255, 0.55);
+    --text-faint: rgba(242, 241, 255, 0.3);
+    --glass: rgba(255, 255, 255, 0.04);
+    --glass-hover: rgba(255, 255, 255, 0.07);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --accent: #9b8cff;
+    --c-violet: #7c5cff;
+    --c-cyan: #38e1ff;
+    --c-magenta: #ff4ecd;
+    --font-display: 'Unbounded', sans-serif;
+    --font-body: 'Sora', sans-serif;
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+  body {
+    background: var(--ink);
+    color: var(--text);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  #mesh { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
+  .grain {
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background: radial-gradient(ellipse 120% 90% at 50% 30%, transparent 55%, rgba(0,0,0,0.5) 100%);
+  }
+  .page { position: relative; z-index: 2; }
+
+  @keyframes orb-spin { to { transform: rotate(360deg); } }
+  @keyframes gradient-slide {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  /* ---- mock banner ---- */
+  .mock-banner {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    z-index: 100; font-family: var(--font-body); font-size: 0.72rem;
+    letter-spacing: 0.08em; color: var(--text-dim); background: rgba(7,7,14,0.8);
+    border: 1px solid var(--glass-border); padding: 8px 16px; border-radius: 100px;
+    backdrop-filter: blur(12px); pointer-events: none;
+  }
+  .mock-banner b { color: var(--c-cyan); }
+
+  /* ---- header ---- */
+  .site-header {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(24px) saturate(1.4);
+    background: linear-gradient(to bottom, rgba(7,7,14,0.7), rgba(7,7,14,0.3));
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .header-inner {
+    max-width: 1180px; margin: 0 auto; padding: 18px 32px;
+    display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand-orb {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: conic-gradient(from 180deg, var(--c-violet), var(--c-cyan), var(--c-magenta), var(--c-violet));
+    animation: orb-spin 9s linear infinite; position: relative;
+    box-shadow: 0 0 24px rgba(124,92,255,0.5); flex-shrink: 0;
+  }
+  .brand-orb::after { content: ''; position: absolute; inset: 11px; border-radius: 50%; background: var(--ink); }
+  .brand-name { font-family: var(--font-display); font-weight: 600; font-size: 1rem; letter-spacing: 0.02em; white-space: nowrap; }
+  .brand-name em {
+    font-style: normal;
+    background: linear-gradient(110deg, var(--c-violet), var(--c-cyan), var(--c-magenta));
+    background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    animation: gradient-slide 6s ease infinite;
+  }
+  .header-controls { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .region-filter { display: flex; gap: 4px; padding: 4px; border-radius: 100px; background: var(--glass); border: 1px solid var(--glass-border); }
+  .region-btn {
+    font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
+    color: var(--text-dim); background: transparent; border: none; border-radius: 100px; padding: 7px 14px;
+    cursor: pointer; transition: all 0.3s var(--ease-smooth);
+  }
+  .region-btn:hover { color: var(--text); }
+  .region-btn.active { color: var(--ink); background: var(--region-c, #fff); box-shadow: 0 0 18px var(--region-glow, rgba(255,255,255,0.4)); }
+  .spotify-btn {
+    display: inline-flex; align-items: center; gap: 9px; font-family: var(--font-body); font-size: 0.8rem; font-weight: 600;
+    color: var(--ink); background: #fff; border: none; border-radius: 100px; padding: 10px 20px; cursor: pointer;
+    transition: transform 0.3s var(--ease-spring), box-shadow 0.3s;
+  }
+  .spotify-btn:hover { transform: scale(1.05); box-shadow: 0 0 32px rgba(255,255,255,0.25); }
+  .icon-link { color: var(--text-dim); display: inline-flex; transition: color 0.25s, transform 0.25s var(--ease-spring); }
+  .icon-link:hover { color: var(--text); transform: translateY(-2px); }
+
+  /* ---- hero: kinetic ---- */
+  .hero {
+    max-width: 1180px; margin: 0 auto; padding: 130px 32px 90px; position: relative; min-height: 78vh;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .hero-eyebrow {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.4em; text-transform: uppercase;
+    color: var(--text-faint); margin-bottom: 30px; overflow: hidden;
+  }
+  .hero-title {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(3rem, 8vw, 7.4rem); line-height: 1; letter-spacing: -0.02em; max-width: 14ch;
+  }
+  .hero-title .line { display: block; overflow: hidden; padding-bottom: 0.08em; }
+  .hero-title .liquid {
+    background: linear-gradient(110deg, var(--c-violet) 0%, var(--c-cyan) 40%, var(--c-magenta) 80%, var(--c-violet) 100%);
+    background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    animation: gradient-slide 7s ease infinite;
+  }
+  .hero-sub { margin-top: 34px; font-size: 1.08rem; font-weight: 300; color: var(--text-dim); max-width: 46ch; }
+  .scroll-cue {
+    position: absolute; right: 48px; bottom: 40px; display: flex; flex-direction: column; align-items: center; gap: 10px;
+    color: var(--text-faint); font-size: 0.68rem; letter-spacing: 0.25em; text-transform: uppercase;
+  }
+  .scroll-cue .stem { width: 1px; height: 46px; background: linear-gradient(to bottom, var(--text-faint), transparent); position: relative; overflow: hidden; }
+  .scroll-cue .stem::after {
+    content: ''; position: absolute; top: -100%; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(to bottom, transparent, var(--c-cyan), transparent);
+    animation: cue-run 2s linear infinite;
+  }
+  @keyframes cue-run { to { top: 100%; } }
+
+  /* ---- pin section ---- */
+  .pin-section { max-width: 1180px; margin: 0 auto; padding: 0 32px; position: relative; height: 130vh; }
+  .pin-inner { position: sticky; top: 0; height: 100vh; display: flex; align-items: center; }
+  .pin-copy { max-width: 640px; }
+  .pin-eyebrow { font-size: 0.72rem; letter-spacing: 0.35em; text-transform: uppercase; color: var(--c-cyan); margin-bottom: 20px; }
+  .pin-title {
+    font-family: var(--font-display); font-weight: 600; font-size: clamp(1.8rem, 4vw, 3.2rem);
+    line-height: 1.15; letter-spacing: -0.01em;
+  }
+  .pin-title .word { display: inline-block; }
+
+  /* ---- archive ---- */
+  .archive { max-width: 1180px; margin: 0 auto; padding: 20px 32px 140px; position: relative; }
+  .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 36px; flex-wrap: wrap; }
+  .section-title { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; }
+  .section-sub { margin-top: 8px; font-size: 0.85rem; color: var(--text-faint); font-weight: 300; }
+
+  .playlist-grid { display: flex; flex-direction: column; gap: 18px; perspective: 1600px; }
+  .pcard {
+    --rc: var(--accent);
+    border-radius: 22px; background: var(--glass); border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px); position: relative; overflow: hidden;
+    transition: background 0.4s, border-color 0.4s, transform 0.5s var(--ease-smooth), box-shadow 0.5s;
+    transform-style: preserve-3d;
+  }
+  .pcard::before {
+    content: ''; position: absolute; top: -60px; left: -40px; width: 280px; height: 200px;
+    background: radial-gradient(ellipse at center, var(--rc) 0%, transparent 70%);
+    opacity: 0.13; filter: blur(30px); transition: opacity 0.5s; pointer-events: none;
+  }
+  .pcard:hover { background: var(--glass-hover); border-color: rgba(255,255,255,0.18); transform: translateY(-4px) scale(1.01); }
+  .pcard:hover::before { opacity: 0.28; }
+  .pcard.open { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); box-shadow: 0 24px 80px rgba(0,0,0,0.55), 0 0 60px -20px var(--rc); }
+  .pcard.open:hover { transform: none; }
+
+  .pcard-head { display: grid; grid-template-columns: 56px 1fr 180px auto; align-items: center; gap: 22px; padding: 22px 28px; cursor: pointer; user-select: none; }
+  .pcard-orb {
+    width: 50px; height: 50px; border-radius: 50%; position: relative;
+    background: radial-gradient(circle at 32% 30%, rgba(255,255,255,0.35), transparent 45%), conic-gradient(from 0deg, var(--rc), transparent 65%, var(--rc));
+    opacity: 0.85; transition: opacity 0.3s var(--ease-smooth);
+  }
+  .pcard-orb::after { content: ''; position: absolute; inset: 16px; border-radius: 50%; background: var(--ink-2); }
+  .pcard:not(.open):hover .pcard-orb { animation: orb-spin 1.2s linear; }
+  .pcard.open .pcard-orb { animation: orb-spin 4s linear infinite; }
+  .pcard-title { font-family: var(--font-display); font-weight: 400; font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pcard-title .region-accent { color: var(--rc); font-weight: 600; }
+  .pcard-meta { display: flex; gap: 16px; margin-top: 7px; font-size: 0.74rem; color: var(--text-faint); font-weight: 300; }
+  .pcard-wave { width: 180px; height: 34px; opacity: 0.55; }
+  .pcard-wave rect { fill: var(--rc); }
+  .pcard-chev { color: var(--text-faint); transition: transform 0.45s var(--ease-spring), color 0.3s; }
+  .pcard.open .pcard-chev { transform: rotate(180deg); color: var(--rc); }
+
+  .tracks { max-height: 0; overflow: hidden; transition: max-height 0.65s var(--ease-smooth); }
+  .tracks-inner { padding: 4px 28px 26px; }
+  .track-row { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 16px; padding: 11px 14px; border-radius: 14px; transition: background 0.25s; }
+  .track-row:hover { background: rgba(255,255,255,0.05); }
+  .track-num { font-size: 0.72rem; color: var(--text-faint); text-align: center; }
+  .track-name { font-size: 0.88rem; font-weight: 500; }
+  .track-artist { font-size: 0.74rem; color: var(--text-faint); margin-top: 3px; font-weight: 300; }
+  .track-open { color: var(--text-faint); font-size: 0.7rem; letter-spacing: 0.08em; }
+
+  @media (max-width: 860px) {
+    .pcard-head { grid-template-columns: 50px 1fr auto; gap: 14px; padding: 18px 18px; }
+    .pcard-wave { display: none; }
+    .hero { padding: 90px 24px 60px; min-height: 60vh; }
+    .scroll-cue { display: none; }
+  }
+</style>
+</head>
+<body>
+  <canvas id="mesh"></canvas>
+  <div class="grain"></div>
+
+  <div class="page">
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="brand">
+          <div class="brand-orb"></div>
+          <h1 class="brand-name">Spotify<em>Unchained</em></h1>
+        </div>
+        <nav class="header-controls">
+          <div class="region-filter" role="group" aria-label="Region filter">
+            <button class="region-btn active" style="--region-c:#fff">ALL</button>
+            <button class="region-btn" style="--region-c:#f5c451;--region-glow:#f5c45166">US</button>
+            <button class="region-btn" style="--region-c:#6db9ff;--region-glow:#6db9ff66">UK</button>
+            <button class="region-btn" style="--region-c:#5ce08a;--region-glow:#5ce08a66">BR</button>
+            <button class="region-btn" style="--region-c:#ff7ee2;--region-glow:#ff7ee266">MX</button>
+          </div>
+          <button class="spotify-btn" id="signin-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+            <span>Sign in</span>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="hero">
+      <p class="hero-eyebrow"><span class="split-eyebrow">The New Music Friday Archive</span></p>
+      <h1 class="hero-title">
+        <span class="line"><span class="split-line">Every Friday,</span></span>
+        <span class="line liquid">preserved.</span>
+      </h1>
+      <p class="hero-sub" id="hero-sub">Spotify's New Music Friday refreshes every week — and last week's discoveries vanish. We archive every edition, in every region, so the music you almost loved is never lost.</p>
+      <div class="scroll-cue"><span>Scroll</span><span class="stem"></span></div>
+    </section>
+
+    <section class="pin-section">
+      <div class="pin-inner">
+        <div class="pin-copy">
+          <p class="pin-eyebrow">Zero maintenance</p>
+          <h2 class="pin-title" id="pin-title">Every region. Every Friday. Automatically preserved before Spotify ever hits refresh.</h2>
+        </div>
+      </div>
+    </section>
+
+    <main class="archive">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Archived Playlists</h2>
+          <p class="section-sub">New Music Friday archives, preserved weekly</p>
+        </div>
+      </div>
+      <div class="playlist-grid" id="playlist-grid"></div>
+    </main>
+  </div>
+
+  <div class="mock-banner">Mock 1 — <b>Cinematic Kinetic Editorial</b> (GSAP + ScrollTrigger + SplitText)</div>
+
+<script>
+gsap.registerPlugin(ScrollTrigger, SplitText);
+
+// ---- mesh background (same engine as production MeshBackground.jsx) ----
+const canvas = document.getElementById('mesh');
+const ctx = canvas.getContext('2d');
+const BASE_COLORS = [[124,92,255],[56,225,255],[255,78,205],[124,92,255],[56,225,255]];
+const blobs = BASE_COLORS.map((c,i) => ({ base:c, cur:[...c], x:Math.random(), y:Math.random(), vx:(Math.random()-0.5)*0.0009, vy:(Math.random()-0.5)*0.0009, r:0.32+Math.random()*0.25, phase:i*1.3 }));
+function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+addEventListener('resize', resize); resize();
+function draw(t){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.globalCompositeOperation = 'screen';
+  const W = canvas.width, H = canvas.height;
+  for (const b of blobs){
+    b.x += b.vx + Math.sin(t/6000+b.phase)*0.0004;
+    b.y += b.vy + Math.cos(t/7000+b.phase)*0.0004;
+    if (b.x<-0.2||b.x>1.2) b.vx*=-1;
+    if (b.y<-0.2||b.y>1.2) b.vy*=-1;
+    const cx=b.x*W, cy=b.y*H, rad=b.r*Math.min(W,H);
+    const g = ctx.createRadialGradient(cx,cy,0,cx,cy,rad);
+    const [r,gg,bl] = b.cur;
+    g.addColorStop(0, `rgba(${r|0},${gg|0},${bl|0},0.16)`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  }
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+
+// ---- sample data ----
+const REGION_COLORS = { US:'#f5c451', UK:'#6db9ff', BR:'#5ce08a', MX:'#ff7ee2' };
+const PLAYLISTS = [
+  { region:'US', title:'New.Music.Friday.US.06.26.2026', date:'June 26, 2026', tracks:[
+    ['Neon Static','Wilder Moss'],['Glass Horizon','Kilo & Sable'],['Paper Planets','Nova Reyes'],['Low Light','Marigold Drive'],['Echo Chamber','The Amber Room'],
+  ]},
+  { region:'UK', title:'New.Music.Friday.UK.06.26.2026', date:'June 26, 2026', tracks:[
+    ['Concrete Bloom','Fenwick Hart'],['Midnight Transit','Yasmine Cole'],['Static Bloom','Palefire'],['Harbour Lights','Rowan & the Tides'],
+  ]},
+  { region:'BR', title:'New.Music.Friday.BR.06.26.2026', date:'June 26, 2026', tracks:[
+    ['Vento Solar','Luma Cruz'],['Fogo Azul','Rio Nunes'],['Céu de Vidro','Bianca Reis'],
+  ]},
+  { region:'MX', title:'New.Music.Friday.MX.06.26.2026', date:'June 26, 2026', tracks:[
+    ['Luz de Neón','Mateo Cielo'],['Corazón Digital','Valentina Duarte'],['Río de Cristal','Sol Marino'],
+  ]},
+];
+
+function waveformBars(){
+  let s = '';
+  for (let i=0;i<36;i++){ const x=(i/36)*180, h=4+Math.random()*24, y=17-h/2; s += `<rect x="${x}" y="${y}" width="2.6" height="${h}" rx="1.3"/>`; }
+  return s;
+}
+
+const grid = document.getElementById('playlist-grid');
+PLAYLISTS.forEach((p, i) => {
+  const rc = REGION_COLORS[p.region];
+  const card = document.createElement('article');
+  card.className = 'pcard';
+  card.style.setProperty('--rc', rc);
+  card.innerHTML = `
+    <div class="pcard-head">
+      <div class="pcard-orb"></div>
+      <div class="pcard-info">
+        <h3 class="pcard-title">${p.title.replace(p.region, `<span class="region-accent">${p.region}</span>`)}</h3>
+        <div class="pcard-meta"><span>${p.date}</span><span>${p.tracks.length} tracks</span></div>
+      </div>
+      <svg class="pcard-wave" viewBox="0 0 180 34" preserveAspectRatio="none">${waveformBars()}</svg>
+      <svg class="pcard-chev" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 7.5 L10 12.5 L15 7.5"/></svg>
+    </div>
+    <div class="tracks">
+      <div class="tracks-inner">
+        ${p.tracks.map((t,idx) => `
+          <div class="track-row">
+            <span class="track-num">${idx+1}</span>
+            <div class="track-details"><div class="track-name">${t[0]}</div><div class="track-artist">${t[1]}</div></div>
+            <span class="track-open">OPEN ↗</span>
+          </div>`).join('')}
+      </div>
+    </div>
+  `;
+  const head = card.querySelector('.pcard-head');
+  const tracks = card.querySelector('.tracks');
+  head.addEventListener('click', () => {
+    const isOpen = card.classList.toggle('open');
+    gsap.to(tracks, { maxHeight: isOpen ? tracks.scrollHeight : 0, duration: 0.6, ease: 'power3.inOut' });
+  });
+  grid.appendChild(card);
+});
+
+document.getElementById('signin-btn').addEventListener('click', function(){
+  this.classList.toggle('signed-in');
+  gsap.fromTo(this, { scale: 0.94 }, { scale: 1, duration: 0.4, ease: 'elastic.out(1, 0.5)' });
+});
+
+// ---- kinetic intro (wait for webfonts so char widths/positions are correct) ----
+// document.fonts.ready only awaits fonts already *requested* — explicitly
+// request the weights SplitText measures so the promise actually blocks on them.
+document.fonts.load('800 1em Unbounded');
+document.fonts.load('600 1em Sora');
+document.fonts.ready.then(() => {
+  const eyebrowSplit = new SplitText('.split-eyebrow', { type: 'chars' });
+  const titleSplits = document.querySelectorAll('.split-line');
+  const titleChars = [...titleSplits].flatMap(el => new SplitText(el, { type: 'chars' }).chars);
+
+  gsap.set(eyebrowSplit.chars, { opacity: 0, y: 12 });
+  gsap.set(titleChars, { opacity: 0, yPercent: 130, rotate: 6 });
+  gsap.set('.hero-title .liquid', { opacity: 0, y: 30 });
+  gsap.set('#hero-sub', { opacity: 0, y: 24 });
+  gsap.set('.scroll-cue', { opacity: 0 });
+
+  const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
+  tl.to(eyebrowSplit.chars, { opacity: 1, y: 0, duration: 0.6, stagger: 0.02 })
+    .to(titleChars, { opacity: 1, yPercent: 0, rotate: 0, duration: 1, stagger: 0.028 }, '-=0.3')
+    .to('.hero-title .liquid', { opacity: 1, y: 0, duration: 0.9 }, '-=0.5')
+    .to('#hero-sub', { opacity: 1, y: 0, duration: 0.8 }, '-=0.5')
+    .to('.scroll-cue', { opacity: 1, duration: 0.6 }, '-=0.4');
+
+  // ---- scroll-scrubbed pin title ----
+  const pinSplit = new SplitText('#pin-title', { type: 'words' });
+  gsap.set(pinSplit.words, { opacity: 0.12 });
+  gsap.to(pinSplit.words, {
+    opacity: 1,
+    stagger: 0.1,
+    ease: 'none',
+    scrollTrigger: { trigger: '.pin-section', start: 'top 80%', end: 'bottom 60%', scrub: 0.6 },
+  });
+
+  // ---- hero parallax on scroll ----
+  gsap.to('.hero-title', { yPercent: -12, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
+  gsap.to('#mesh', { yPercent: 8, ease: 'none', scrollTrigger: { trigger: '.page', start: 'top top', end: 'bottom bottom', scrub: true } });
+
+  // ---- card reveal on scroll ----
+  gsap.utils.toArray('.pcard').forEach((card) => {
+    gsap.fromTo(card, { autoAlpha: 0, y: 60, rotateX: -8 }, {
+      autoAlpha: 1, y: 0, rotateX: 0, duration: 0.9, ease: 'power3.out',
+      scrollTrigger: { trigger: card, start: 'top 88%' },
+    });
+  });
+});
+</script>
+</body>
+</html>

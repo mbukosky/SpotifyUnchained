@@ -469,10 +469,9 @@ body {
   -webkit-backdrop-filter: blur(20px);
   position: relative;
   overflow: hidden;
-  transition: background 0.4s, border-color 0.4s, transform 0.5s var(--ease-smooth), box-shadow 0.5s;
+  transition: background 0.4s, border-color 0.4s, transform 0.15s ease-out, box-shadow 0.5s;
   transform-style: preserve-3d;
-  opacity: 0;
-  animation: rise 0.9s var(--ease-smooth) forwards;
+  animation: rise 0.9s var(--ease-smooth) backwards;
 }
 
 .pcard::before {
@@ -492,18 +491,14 @@ body {
 .pcard:hover {
   background: var(--glass-hover);
   border-color: rgba(255, 255, 255, 0.18);
-  transform: translateY(-4px) scale(1.01);
 }
-.pcard:hover::before { opacity: 0.28; }
+.pcard:hover::before { opacity: 0.3; }
 
 .pcard.open {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.2);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), 0 0 60px -20px var(--rc);
 }
-
-/* When expanded the card is a tall list, so don't lift/scale it on hover. */
-.pcard.open:hover { transform: none; }
 
 .pcard-head {
   display: grid;
@@ -521,9 +516,9 @@ body {
   border-radius: 50%;
   position: relative;
   background:
-    radial-gradient(circle at 32% 30%, rgba(255, 255, 255, 0.35), transparent 45%),
-    conic-gradient(from 0deg, var(--rc), transparent 65%, var(--rc));
-  opacity: 0.85;
+    radial-gradient(circle at 32% 30%, rgba(255, 255, 255, 0.28), transparent 45%),
+    repeating-radial-gradient(circle at center, #050509 0px, #050509 2px, var(--rc) 3px, var(--rc) 4px);
+  opacity: 0.9;
   transition: opacity 0.3s var(--ease-smooth);
 }
 
@@ -535,8 +530,7 @@ body {
   background: var(--ink-2);
 }
 
-.pcard:not(.open):hover .pcard-orb { animation: orb-spin 1.2s linear; }
-.pcard.open .pcard-orb { animation: orb-spin 4s linear infinite; }
+.pcard.open .pcard-orb { animation: orb-spin 3s linear infinite; }
 
 .pcard-info { min-width: 0; }
 
@@ -562,8 +556,22 @@ body {
   letter-spacing: 0.04em;
 }
 
-.pcard-wave { width: 180px; height: 34px; opacity: 0.55; }
-.pcard-wave rect { fill: var(--rc); }
+.pcard-wave {
+  width: 180px;
+  height: 34px;
+  opacity: 0.55;
+  display: flex;
+  align-items: center;
+  gap: 2.4px;
+}
+.pcard-wave i {
+  flex: 1;
+  height: calc(var(--h) * 1px);
+  min-height: 4px;
+  background: var(--rc);
+  border-radius: 2px;
+  transition: height 0.25s var(--ease-spring), opacity 0.25s;
+}
 
 .pcard-dl {
   background: transparent;

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SpotifyUnchained — Mock 2: Playful Dopamine Bounce</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;800&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<style>
+  :root {
+    --ink: #0a0714;
+    --ink-2: #120c22;
+    --text: #f8f2ff;
+    --text-dim: rgba(248, 242, 255, 0.6);
+    --text-faint: rgba(248, 242, 255, 0.32);
+    --glass: rgba(255, 255, 255, 0.05);
+    --glass-hover: rgba(255, 255, 255, 0.09);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --c-violet: #9b5bff;
+    --c-cyan: #00e5ff;
+    --c-magenta: #ff2ea6;
+    --c-lime: #c6ff3d;
+    --c-orange: #ff9d3d;
+    --font-display: 'Unbounded', sans-serif;
+    --font-body: 'Sora', sans-serif;
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-bounce: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+  body {
+    background: var(--ink); color: var(--text); font-family: var(--font-body);
+    overflow-x: hidden; min-height: 100vh; line-height: 1.6; cursor: default;
+  }
+
+  .grain {
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background: radial-gradient(ellipse 120% 90% at 50% 20%, transparent 50%, rgba(0,0,0,0.55) 100%);
+  }
+  .page { position: relative; z-index: 2; }
+
+  .cursor-blob {
+    position: fixed; top: 0; left: 0; width: 480px; height: 480px; margin: -240px 0 0 -240px;
+    border-radius: 50%; pointer-events: none; z-index: 0; mix-blend-mode: screen;
+    background: radial-gradient(circle, rgba(155,91,255,0.35), rgba(0,229,255,0.15) 45%, transparent 70%);
+    filter: blur(10px);
+  }
+
+  @keyframes bounce-in {
+    0% { opacity: 0; transform: translateY(50px) scale(0.85) rotate(-3deg); }
+    60% { opacity: 1; transform: translateY(-8px) scale(1.03) rotate(1deg); }
+    100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+  }
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-2deg); }
+    75% { transform: rotate(2deg); }
+  }
+  @keyframes gradient-slide {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  @keyframes blob-float {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(10px,-14px) scale(1.06); }
+  }
+  @keyframes pop-spin { to { transform: rotate(360deg); } }
+
+  .mock-banner {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    z-index: 100; font-size: 0.72rem; letter-spacing: 0.08em; color: var(--text-dim);
+    background: rgba(10,7,20,0.85); border: 1px solid var(--glass-border); padding: 8px 16px;
+    border-radius: 100px; backdrop-filter: blur(12px); pointer-events: none;
+  }
+  .mock-banner b { color: var(--c-lime); }
+
+  .site-header {
+    position: sticky; top: 0; z-index: 50; backdrop-filter: blur(24px) saturate(1.6);
+    background: linear-gradient(to bottom, rgba(10,7,20,0.75), rgba(10,7,20,0.35));
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .header-inner { max-width: 1180px; margin: 0 auto; padding: 18px 32px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand-orb {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: conic-gradient(from 180deg, var(--c-violet), var(--c-cyan), var(--c-lime), var(--c-magenta), var(--c-violet));
+    animation: pop-spin 5s linear infinite, blob-float 4s ease-in-out infinite; position: relative;
+    box-shadow: 0 0 28px rgba(155,91,255,0.6); flex-shrink: 0;
+  }
+  .brand-orb::after { content: ''; position: absolute; inset: 11px; border-radius: 50%; background: var(--ink); }
+  .brand-name { font-family: var(--font-display); font-weight: 600; font-size: 1rem; }
+  .brand-name em {
+    font-style: normal;
+    background: linear-gradient(110deg, var(--c-violet), var(--c-cyan), var(--c-lime), var(--c-magenta));
+    background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    animation: gradient-slide 4s ease infinite;
+  }
+  .header-controls { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .region-filter { display: flex; gap: 4px; padding: 4px; border-radius: 100px; background: var(--glass); border: 1px solid var(--glass-border); }
+  .region-btn {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; color: var(--text-dim);
+    background: transparent; border: none; border-radius: 100px; padding: 7px 14px; cursor: pointer;
+    transition: transform 0.35s var(--ease-spring), color 0.3s, background 0.3s;
+  }
+  .region-btn:hover { color: var(--text); transform: scale(1.1) rotate(-2deg); }
+  .region-btn.active { color: var(--ink); background: var(--region-c, #fff); box-shadow: 0 0 20px var(--region-glow, rgba(255,255,255,0.5)); transform: scale(1.06); }
+  .spotify-btn {
+    display: inline-flex; align-items: center; gap: 9px; font-size: 0.8rem; font-weight: 700;
+    color: var(--ink); background: #fff; border: none; border-radius: 100px; padding: 10px 20px; cursor: pointer;
+    transition: transform 0.4s var(--ease-spring), box-shadow 0.3s, background 0.3s;
+  }
+  .spotify-btn:hover { transform: scale(1.08) rotate(-1.5deg); box-shadow: 0 0 36px rgba(255,255,255,0.35); }
+  .spotify-btn.signed-in { background: var(--c-lime); }
+  .icon-link { color: var(--text-dim); display: inline-flex; transition: transform 0.3s var(--ease-spring), color 0.25s; }
+  .icon-link:hover { color: var(--text); transform: translateY(-3px) rotate(8deg) scale(1.15); }
+
+  .hero { max-width: 1180px; margin: 0 auto; padding: 110px 32px 70px; position: relative; }
+  .hero-eyebrow {
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.35em; text-transform: uppercase;
+    color: var(--c-lime); margin-bottom: 26px; opacity: 0; animation: bounce-in 0.8s var(--ease-spring) 0.1s forwards;
+  }
+  .hero-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(3rem, 7.5vw, 6.4rem); line-height: 1; letter-spacing: -0.02em; max-width: 13ch; }
+  .hero-title .line { display: block; opacity: 0; animation: bounce-in 0.9s var(--ease-spring) forwards; }
+  .hero-title .line:nth-child(1) { animation-delay: 0.2s; }
+  .hero-title .line:nth-child(2) { animation-delay: 0.38s; }
+  .hero-title .liquid {
+    display: inline-block;
+    background: linear-gradient(110deg, var(--c-magenta) 0%, var(--c-orange) 30%, var(--c-lime) 60%, var(--c-cyan) 85%, var(--c-magenta) 100%);
+    background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    animation: bounce-in 0.9s var(--ease-spring) 0.38s forwards, gradient-slide 4s ease infinite;
+  }
+  .hero-sub { margin-top: 28px; font-size: 1.05rem; font-weight: 300; color: var(--text-dim); max-width: 46ch; opacity: 0; animation: bounce-in 0.8s var(--ease-spring) 0.55s forwards; }
+  .hero-emoji-row { margin-top: 30px; display: flex; gap: 14px; opacity: 0; animation: bounce-in 0.8s var(--ease-spring) 0.7s forwards; }
+  .hero-emoji-row span {
+    font-size: 1.5rem; display: inline-block; animation: wiggle 2.4s ease-in-out infinite;
+    filter: drop-shadow(0 0 12px rgba(198,255,61,0.4));
+  }
+  .hero-emoji-row span:nth-child(2) { animation-delay: 0.3s; }
+  .hero-emoji-row span:nth-child(3) { animation-delay: 0.6s; }
+  .hero-emoji-row span:nth-child(4) { animation-delay: 0.9s; }
+
+  .archive { max-width: 1180px; margin: 0 auto; padding: 0 32px 130px; }
+  .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 36px; flex-wrap: wrap; }
+  .section-title { font-family: var(--font-display); font-weight: 600; font-size: 1.55rem; }
+  .section-sub { margin-top: 8px; font-size: 0.85rem; color: var(--text-faint); font-weight: 300; }
+
+  .playlist-grid { display: flex; flex-direction: column; gap: 20px; }
+  .pcard {
+    --rc: var(--c-violet);
+    border-radius: 26px; background: var(--glass); border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px); position: relative; overflow: hidden;
+    opacity: 0; animation: bounce-in 0.7s var(--ease-spring) forwards;
+    transition: transform 0.4s var(--ease-spring), border-color 0.4s, box-shadow 0.4s;
+  }
+  .pcard:hover { transform: translateY(-6px) rotate(-0.4deg) scale(1.012); border-color: rgba(255,255,255,0.22); box-shadow: 0 20px 50px -10px var(--rc); }
+  .pcard.open { box-shadow: 0 24px 80px rgba(0,0,0,0.5), 0 0 70px -18px var(--rc); }
+  .pcard.open:hover { transform: none; }
+  .pcard-head { display: grid; grid-template-columns: 56px 1fr 180px auto auto; align-items: center; gap: 22px; padding: 22px 28px; cursor: pointer; user-select: none; }
+  .pcard-orb {
+    width: 50px; height: 50px; border-radius: 50%; position: relative;
+    background: radial-gradient(circle at 32% 30%, rgba(255,255,255,0.4), transparent 45%), conic-gradient(from 0deg, var(--rc), transparent 65%, var(--rc));
+    transition: transform 0.4s var(--ease-spring);
+  }
+  .pcard-orb::after { content: ''; position: absolute; inset: 16px; border-radius: 50%; background: var(--ink-2); }
+  .pcard-head:hover .pcard-orb { transform: scale(1.15) rotate(20deg); }
+  .pcard.open .pcard-orb { animation: pop-spin 3s linear infinite; }
+  .pcard-title { font-family: var(--font-display); font-weight: 400; font-size: 1.02rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pcard-title .region-accent { color: var(--rc); font-weight: 700; }
+  .pcard-meta { display: flex; gap: 16px; margin-top: 7px; font-size: 0.74rem; color: var(--text-faint); }
+  .pcard-wave { width: 180px; height: 34px; opacity: 0.6; }
+  .pcard-wave rect { fill: var(--rc); }
+  .pcard-save {
+    width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--glass-border); background: transparent;
+    color: var(--text-dim); display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: transform 0.4s var(--ease-spring), background 0.3s, color 0.3s, border-color 0.3s; font-size: 1.1rem;
+  }
+  .pcard-save:hover { transform: scale(1.25) rotate(-12deg); background: var(--rc); border-color: var(--rc); color: var(--ink); }
+  .pcard-chev { color: var(--text-faint); transition: transform 0.5s var(--ease-spring), color 0.3s; }
+  .pcard.open .pcard-chev { transform: rotate(180deg) scale(1.2); color: var(--rc); }
+
+  .tracks { max-height: 0; overflow: hidden; transition: max-height 0.6s var(--ease-spring); }
+  .tracks-inner { padding: 4px 28px 26px; }
+  .track-row {
+    display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 16px; padding: 11px 14px;
+    border-radius: 16px; cursor: pointer; transition: background 0.25s, transform 0.3s var(--ease-spring);
+    opacity: 0; transform: translateY(14px) scale(0.96);
+  }
+  .pcard.open .track-row { animation: bounce-in 0.5s var(--ease-spring) forwards; animation-delay: calc(var(--i) * 0.06s); }
+  .track-row:hover { background: rgba(255,255,255,0.06); transform: translateX(4px) scale(1.01); }
+  .track-num { font-size: 0.72rem; color: var(--text-faint); text-align: center; }
+  .track-name { font-size: 0.88rem; font-weight: 500; }
+  .track-artist { font-size: 0.74rem; color: var(--text-faint); margin-top: 3px; font-weight: 300; }
+  .track-open { color: var(--text-faint); font-size: 0.7rem; }
+
+  @media (max-width: 860px) {
+    .pcard-head { grid-template-columns: 50px 1fr auto auto; gap: 14px; padding: 18px 18px; }
+    .pcard-wave { display: none; }
+    .hero { padding: 70px 24px 50px; }
+  }
+</style>
+</head>
+<body>
+  <div class="cursor-blob" id="cursor-blob"></div>
+  <div class="grain"></div>
+
+  <div class="page">
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="brand">
+          <div class="brand-orb"></div>
+          <h1 class="brand-name">Spotify<em>Unchained</em></h1>
+        </div>
+        <nav class="header-controls">
+          <div class="region-filter" role="group" aria-label="Region filter">
+            <button class="region-btn active" style="--region-c:#fff">ALL</button>
+            <button class="region-btn" style="--region-c:#f5c451;--region-glow:#f5c45166">US</button>
+            <button class="region-btn" style="--region-c:#6db9ff;--region-glow:#6db9ff66">UK</button>
+            <button class="region-btn" style="--region-c:#5ce08a;--region-glow:#5ce08a66">BR</button>
+            <button class="region-btn" style="--region-c:#ff7ee2;--region-glow:#ff7ee266">MX</button>
+          </div>
+          <button class="spotify-btn" id="signin-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+            <span class="signin-label">Sign in</span>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="hero">
+      <p class="hero-eyebrow">The New Music Friday Archive</p>
+      <h1 class="hero-title">
+        <span class="line">Every Friday,</span>
+        <span class="line"><span class="liquid">preserved.</span></span>
+      </h1>
+      <p class="hero-sub">Spotify's New Music Friday refreshes every week — and last week's discoveries vanish. We archive every edition, in every region, so the music you almost loved is never lost.</p>
+      <div class="hero-emoji-row"><span>🎧</span><span>✨</span><span>🎶</span><span>🕺</span></div>
+    </section>
+
+    <main class="archive">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Archived Playlists</h2>
+          <p class="section-sub">New Music Friday archives, preserved weekly</p>
+        </div>
+      </div>
+      <div class="playlist-grid" id="playlist-grid"></div>
+    </main>
+  </div>
+
+  <div class="mock-banner">Mock 2 — <b>Playful Dopamine Bounce</b> (confetti + spring physics)</div>
+
+<script>
+// ---- cursor-following blob ----
+const blob = document.getElementById('cursor-blob');
+let mx = innerWidth/2, my = innerHeight/2, bx = mx, by = my;
+addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+function tick(){
+  bx += (mx - bx) * 0.12;
+  by += (my - by) * 0.12;
+  blob.style.transform = `translate(${bx - 240}px, ${by - 240}px)`;
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+// ---- sample data ----
+const REGION_COLORS = { US:'#f5c451', UK:'#6db9ff', BR:'#5ce08a', MX:'#ff7ee2' };
+const PLAYLISTS = [
+  { region:'US', title:'New.Music.Friday.US.06.26.2026', date:'June 26, 2026', tracks:[
+    ['Neon Static','Wilder Moss'],['Glass Horizon','Kilo & Sable'],['Paper Planets','Nova Reyes'],['Low Light','Marigold Drive'],['Echo Chamber','The Amber Room'],
+  ]},
+  { region:'UK', title:'New.Music.Friday.UK.06.26.2026', date:'June 26, 2026', tracks:[
+    ['Concrete Bloom','Fenwick Hart'],['Midnight Transit','Yasmine Cole'],['Static Bloom','Palefire'],['Harbour Lights','Rowan & the Tides'],
+  ]},
+  { region:'BR', title:'New.Music.Friday.BR.06.26.2026', date:'June 26, 2026', tracks:[
+    ['Vento Solar','Luma Cruz'],['Fogo Azul','Rio Nunes'],['Céu de Vidro','Bianca Reis'],
+  ]},
+  { region:'MX', title:'New.Music.Friday.MX.06.26.2026', date:'June 26, 2026', tracks:[
+    ['Luz de Neón','Mateo Cielo'],['Corazón Digital','Valentina Duarte'],['Río de Cristal','Sol Marino'],
+  ]},
+];
+
+function waveformBars(){
+  let s = '';
+  for (let i=0;i<36;i++){ const x=(i/36)*180, h=4+Math.random()*24, y=17-h/2; s += `<rect x="${x}" y="${y}" width="2.6" height="${h}" rx="1.3"/>`; }
+  return s;
+}
+
+function burstConfetti(x, y, colors){
+  confetti({
+    particleCount: 40, spread: 70, startVelocity: 32, gravity: 1.1, scalar: 0.9,
+    origin: { x: x / innerWidth, y: y / innerHeight }, colors,
+  });
+}
+
+const grid = document.getElementById('playlist-grid');
+PLAYLISTS.forEach((p, i) => {
+  const rc = REGION_COLORS[p.region];
+  const card = document.createElement('article');
+  card.className = 'pcard';
+  card.style.setProperty('--rc', rc);
+  card.style.animationDelay = `${i * 0.1}s`;
+  card.innerHTML = `
+    <div class="pcard-head">
+      <div class="pcard-orb"></div>
+      <div class="pcard-info">
+        <h3 class="pcard-title">${p.title.replace(p.region, `<span class="region-accent">${p.region}</span>`)}</h3>
+        <div class="pcard-meta"><span>${p.date}</span><span>${p.tracks.length} tracks</span></div>
+      </div>
+      <svg class="pcard-wave" viewBox="0 0 180 34" preserveAspectRatio="none">${waveformBars()}</svg>
+      <button class="pcard-save" title="Save to Spotify">💾</button>
+      <svg class="pcard-chev" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 7.5 L10 12.5 L15 7.5"/></svg>
+    </div>
+    <div class="tracks">
+      <div class="tracks-inner">
+        ${p.tracks.map((t,idx) => `
+          <div class="track-row" style="--i:${idx}">
+            <span class="track-num">${idx+1}</span>
+            <div class="track-details"><div class="track-name">${t[0]}</div><div class="track-artist">${t[1]}</div></div>
+            <span class="track-open">OPEN ↗</span>
+          </div>`).join('')}
+      </div>
+    </div>
+  `;
+  const head = card.querySelector('.pcard-head');
+  const tracks = card.querySelector('.tracks');
+  const chev = card.querySelector('.pcard-chev');
+  head.addEventListener('click', (e) => {
+    if (e.target.closest('.pcard-save')) return;
+    const isOpen = card.classList.toggle('open');
+    tracks.style.maxHeight = isOpen ? tracks.scrollHeight + 'px' : '0px';
+    if (isOpen) {
+      const rect = chev.getBoundingClientRect();
+      burstConfetti(rect.left, rect.top, [rc, '#c6ff3d', '#ffffff']);
+    }
+  });
+  card.querySelector('.pcard-save').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const rect = e.target.getBoundingClientRect();
+    burstConfetti(rect.left, rect.top, [rc, '#ff2ea6', '#c6ff3d']);
+    e.target.textContent = '✅';
+    setTimeout(() => { e.target.textContent = '💾'; }, 1400);
+  });
+  grid.appendChild(card);
+});
+
+const signinBtn = document.getElementById('signin-btn');
+signinBtn.addEventListener('click', () => {
+  const signedIn = signinBtn.classList.toggle('signed-in');
+  signinBtn.querySelector('.signin-label').textContent = signedIn ? 'Connected!' : 'Sign in';
+  const rect = signinBtn.getBoundingClientRect();
+  burstConfetti(rect.left + rect.width/2, rect.top + rect.height/2, ['#9b5bff', '#00e5ff', '#c6ff3d', '#ff2ea6']);
+});
+</script>
+</body>
+</html>

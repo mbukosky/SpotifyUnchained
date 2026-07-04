@@ -28,6 +28,7 @@ function createBlobs() {
     vy: (Math.random() - 0.5) * 0.0009,
     r: 0.32 + Math.random() * 0.25,
     phase: i * 1.3,
+    depth: 0.02 + i * 0.0125,
   }));
 }
 
@@ -44,7 +45,18 @@ export default function MeshBackground() {
     const ctx = canvas.getContext('2d');
     const blobs = createBlobs();
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const finePointer = window.matchMedia('(pointer: fine)').matches;
     let rafId;
+
+    // Cursor-driven parallax: raw target from pointermove, smoothed in draw().
+    const pointer = { tx: 0, ty: 0, x: 0, y: 0 };
+    const onPointerMove = (e) => {
+      pointer.tx = e.clientX / window.innerWidth - 0.5;
+      pointer.ty = e.clientY / window.innerHeight - 0.5;
+    };
+    if (!reducedMotion && finePointer) {
+      window.addEventListener('pointermove', onPointerMove, { passive: true });
+    }
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -60,6 +72,9 @@ export default function MeshBackground() {
       const H = canvas.height;
       const target = targetRef.current;
 
+      pointer.x += (pointer.tx - pointer.x) * 0.06;
+      pointer.y += (pointer.ty - pointer.y) * 0.06;
+
       for (const b of blobs) {
         b.x += b.vx + Math.sin(t / 6000 + b.phase) * 0.0004;
         b.y += b.vy + Math.cos(t / 7000 + b.phase) * 0.0004;
@@ -71,8 +86,8 @@ export default function MeshBackground() {
           b.cur[i] += (goal - b.cur[i]) * 0.02;
         }
 
-        const cx = b.x * W;
-        const cy = b.y * H;
+        const cx = b.x * W + pointer.x * -4000 * b.depth;
+        const cy = b.y * H + pointer.y * -4000 * b.depth;
         const rad = b.r * Math.min(W, H);
         const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
         const [r, gg, bl] = b.cur.map(v => v | 0);
@@ -96,6 +111,7 @@ export default function MeshBackground() {
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', resize);
+      window.removeEventListener('pointermove', onPointerMove);
     };
   }, []);
 

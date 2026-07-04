@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SpotifyUnchained — Design Mocks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;800&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #07070e; --text: #f2f1ff; --text-dim: rgba(242,241,255,0.55); --text-faint: rgba(242,241,255,0.3);
+    --glass: rgba(255,255,255,0.04); --glass-border: rgba(255,255,255,0.1);
+    --c-violet: #7c5cff; --c-cyan: #38e1ff; --c-magenta: #ff4ecd;
+    --font-display: 'Unbounded', sans-serif; --font-body: 'Sora', sans-serif;
+    --ease-spring: cubic-bezier(0.34,1.56,0.64,1);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--ink); color: var(--text); font-family: var(--font-body); min-height: 100vh; padding: 80px 32px; }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  .eyebrow { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.35em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 20px; }
+  h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(2.2rem, 5vw, 3.4rem); margin-bottom: 16px;
+    background: linear-gradient(110deg, var(--c-violet), var(--c-cyan), var(--c-magenta)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  p.lede { color: var(--text-dim); max-width: 62ch; margin-bottom: 48px; font-size: 1.05rem; line-height: 1.7; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+  a.card {
+    display: block; padding: 28px; border-radius: 20px; background: var(--glass); border: 1px solid var(--glass-border);
+    text-decoration: none; color: var(--text); transition: transform 0.3s var(--ease-spring), border-color 0.3s, background 0.3s;
+    position: relative;
+  }
+  a.card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.07); }
+  a.card .num { font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 10px; display: block; }
+  a.card h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.15rem; margin-bottom: 10px; }
+  a.card p { font-size: 0.88rem; color: var(--text-faint); line-height: 1.6; }
+  a.card .dep {
+    display: inline-block; margin-top: 14px; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em;
+    color: var(--text-dim); border: 1px solid var(--glass-border); border-radius: 100px; padding: 4px 12px;
+  }
+  a.card .flag {
+    position: absolute; top: 18px; right: 18px; font-size: 0.6rem; font-weight: 600; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--ink); background: #f5c451; border-radius: 100px; padding: 4px 10px;
+  }
+  .c05 .num { color: var(--c-cyan); }
+  .c06 .num { color: var(--c-magenta); }
+  .c07 .num { color: var(--c-violet); }
+  .c08 .num { color: #f5c451; }
+  .round-head {
+    font-family: var(--font-display); font-weight: 600; font-size: 1rem; color: var(--text-dim);
+    margin: 56px 0 20px; padding-top: 32px; border-top: 1px solid var(--glass-border);
+  }
+  .round1 .card:nth-child(1) .num { color: var(--c-violet); }
+  .round1 .card:nth-child(2) .num { color: var(--c-magenta); }
+  .round1 .card:nth-child(3) .num { color: var(--c-cyan); }
+  .round1 .card:nth-child(4) .num { color: #f5c451; }
+  .ref { margin-top: 56px; padding-top: 28px; border-top: 1px solid var(--glass-border); }
+  .ref a { color: var(--text-dim); font-size: 0.85rem; }
+  .ref p { color: var(--text-faint); font-size: 0.78rem; margin-top: 8px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <p class="eyebrow">SpotifyUnchained — Design Exploration</p>
+    <h1>Pick a direction.</h1>
+    <p class="lede">Eight standalone mockups across two rounds, exploring different ways to bring the archive to life. Round 2 keeps the current liquid-audio brand (palette, type, glass) and page skeleton — what changes is the motion language and one signature set piece per mock. Nothing here is wired into the real app yet.</p>
+    <h2 class="round-head" style="margin-top:0;padding-top:0;border-top:none;">Round 2 — motion &amp; life</h2>
+    <div class="grid">
+      <a class="card c05" href="05-time-machine/index.html">
+        <span class="num">05</span>
+        <h2>Time Machine</h2>
+        <p>Scrolling rewinds time. A giant ghosted date counts back through the Fridays as cards dock onto a glowing timeline spine. Cinematic and calm at rest.</p>
+        <span class="dep">adds: gsap + ScrollTrigger (~30kb)</span>
+      </a>
+      <a class="card c06" href="06-sound-garden/index.html">
+        <span class="num">06</span>
+        <h2>Sound Garden</h2>
+        <p>The page is an instrument. A cursor spotlight reveals a hidden waveform field, buttons are magnetic, track rows pluck and throw musical notes when played.</p>
+        <span class="dep">dependency-free</span>
+      </a>
+      <a class="card c07" href="07-observatory/index.html">
+        <span class="num">07</span>
+        <h2>Observatory</h2>
+        <p>The archive as a night sky. Drifting stars, occasional meteors, breathing aurora — and every saved week is a constellation that lights up when you hover its card.</p>
+        <span class="dep">dependency-free</span>
+      </a>
+      <a class="card c08" href="08-crate-digger/index.html">
+        <span class="flag">boldest layout</span>
+        <span class="num">08</span>
+        <h2>Crate Digger</h2>
+        <p>The archive as a 3D record crate. Scroll, drag, or click to flip through the sleeves; pull one out and the vinyl slides free while its tracklist unfolds.</p>
+        <span class="dep">dependency-free</span>
+      </a>
+    </div>
+    <h2 class="round-head">Round 1 — earlier exploration</h2>
+    <div class="grid round1">
+      <a class="card" href="01-kinetic-editorial/index.html">
+        <span class="num">01</span>
+        <h2>Cinematic Kinetic Editorial</h2>
+        <p>GSAP-driven kinetic type, scroll-scrubbed reveals. Restrained, premium motion.</p>
+      </a>
+      <a class="card" href="02-dopamine-bounce/index.html">
+        <span class="num">02</span>
+        <h2>Playful Dopamine Bounce</h2>
+        <p>Bouncy spring physics, confetti bursts, a cursor-following blob, candy accents.</p>
+      </a>
+      <a class="card" href="03-immersive-vinyl/index.html">
+        <span class="num">03</span>
+        <h2>Immersive 3D Vinyl</h2>
+        <p>A mouse-tilted 3D vinyl centerpiece and parallax depth layers.</p>
+      </a>
+      <a class="card" href="04-waveform-wall/index.html">
+        <span class="num">04</span>
+        <h2>Audio-Reactive Waveform Wall</h2>
+        <p>Full-bleed spectrum bars that react to cursor and scroll speed.</p>
+      </a>
+    </div>
+    <div class="ref">
+      <a href="liquid-audio/index.html">→ liquid-audio/ — earlier prototype that became the current live site (for reference)</a>
+    </div>
+  </div>
+</body>
+</html>
