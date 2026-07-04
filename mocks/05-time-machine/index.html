@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SpotifyUnchained — Mock 05: Time Machine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;800&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* =========================================================
+     Mock 05 — TIME MACHINE
+     Concept: scrolling = rewinding through Fridays.
+     A giant ghosted date sits behind the archive and counts
+     backward as each week passes; cards dock onto a timeline
+     spine. GSAP + ScrollTrigger drive scrubbed entrances.
+     Dependency this would add to the real app: gsap (~30kb gz).
+     ========================================================= */
+  :root {
+    --ink: #07070e;
+    --ink-2: #0c0c18;
+    --text: #f2f1ff;
+    --text-dim: rgba(242, 241, 255, 0.55);
+    --text-faint: rgba(242, 241, 255, 0.3);
+    --glass: rgba(255, 255, 255, 0.04);
+    --glass-hover: rgba(255, 255, 255, 0.07);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --c-violet: #7c5cff;
+    --c-cyan: #38e1ff;
+    --c-magenta: #ff4ecd;
+    --font-display: 'Unbounded', sans-serif;
+    --font-body: 'Sora', sans-serif;
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background:
+      radial-gradient(ellipse 90% 60% at 70% -10%, rgba(124, 92, 255, 0.12), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 10% 40%, rgba(56, 225, 255, 0.05), transparent 60%),
+      var(--ink);
+    color: var(--text);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  .vignette {
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background: radial-gradient(ellipse 120% 90% at 50% 30%, transparent 55%, rgba(0,0,0,0.5) 100%);
+  }
+
+  .page { position: relative; z-index: 2; }
+
+  @keyframes orb-spin { to { transform: rotate(360deg); } }
+  @keyframes gradient-slide {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(36px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes cue-drop {
+    0%, 100% { transform: translateY(0); opacity: 0.7; }
+    50% { transform: translateY(9px); opacity: 0.25; }
+  }
+  @keyframes node-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(56, 225, 255, 0.5); }
+    100% { box-shadow: 0 0 0 14px rgba(56, 225, 255, 0); }
+  }
+
+  /* ---- Header ---- */
+  .site-header {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    background: linear-gradient(to bottom, rgba(7,7,14,0.7), rgba(7,7,14,0.3));
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .header-inner {
+    max-width: 1180px; margin: 0 auto; padding: 18px 32px;
+    display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand-orb {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: conic-gradient(from 180deg, var(--c-violet), var(--c-cyan), var(--c-magenta), var(--c-violet));
+    animation: orb-spin 9s linear infinite;
+    position: relative; box-shadow: 0 0 24px rgba(124, 92, 255, 0.5); flex-shrink: 0;
+  }
+  .brand-orb::after { content: ''; position: absolute; inset: 11px; border-radius: 50%; background: var(--ink); }
+  .brand-name { font-family: var(--font-display); font-weight: 600; font-size: 1rem; white-space: nowrap; }
+  .brand-name em {
+    font-style: normal;
+    background: linear-gradient(110deg, var(--c-violet), var(--c-cyan), var(--c-magenta));
+    background-size: 200% 100%;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    animation: gradient-slide 6s ease infinite;
+  }
+  .header-controls { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .region-filter {
+    display: flex; gap: 4px; padding: 4px; border-radius: 100px;
+    background: var(--glass); border: 1px solid var(--glass-border);
+  }
+  .region-btn {
+    font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
+    color: var(--text-dim); background: transparent; border: none; border-radius: 100px;
+    padding: 7px 14px; cursor: pointer; transition: all 0.3s var(--ease-smooth);
+  }
+  .region-btn:hover { color: var(--text); }
+  .region-btn.active { color: var(--ink); background: #fff; box-shadow: 0 0 18px rgba(255,255,255,0.4); }
+  .spotify-btn {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-family: var(--font-body); font-size: 0.8rem; font-weight: 600;
+    color: var(--ink); background: #fff; border: none; border-radius: 100px; padding: 10px 20px;
+    cursor: pointer; white-space: nowrap;
+    transition: transform 0.3s var(--ease-spring), box-shadow 0.3s;
+  }
+  .spotify-btn:hover { transform: scale(1.05); box-shadow: 0 0 32px rgba(255,255,255,0.25); }
+
+  /* ---- Hero ---- */
+  .hero {
+    max-width: 1180px; margin: 0 auto; padding: 13vh 32px 16vh;
+    min-height: 88vh; position: relative;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .hero-eyebrow {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.35em; text-transform: uppercase;
+    color: var(--text-faint); margin-bottom: 28px;
+    opacity: 0; animation: rise 1s var(--ease-smooth) 0.1s forwards;
+  }
+  .hero-title {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(3rem, 7.5vw, 6.2rem); line-height: 1.02; letter-spacing: -0.02em; max-width: 14ch;
+  }
+  .hero-title .line { display: block; opacity: 0; animation: rise 1.1s var(--ease-smooth) forwards; }
+  .hero-title .line:nth-child(1) { animation-delay: 0.25s; }
+  .hero-title .line:nth-child(2) { animation-delay: 0.45s; }
+  .hero-title .liquid {
+    background: linear-gradient(110deg, var(--c-violet) 0%, var(--c-cyan) 40%, var(--c-magenta) 80%, var(--c-violet) 100%);
+    background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    animation: rise 1.1s var(--ease-smooth) 0.45s forwards, gradient-slide 7s ease infinite;
+  }
+  .hero-sub {
+    margin-top: 30px; font-size: 1.05rem; font-weight: 300; color: var(--text-dim);
+    max-width: 46ch; line-height: 1.7;
+    opacity: 0; animation: rise 1s var(--ease-smooth) 0.65s forwards;
+  }
+  .hero-cue {
+    margin-top: 34px;
+    display: flex; align-items: center; gap: 14px;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--text-faint);
+    opacity: 0; animation: rise 1s var(--ease-smooth) 1s forwards;
+  }
+  .hero-cue svg { animation: cue-drop 1.8s ease-in-out infinite; }
+
+  /* ---- Timeline / archive ---- */
+  .timeline { position: relative; }
+
+  /* Giant ghosted date pinned behind the cards. Sticky + negative
+     margin keeps it under the whole scroll length of the section. */
+  .dial-layer {
+    position: sticky; top: 0; height: 100vh; margin-bottom: -100vh;
+    z-index: 0; pointer-events: none;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .dial-stack { position: relative; text-align: center; width: 100%; }
+  .dial-date {
+    position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(5rem, 17vw, 15rem); line-height: 1; letter-spacing: 0.02em;
+    color: transparent;
+    -webkit-text-stroke: 1.5px rgba(242, 241, 255, 0.09);
+    white-space: nowrap;
+    transition: opacity 0.6s var(--ease-smooth), transform 0.6s var(--ease-smooth);
+  }
+  .dial-date.out { opacity: 0; transform: translateY(calc(-50% + 60px)) scale(0.96); }
+  .dial-date.in-above { opacity: 0; transform: translateY(calc(-50% - 60px)) scale(0.96); }
+  .dial-weeks {
+    position: absolute; left: 0; right: 0; top: calc(50% + clamp(3rem, 9.5vw, 8.5rem));
+    font-size: 0.78rem; font-weight: 600; letter-spacing: 0.4em; text-transform: uppercase;
+    color: var(--text-faint); transition: opacity 0.4s;
+  }
+  .dial-weeks em { font-style: normal; color: var(--c-cyan); }
+
+  .weeks-wrap {
+    position: relative; z-index: 1;
+    max-width: 1020px; margin: 0 auto; padding: 14vh 32px 34vh;
+  }
+
+  /* Spine */
+  .weeks-list { position: relative; padding-left: 72px; }
+  .spine {
+    position: absolute; left: 24px; top: 0; bottom: 0; width: 2px;
+    background: linear-gradient(to bottom, transparent, var(--c-violet) 12%, var(--c-cyan) 55%, var(--c-magenta) 90%, transparent);
+    opacity: 0.35;
+  }
+  .spine-progress {
+    position: absolute; left: 24px; top: 0; width: 2px; height: 100%;
+    background: linear-gradient(to bottom, var(--c-violet), var(--c-cyan));
+    transform-origin: top; transform: scaleY(0);
+    box-shadow: 0 0 12px rgba(56, 225, 255, 0.6);
+  }
+
+  .week { position: relative; margin-bottom: 42vh; }
+  .week:last-child { margin-bottom: 0; }
+  .week-node {
+    position: absolute; left: -55px; top: 34px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--ink-2); border: 2px solid var(--text-faint);
+    transition: border-color 0.4s, background 0.4s, transform 0.4s var(--ease-spring);
+  }
+  .week.current .week-node {
+    background: var(--rc); border-color: var(--rc); transform: scale(1.25);
+    animation: node-pulse 1.6s ease-out infinite;
+  }
+  .week-when {
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--text-faint); margin-bottom: 14px; transition: color 0.4s;
+  }
+  .week.current .week-when { color: var(--rc); }
+
+  /* ---- Playlist card ---- */
+  .pcard {
+    --rc: var(--c-violet);
+    border-radius: 22px; background: var(--glass); border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    position: relative; overflow: hidden;
+    transition: background 0.4s, border-color 0.4s, box-shadow 0.5s;
+  }
+  .pcard::before {
+    content: ''; position: absolute; top: -60px; left: -40px; width: 280px; height: 200px;
+    background: radial-gradient(ellipse at center, var(--rc) 0%, transparent 70%);
+    opacity: 0.12; filter: blur(30px); transition: opacity 0.5s; pointer-events: none;
+  }
+  .week.current .pcard { border-color: rgba(255, 255, 255, 0.2); box-shadow: 0 24px 80px rgba(0,0,0,0.5), 0 0 60px -24px var(--rc); }
+  .week.current .pcard::before { opacity: 0.26; }
+  .pcard-head {
+    display: grid; grid-template-columns: 56px 1fr auto auto; align-items: center;
+    gap: 22px; padding: 22px 28px; cursor: pointer; user-select: none;
+  }
+  .pcard-orb {
+    width: 50px; height: 50px; border-radius: 50%; position: relative;
+    background:
+      radial-gradient(circle at 32% 30%, rgba(255,255,255,0.35), transparent 45%),
+      conic-gradient(from 0deg, var(--rc), transparent 65%, var(--rc));
+    opacity: 0.85;
+  }
+  .pcard-orb::after { content: ''; position: absolute; inset: 16px; border-radius: 50%; background: var(--ink-2); }
+  .week.current .pcard-orb { animation: orb-spin 4s linear infinite; }
+  .pcard-info { min-width: 0; }
+  .pcard-title {
+    font-family: var(--font-display); font-weight: 400; font-size: 1.02rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .pcard-title .region-accent { color: var(--rc); font-weight: 600; }
+  .pcard-meta { display: flex; gap: 16px; margin-top: 7px; font-size: 0.74rem; color: var(--text-faint); font-weight: 300; }
+  .pcard-dl {
+    background: transparent; border: 1px solid var(--glass-border); color: var(--text-dim);
+    width: 38px; height: 38px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+    transition: all 0.3s var(--ease-spring);
+  }
+  .pcard-dl:hover { color: var(--ink); background: var(--rc); border-color: var(--rc); transform: scale(1.12); box-shadow: 0 0 20px var(--rc); }
+  .pcard-chev { color: var(--text-faint); transition: transform 0.45s var(--ease-spring), color 0.3s; }
+  .pcard.open .pcard-chev { transform: rotate(180deg); color: var(--rc); }
+
+  .tracks { max-height: 0; overflow: hidden; transition: max-height 0.65s var(--ease-smooth); }
+  .tracks-inner { padding: 4px 28px 26px; }
+  .track-row {
+    display: grid; grid-template-columns: 34px 40px 1fr auto; align-items: center;
+    gap: 16px; padding: 11px 14px; border-radius: 14px; cursor: pointer;
+    transition: background 0.25s; opacity: 0; transform: translateY(14px);
+  }
+  .pcard.open .track-row { animation: rise 0.5s var(--ease-smooth) forwards; animation-delay: calc(var(--i) * 0.05s); }
+  .track-row:hover { background: rgba(255,255,255,0.05); }
+  .track-num { font-size: 0.72rem; color: var(--text-faint); font-variant-numeric: tabular-nums; text-align: center; }
+  .track-play {
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--glass-border);
+    background: transparent; color: var(--text-dim); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 0.3s var(--ease-spring);
+  }
+  .track-play:hover { border-color: var(--rc); color: var(--rc); transform: scale(1.1); }
+  .track-details { min-width: 0; }
+  .track-name { font-size: 0.88rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .track-artist { font-size: 0.74rem; color: var(--text-faint); margin-top: 3px; font-weight: 300; }
+  .track-open { color: var(--text-faint); display: inline-flex; transition: color 0.25s, transform 0.25s; text-decoration: none; }
+  .track-open:hover { color: var(--rc); transform: scale(1.15); }
+
+  /* ---- Progress rail (right edge) ---- */
+  .rail {
+    position: fixed; right: 26px; top: 50%; transform: translateY(-50%);
+    z-index: 40; display: flex; flex-direction: column; align-items: center; gap: 14px;
+    opacity: 0; transition: opacity 0.5s;
+  }
+  .rail.visible { opacity: 1; }
+  .rail-track { width: 2px; height: 200px; background: rgba(242,241,255,0.1); border-radius: 2px; position: relative; overflow: hidden; }
+  .rail-fill {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(to bottom, var(--c-cyan), var(--c-magenta));
+    transform-origin: top; transform: scaleY(0);
+  }
+  .rail-label {
+    writing-mode: vertical-rl; font-size: 0.62rem; font-weight: 600;
+    letter-spacing: 0.3em; text-transform: uppercase; color: var(--text-faint);
+  }
+  .rail-label em { font-style: normal; color: var(--c-cyan); }
+
+  /* ---- End cap ---- */
+  .epoch {
+    text-align: center; padding: 4vh 32px 16vh; position: relative; z-index: 1;
+  }
+  .epoch-title { font-family: var(--font-display); font-weight: 600; font-size: 1.3rem; color: var(--text-dim); }
+  .epoch-sub { margin-top: 10px; font-size: 0.85rem; color: var(--text-faint); font-weight: 300; }
+  .epoch a {
+    display: inline-block; margin-top: 26px; color: var(--text-dim); text-decoration: none;
+    font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em;
+    border: 1px solid var(--glass-border); border-radius: 100px; padding: 11px 24px;
+    background: var(--glass); transition: all 0.3s;
+  }
+  .epoch a:hover { color: var(--ink); background: var(--c-cyan); border-color: var(--c-cyan); box-shadow: 0 0 28px rgba(56,225,255,0.35); }
+
+  /* ---- Mock badge ---- */
+  .mock-badge {
+    position: fixed; right: 20px; bottom: 20px; z-index: 60;
+    font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-dim); text-decoration: none;
+    background: rgba(12, 12, 24, 0.8); border: 1px solid var(--glass-border);
+    border-radius: 100px; padding: 8px 16px;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    transition: color 0.25s, border-color 0.25s;
+  }
+  .mock-badge:hover { color: var(--text); border-color: rgba(255,255,255,0.3); }
+  .mock-badge em { font-style: normal; color: var(--c-cyan); }
+
+  .site-footer {
+    border-top: 1px solid var(--glass-border); padding: 36px 32px; text-align: center;
+    font-size: 0.74rem; color: var(--text-faint); font-weight: 300; letter-spacing: 0.05em;
+    position: relative; z-index: 2;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(242,241,255,0.2); border-radius: 3px; }
+  ::selection { background: var(--c-violet); color: var(--ink); }
+
+  @media (max-width: 860px) {
+    .weeks-list { padding-left: 44px; }
+    .spine, .spine-progress { left: 12px; }
+    .week-node { left: -39px; }
+    .rail { display: none; }
+    .pcard-head { grid-template-columns: 44px 1fr auto auto; gap: 14px; padding: 18px 18px; }
+    .pcard-orb { width: 44px; height: 44px; }
+    .pcard-orb::after { inset: 14px; }
+    .hero { padding: 9vh 24px 12vh; min-height: 74vh; }
+    .hero-cue { left: 24px; }
+  }
+  @media (max-width: 480px) {
+    .brand-name { font-size: 0.85rem; }
+    .region-btn { padding: 6px 9px; font-size: 0.65rem; }
+    .track-num { display: none; }
+    .track-row { grid-template-columns: 40px 1fr auto; gap: 10px; padding: 10px 8px; }
+    .pcard-title { font-size: 0.82rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <div class="page">
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="brand">
+          <div class="brand-orb" aria-hidden="true"></div>
+          <div class="brand-name">Spotify<em>Unchained</em></div>
+        </div>
+        <div class="header-controls">
+          <div class="region-filter" role="group" aria-label="Region filter">
+            <button class="region-btn active">ALL</button>
+            <button class="region-btn">US</button>
+            <button class="region-btn">UK</button>
+            <button class="region-btn">CA</button>
+            <button class="region-btn">BR</button>
+            <button class="region-btn">MX</button>
+            <button class="region-btn">DE</button>
+          </div>
+          <button class="spotify-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3a.75.75 0 0 1-1.03.25c-2.82-1.72-6.37-2.11-10.55-1.16a.75.75 0 1 1-.33-1.46c4.58-1.05 8.51-.6 11.66 1.34.35.22.47.68.25 1.03zm1.47-3.26a.94.94 0 0 1-1.29.31c-3.23-1.98-8.16-2.56-11.98-1.4a.94.94 0 1 1-.55-1.79c4.37-1.33 9.8-.68 13.51 1.6.44.27.58.85.31 1.28zm.13-3.4C15.24 8.34 8.84 8.13 5.14 9.25a1.13 1.13 0 1 1-.65-2.15c4.24-1.29 11.28-1.04 15.72 1.6a1.13 1.13 0 0 1-1.11 1.94z"/></svg>
+            Sign in
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <section class="hero">
+      <p class="hero-eyebrow">The New Music Friday Archive</p>
+      <h1 class="hero-title">
+        <span class="line">Every Friday,</span>
+        <span class="line liquid">preserved.</span>
+      </h1>
+      <p class="hero-sub">
+        Spotify's New Music Friday refreshes every week — and last week's discoveries
+        vanish. Scroll down to travel back through every Friday we've saved.
+      </p>
+      <div class="hero-cue" aria-hidden="true">
+        <svg width="14" height="18" viewBox="0 0 14 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1v14M2 10l5 5 5-5"/></svg>
+        Scroll to rewind
+      </div>
+    </section>
+
+    <section class="timeline" id="timeline">
+      <div class="dial-layer" aria-hidden="true">
+        <div class="dial-stack">
+          <div class="dial-date" id="dialA">NOW</div>
+          <div class="dial-date in-above" id="dialB"></div>
+          <div class="dial-weeks" id="dialWeeks">the present</div>
+        </div>
+      </div>
+
+      <div class="weeks-wrap">
+        <div class="weeks-list" id="weeksList">
+          <div class="spine" aria-hidden="true"></div>
+          <div class="spine-progress" id="spineProgress" aria-hidden="true"></div>
+          <!-- Week cards injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <section class="epoch">
+      <p class="epoch-title">This is where the archive begins.</p>
+      <p class="epoch-sub">Every Friday from here forward is safe with us.</p>
+      <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">⏮ Back to the present</a>
+    </section>
+
+    <footer class="site-footer">
+      Preserving New Music Friday since 2015 · Not affiliated with Spotify
+    </footer>
+  </div>
+
+  <div class="rail" id="rail" aria-hidden="true">
+    <div class="rail-track"><div class="rail-fill" id="railFill"></div></div>
+    <div class="rail-label" id="railLabel"><em>0</em> weeks back</div>
+  </div>
+
+  <a class="mock-badge" href="../index.html"><em>05</em> · Time Machine · all mocks</a>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script>
+  // ---------- Sample data (mirrors the Playlist model) ----------
+  const REGION_COLORS = { US: '#f5c451', UK: '#6db9ff', CA: '#ff6b6b', BR: '#5ce08a', MX: '#ff7ee2', DE: '#5ee6d0' };
+
+  const WEEKS = [
+    {
+      title: 'New.Music.Friday.US.06.26.2026', region: 'US', dial: 'JUN 26', when: 'Friday · June 26, 2026', weeksBack: 1,
+      tracks: [
+        ['Neon Static', 'Vela Nova'], ['Half Past Golden', 'The Marigold Theory'],
+        ['Gravity Well', 'Kess'], ['Sugar & Cinder', 'Petra Lune'],
+        ['Wildfire Season', 'Coastal Youth'], ['Glass Bones', 'MONA REY'],
+      ],
+    },
+    {
+      title: 'New.Music.Friday.UK.06.19.2026', region: 'UK', dial: 'JUN 19', when: 'Friday · June 19, 2026', weeksBack: 2,
+      tracks: [
+        ['Brixton Rain', 'Ada & The Volts'], ['Peripheral', 'Junes'],
+        ['Modern Ruins', 'Cathedral Park'], ['Low Light', 'Yara Flynn'],
+        ['Terraform', 'Night Bus Home'],
+      ],
+    },
+    {
+      title: 'New.Music.Friday.CA.06.12.2026', region: 'CA', dial: 'JUN 12', when: 'Friday · June 12, 2026', weeksBack: 3,
+      tracks: [
+        ['Aurora County', 'Wren North'], ['Blue Hour', 'Saint-Laurent'],
+        ['Powder & Pine', 'The Hinterland'], ['Comet Tail', 'Mirabel'],
+        ['True North Motel', 'Casey Rideau'],
+      ],
+    },
+    {
+      title: 'New.Music.Friday.US.06.05.2026', region: 'US', dial: 'JUN 5', when: 'Friday · June 5, 2026', weeksBack: 4,
+      tracks: [
+        ['Rearview Cathedral', 'Okay Comet'], ['Milk Teeth', 'Juniper Vale'],
+        ['Fast Lane Lullaby', 'Ray Delgado'], ['Hologram Heart', 'SOFT REACTOR'],
+        ['Last American Summer', 'The Getaway Plan B'],
+      ],
+    },
+  ];
+
+  // ---------- Render weeks ----------
+  const list = document.getElementById('weeksList');
+
+  function regionTitle(title) {
+    return title.replace(/\b(US|UK|CA|BR|MX|DE)\b/, '<span class="region-accent">$1</span>');
+  }
+
+  WEEKS.forEach((week, wi) => {
+    const el = document.createElement('div');
+    el.className = 'week';
+    el.dataset.index = wi;
+    el.innerHTML = `
+      <div class="week-node" aria-hidden="true"></div>
+      <p class="week-when">${week.when}</p>
+      <article class="pcard" style="--rc:${REGION_COLORS[week.region]}">
+        <div class="pcard-head" role="button" tabindex="0" aria-expanded="false">
+          <div class="pcard-orb" aria-hidden="true"></div>
+          <div class="pcard-info">
+            <h3 class="pcard-title">${regionTitle(week.title)}</h3>
+            <div class="pcard-meta"><span>${week.when.split('· ')[1]}</span><span>${week.tracks.length} tracks</span></div>
+          </div>
+          <button class="pcard-dl" aria-label="Download playlist" onclick="event.stopPropagation()">
+            <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3v10M5.5 9l4.5 4.5L14.5 9M4 16.5h12"/></svg>
+          </button>
+          <svg class="pcard-chev" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 7.5 L10 12.5 L15 7.5"/></svg>
+        </div>
+        <div class="tracks">
+          <div class="tracks-inner">
+            ${week.tracks.map(([name, artist], i) => `
+              <div class="track-row" style="--i:${i}">
+                <span class="track-num">${String(i + 1).padStart(2, '0')}</span>
+                <button class="track-play" aria-label="Play ${name}">
+                  <svg width="11" height="12" viewBox="0 0 10 12" fill="currentColor"><path d="M0 0l10 6-10 6z"/></svg>
+                </button>
+                <div class="track-details">
+                  <div class="track-name">${name}</div>
+                  <div class="track-artist">${artist}</div>
+                </div>
+                <a class="track-open" href="#" onclick="return false" aria-label="Open in Spotify">
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 4h8v8M16 4L7 13"/></svg>
+                </a>
+              </div>`).join('')}
+          </div>
+        </div>
+      </article>`;
+    list.appendChild(el);
+  });
+
+  // ---------- Expand / collapse ----------
+  document.querySelectorAll('.pcard-head').forEach(head => {
+    const card = head.closest('.pcard');
+    const tracks = card.querySelector('.tracks');
+    const toggle = () => {
+      const open = card.classList.toggle('open');
+      head.setAttribute('aria-expanded', open);
+      tracks.style.maxHeight = open ? tracks.scrollHeight + 'px' : '0px';
+      if (window.ScrollTrigger) setTimeout(() => ScrollTrigger.refresh(), 700);
+    };
+    head.addEventListener('click', toggle);
+    head.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+  });
+
+  // ---------- Time dial + scroll choreography ----------
+  const dialA = document.getElementById('dialA');
+  const dialB = document.getElementById('dialB');
+  const dialWeeks = document.getElementById('dialWeeks');
+  const rail = document.getElementById('rail');
+  const railFill = document.getElementById('railFill');
+  const railLabel = document.getElementById('railLabel');
+  const weekEls = Array.from(document.querySelectorAll('.week'));
+
+  let frontIsA = true;
+  let currentDial = 'NOW';
+
+  function setDial(text, weeksBack) {
+    if (text === currentDial) return;
+    currentDial = text;
+    const front = frontIsA ? dialA : dialB;
+    const back = frontIsA ? dialB : dialA;
+    back.textContent = text;
+    back.classList.remove('out');
+    back.classList.add('in-above');
+    // Force a layout so the transition runs from the staged position.
+    void back.offsetHeight;
+    front.classList.add('out');
+    front.classList.remove('in-above');
+    back.classList.remove('in-above');
+    frontIsA = !frontIsA;
+    dialWeeks.innerHTML = weeksBack === 0
+      ? 'the present'
+      : `<em>${weeksBack}</em> week${weeksBack > 1 ? 's' : ''} back`;
+    railLabel.innerHTML = `<em>${weeksBack}</em> week${weeksBack === 1 ? '' : 's'} back`;
+  }
+
+  function setCurrentWeek(index) {
+    weekEls.forEach((el, i) => el.classList.toggle('current', i === index));
+    if (index >= 0) {
+      const w = WEEKS[index];
+      setDial(w.dial, w.weeksBack);
+    } else {
+      setDial('NOW', 0);
+    }
+  }
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (window.gsap && window.ScrollTrigger && !reduceMotion) {
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Hero recedes as the machine takes over.
+    gsap.to('.hero', {
+      opacity: 0.15, scale: 0.96, y: -40, ease: 'none',
+      scrollTrigger: { trigger: '.timeline', start: 'top 90%', end: 'top 25%', scrub: true },
+    });
+
+    // Scrubbed card entrances: rise out of the temporal fog.
+    weekEls.forEach(el => {
+      gsap.fromTo(el,
+        { y: 110, opacity: 0, rotateX: 14, filter: 'blur(8px)' },
+        {
+          y: 0, opacity: 1, rotateX: 0, filter: 'blur(0px)', ease: 'none',
+          scrollTrigger: { trigger: el, start: 'top 96%', end: 'top 58%', scrub: true },
+        });
+
+      ScrollTrigger.create({
+        trigger: el,
+        start: 'top 62%',
+        end: 'bottom 38%',
+        onEnter: () => setCurrentWeek(Number(el.dataset.index)),
+        onEnterBack: () => setCurrentWeek(Number(el.dataset.index)),
+        onLeaveBack: () => { if (Number(el.dataset.index) === 0) setCurrentWeek(-1); },
+      });
+    });
+
+    // Spine + rail progress.
+    gsap.to('#spineProgress', {
+      scaleY: 1, ease: 'none',
+      scrollTrigger: { trigger: '.weeks-list', start: 'top 62%', end: 'bottom 62%', scrub: true },
+    });
+    gsap.to(railFill, {
+      scaleY: 1, ease: 'none',
+      scrollTrigger: { trigger: '.timeline', start: 'top 60%', end: 'bottom bottom', scrub: true },
+    });
+    ScrollTrigger.create({
+      trigger: '.timeline', start: 'top 75%', end: 'bottom 20%',
+      onToggle: self => rail.classList.toggle('visible', self.isActive),
+    });
+
+    // Let the giant date dissolve before the end-cap message arrives.
+    gsap.to('.dial-layer', {
+      opacity: 0, ease: 'none',
+      scrollTrigger: { trigger: '.epoch', start: 'top 95%', end: 'top 55%', scrub: true },
+    });
+  } else {
+    // Fallback (no GSAP / reduced motion): IntersectionObserver flips the dial,
+    // cards render in place.
+    rail.classList.add('visible');
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) setCurrentWeek(Number(entry.target.dataset.index));
+      });
+    }, { rootMargin: '-40% 0px -40% 0px' });
+    weekEls.forEach(el => io.observe(el));
+    document.getElementById('spineProgress').style.transform = 'scaleY(1)';
+    railFill.style.transform = 'scaleY(1)';
+  }
+  </script>
+</body>
+</html>

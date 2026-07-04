@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SpotifyUnchained — Mock 06: Sound Garden</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;800&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* =========================================================
+     Mock 06 — SOUND GARDEN
+     Concept: the page is an instrument. A cursor spotlight
+     reveals a hidden waveform field; buttons are magnetic;
+     track rows pluck and emit note glyphs; cards get a
+     traveling border light. 100% dependency-free vanilla JS.
+     ========================================================= */
+  @property --ring-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+
+  :root {
+    --ink: #07070e;
+    --ink-2: #0c0c18;
+    --text: #f2f1ff;
+    --text-dim: rgba(242, 241, 255, 0.55);
+    --text-faint: rgba(242, 241, 255, 0.3);
+    --glass: rgba(255, 255, 255, 0.04);
+    --glass-hover: rgba(255, 255, 255, 0.07);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --c-violet: #7c5cff;
+    --c-cyan: #38e1ff;
+    --c-magenta: #ff4ecd;
+    --font-display: 'Unbounded', sans-serif;
+    --font-body: 'Sora', sans-serif;
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--ink);
+    color: var(--text);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* Hidden waveform field, revealed by the cursor spotlight */
+  #field {
+    position: fixed; inset: 0; width: 100vw; height: 100vh;
+    z-index: 0; pointer-events: none;
+  }
+
+  /* Soft cursor halo (adds warmth on top of the canvas reveal) */
+  .halo {
+    position: fixed; left: 0; top: 0; width: 520px; height: 520px;
+    margin: -260px 0 0 -260px; z-index: 1; pointer-events: none;
+    background: radial-gradient(circle, rgba(124, 92, 255, 0.10), rgba(56, 225, 255, 0.05) 40%, transparent 70%);
+    mix-blend-mode: screen;
+    transform: translate(-1000px, -1000px);
+  }
+
+  .vignette {
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background: radial-gradient(ellipse 120% 90% at 50% 30%, transparent 55%, rgba(0,0,0,0.5) 100%);
+  }
+
+  .page { position: relative; z-index: 2; }
+
+  @keyframes orb-spin { to { transform: rotate(360deg); } }
+  @keyframes gradient-slide {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(36px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes ring-run { to { --ring-angle: 360deg; } }
+
+  /* ---- Header ---- */
+  .site-header {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    background: linear-gradient(to bottom, rgba(7,7,14,0.7), rgba(7,7,14,0.3));
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .header-inner {
+    max-width: 1180px; margin: 0 auto; padding: 18px 32px;
+    display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand-orb {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: conic-gradient(from 180deg, var(--c-violet), var(--c-cyan), var(--c-magenta), var(--c-violet));
+    animation: orb-spin 9s linear infinite;
+    position: relative; box-shadow: 0 0 24px rgba(124, 92, 255, 0.5); flex-shrink: 0;
+  }
+  .brand-orb::after { content: ''; position: absolute; inset: 11px; border-radius: 50%; background: var(--ink); }
+  .brand-name { font-family: var(--font-display); font-weight: 600; font-size: 1rem; white-space: nowrap; }
+  .brand-name em {
+    font-style: normal;
+    background: linear-gradient(110deg, var(--c-violet), var(--c-cyan), var(--c-magenta));
+    background-size: 200% 100%;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    animation: gradient-slide 6s ease infinite;
+  }
+  .header-controls { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .region-filter {
+    display: flex; gap: 4px; padding: 4px; border-radius: 100px;
+    background: var(--glass); border: 1px solid var(--glass-border);
+  }
+  .region-btn {
+    font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
+    color: var(--text-dim); background: transparent; border: none; border-radius: 100px;
+    padding: 7px 14px; cursor: pointer;
+    transition: color 0.3s var(--ease-smooth), background 0.3s var(--ease-smooth), box-shadow 0.3s;
+    will-change: transform;
+  }
+  .region-btn:hover { color: var(--text); }
+  .region-btn.active { color: var(--ink); background: #fff; box-shadow: 0 0 18px rgba(255,255,255,0.4); }
+  .spotify-btn {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-family: var(--font-body); font-size: 0.8rem; font-weight: 600;
+    color: var(--ink); background: #fff; border: none; border-radius: 100px; padding: 10px 20px;
+    cursor: pointer; white-space: nowrap; will-change: transform;
+    transition: box-shadow 0.3s;
+  }
+  .spotify-btn:hover { box-shadow: 0 0 32px rgba(255,255,255,0.3); }
+
+  /* ---- Hero ---- */
+  .hero {
+    max-width: 1180px; margin: 0 auto; padding: 110px 32px 90px; position: relative;
+  }
+  .hero-eyebrow {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.35em; text-transform: uppercase;
+    color: var(--text-faint); margin-bottom: 28px;
+    opacity: 0; animation: rise 1s var(--ease-smooth) 0.1s forwards;
+  }
+  .hero-title {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(3rem, 7.5vw, 6.2rem); line-height: 1.02; letter-spacing: -0.02em; max-width: 14ch;
+  }
+  .hero-title .line { display: block; opacity: 0; animation: rise 1.1s var(--ease-smooth) forwards; }
+  .hero-title .line:nth-child(1) { animation-delay: 0.25s; }
+  .hero-title .line:nth-child(2) { animation-delay: 0.45s; }
+  .hero-title .liquid {
+    background: linear-gradient(110deg, var(--c-violet) 0%, var(--c-cyan) 40%, var(--c-magenta) 80%, var(--c-violet) 100%);
+    background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    animation: rise 1.1s var(--ease-smooth) 0.45s forwards, gradient-slide 7s ease infinite;
+  }
+  /* Words in the headline lean away from the cursor — the type itself is springy */
+  .hero-title .w { display: inline-block; will-change: transform; }
+  .hero-sub {
+    margin-top: 30px; font-size: 1.05rem; font-weight: 300; color: var(--text-dim);
+    max-width: 46ch; line-height: 1.7;
+    opacity: 0; animation: rise 1s var(--ease-smooth) 0.65s forwards;
+  }
+  .hero-hint {
+    margin-top: 22px; display: inline-flex; align-items: center; gap: 10px;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--text-faint);
+    opacity: 0; animation: rise 1s var(--ease-smooth) 0.9s forwards;
+  }
+  .hero-hint .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--c-cyan); box-shadow: 0 0 12px var(--c-cyan);
+  }
+
+  /* ---- Archive ---- */
+  .archive { max-width: 1180px; margin: 0 auto; padding: 0 32px 120px; }
+  .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 36px; flex-wrap: wrap; }
+  .section-title { font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; }
+  .section-sub { margin-top: 8px; font-size: 0.85rem; color: var(--text-faint); font-weight: 300; }
+  .playlist-grid { display: flex; flex-direction: column; gap: 18px; }
+
+  /* ---- Playlist cards + traveling border light ---- */
+  .pcard {
+    --rc: var(--c-violet);
+    border-radius: 22px; background: var(--glass); border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    position: relative;
+    transition: background 0.4s, border-color 0.4s, transform 0.45s var(--ease-spring), box-shadow 0.5s;
+    opacity: 0; animation: rise 0.9s var(--ease-smooth) forwards;
+  }
+  .pcard:hover { background: var(--glass-hover); transform: translateY(-3px); }
+  .pcard.open { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); box-shadow: 0 24px 80px rgba(0,0,0,0.55), 0 0 60px -20px var(--rc); }
+  .pcard.open:hover { transform: none; }
+
+  /* Border light: a thin conic highlight that runs the card perimeter on hover */
+  .pcard::after {
+    content: ''; position: absolute; inset: -1px; border-radius: 23px; padding: 1.5px;
+    background: conic-gradient(from var(--ring-angle),
+      transparent 0deg, transparent 288deg,
+      var(--rc) 330deg, #fff 344deg, var(--rc) 352deg, transparent 360deg);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    opacity: 0; transition: opacity 0.35s; pointer-events: none;
+  }
+  .pcard:hover::after, .pcard.open::after { opacity: 1; animation: ring-run 2.4s linear infinite; }
+
+  /* Glare sweep across the head on hover */
+  .pcard-head { position: relative; overflow: hidden; border-radius: 22px; }
+  .pcard-head::before {
+    content: ''; position: absolute; top: 0; bottom: 0; left: -70%; width: 45%;
+    background: linear-gradient(105deg, transparent, rgba(255,255,255,0.055), transparent);
+    transform: skewX(-18deg); pointer-events: none; transition: none; opacity: 0;
+  }
+  .pcard:hover .pcard-head::before { opacity: 1; transition: left 0.9s var(--ease-smooth); left: 125%; }
+
+  .pcard-head {
+    display: grid; grid-template-columns: 56px 1fr 180px auto auto; align-items: center;
+    gap: 22px; padding: 22px 28px; cursor: pointer; user-select: none;
+  }
+  .pcard-orb {
+    width: 50px; height: 50px; border-radius: 50%; position: relative;
+    background:
+      radial-gradient(circle at 32% 30%, rgba(255,255,255,0.35), transparent 45%),
+      conic-gradient(from 0deg, var(--rc), transparent 65%, var(--rc));
+    opacity: 0.85;
+  }
+  .pcard-orb::after { content: ''; position: absolute; inset: 16px; border-radius: 50%; background: var(--ink-2); }
+  .pcard:not(.open):hover .pcard-orb { animation: orb-spin 1.2s linear; }
+  .pcard.open .pcard-orb { animation: orb-spin 4s linear infinite; }
+  .pcard-info { min-width: 0; }
+  .pcard-title {
+    font-family: var(--font-display); font-weight: 400; font-size: 1.02rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .pcard-title .region-accent { color: var(--rc); font-weight: 600; }
+  .pcard-meta { display: flex; gap: 16px; margin-top: 7px; font-size: 0.74rem; color: var(--text-faint); font-weight: 300; }
+
+  /* Waveform bars respond to hover proximity (plucked by the cursor) */
+  .pcard-wave { width: 180px; height: 34px; opacity: 0.55; display: flex; align-items: center; gap: 2.4px; }
+  .pcard-wave i {
+    flex: 1; height: calc(var(--h) * 1px); min-height: 4px;
+    background: var(--rc); border-radius: 2px;
+    transition: height 0.25s var(--ease-spring), opacity 0.25s;
+  }
+
+  .pcard-dl {
+    background: transparent; border: 1px solid var(--glass-border); color: var(--text-dim);
+    width: 38px; height: 38px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+    transition: color 0.3s, background 0.3s, border-color 0.3s, box-shadow 0.3s;
+    will-change: transform;
+  }
+  .pcard-dl:hover { color: var(--ink); background: var(--rc); border-color: var(--rc); box-shadow: 0 0 20px var(--rc); }
+  .pcard-chev { color: var(--text-faint); transition: transform 0.45s var(--ease-spring), color 0.3s; }
+  .pcard.open .pcard-chev { transform: rotate(180deg); color: var(--rc); }
+
+  /* ---- Track rows: pluckable ---- */
+  .tracks { max-height: 0; overflow: hidden; transition: max-height 0.65s var(--ease-smooth); }
+  .tracks-inner { padding: 4px 28px 26px; }
+  .track-row {
+    display: grid; grid-template-columns: 34px 40px 1fr auto; align-items: center;
+    gap: 16px; padding: 11px 14px; border-radius: 14px; cursor: pointer;
+    background: transparent;
+    transition: background 0.25s, transform 0.5s var(--ease-spring);
+    opacity: 0; transform: translateY(14px);
+    will-change: transform;
+  }
+  .pcard.open .track-row { animation: rise 0.5s var(--ease-smooth) forwards; animation-delay: calc(var(--i) * 0.05s); }
+  .track-row:hover { background: rgba(255,255,255,0.05); }
+  .track-num { font-size: 0.72rem; color: var(--text-faint); font-variant-numeric: tabular-nums; text-align: center; }
+  .track-play {
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--glass-border);
+    background: transparent; color: var(--text-dim); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 0.3s var(--ease-spring);
+  }
+  .track-play:hover { border-color: var(--rc); color: var(--rc); transform: scale(1.12); }
+  .track-play.played { background: var(--rc); border-color: var(--rc); color: var(--ink); box-shadow: 0 0 16px var(--rc); }
+  .track-details { min-width: 0; }
+  .track-name { font-size: 0.88rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .track-artist { font-size: 0.74rem; color: var(--text-faint); margin-top: 3px; font-weight: 300; }
+  .track-open { color: var(--text-faint); display: inline-flex; transition: color 0.25s, transform 0.25s; text-decoration: none; }
+  .track-open:hover { color: var(--rc); transform: scale(1.15); }
+
+  /* Floating note glyphs */
+  .note-fx {
+    position: fixed; z-index: 70; pointer-events: none;
+    font-size: 1.1rem; font-family: var(--font-body); font-weight: 600;
+    text-shadow: 0 0 14px currentColor;
+  }
+
+  /* ---- Mock badge / footer ---- */
+  .mock-badge {
+    position: fixed; right: 20px; bottom: 20px; z-index: 60;
+    font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-dim); text-decoration: none;
+    background: rgba(12, 12, 24, 0.8); border: 1px solid var(--glass-border);
+    border-radius: 100px; padding: 8px 16px;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    transition: color 0.25s, border-color 0.25s;
+  }
+  .mock-badge:hover { color: var(--text); border-color: rgba(255,255,255,0.3); }
+  .mock-badge em { font-style: normal; color: var(--c-magenta); }
+
+  .site-footer {
+    border-top: 1px solid var(--glass-border); padding: 36px 32px; text-align: center;
+    font-size: 0.74rem; color: var(--text-faint); font-weight: 300; letter-spacing: 0.05em;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(242,241,255,0.2); border-radius: 3px; }
+  ::selection { background: var(--c-magenta); color: var(--ink); }
+
+  @media (max-width: 860px) {
+    .pcard-head { grid-template-columns: 50px 1fr auto auto; gap: 14px; padding: 18px 18px; }
+    .pcard-wave { display: none; }
+    .hero { padding: 70px 24px 50px; }
+    .archive { padding: 0 24px 80px; }
+    .halo { display: none; }
+  }
+  @media (max-width: 480px) {
+    .brand-name { font-size: 0.85rem; }
+    .region-btn { padding: 6px 9px; font-size: 0.65rem; }
+    .track-num { display: none; }
+    .track-row { grid-template-columns: 40px 1fr auto; gap: 10px; padding: 10px 8px; }
+    .pcard-title { font-size: 0.82rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    #field, .halo { display: none; }
+  }
+</style>
+</head>
+<body>
+  <canvas id="field" aria-hidden="true"></canvas>
+  <div class="halo" id="halo" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <div class="page">
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="brand">
+          <div class="brand-orb" aria-hidden="true"></div>
+          <div class="brand-name">Spotify<em>Unchained</em></div>
+        </div>
+        <div class="header-controls">
+          <div class="region-filter" role="group" aria-label="Region filter">
+            <button class="region-btn magnetic active">ALL</button>
+            <button class="region-btn magnetic">US</button>
+            <button class="region-btn magnetic">UK</button>
+            <button class="region-btn magnetic">CA</button>
+            <button class="region-btn magnetic">BR</button>
+            <button class="region-btn magnetic">MX</button>
+            <button class="region-btn magnetic">DE</button>
+          </div>
+          <button class="spotify-btn magnetic">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3a.75.75 0 0 1-1.03.25c-2.82-1.72-6.37-2.11-10.55-1.16a.75.75 0 1 1-.33-1.46c4.58-1.05 8.51-.6 11.66 1.34.35.22.47.68.25 1.03zm1.47-3.26a.94.94 0 0 1-1.29.31c-3.23-1.98-8.16-2.56-11.98-1.4a.94.94 0 1 1-.55-1.79c4.37-1.33 9.8-.68 13.51 1.6.44.27.58.85.31 1.28zm.13-3.4C15.24 8.34 8.84 8.13 5.14 9.25a1.13 1.13 0 1 1-.65-2.15c4.24-1.29 11.28-1.04 15.72 1.6a1.13 1.13 0 0 1-1.11 1.94z"/></svg>
+            Sign in
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <section class="hero">
+      <p class="hero-eyebrow">The New Music Friday Archive</p>
+      <h1 class="hero-title" id="heroTitle">
+        <span class="line"><span class="w">Every</span> <span class="w">Friday,</span></span>
+        <span class="line liquid"><span class="w">preserved.</span></span>
+      </h1>
+      <p class="hero-sub">
+        Spotify's New Music Friday refreshes every week — and last week's discoveries
+        vanish. We archive every edition, in every region, so the music you almost
+        loved is never lost.
+      </p>
+      <div class="hero-hint" aria-hidden="true">
+        <span class="dot"></span> Move your cursor — the page listens
+      </div>
+    </section>
+
+    <section class="archive">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">The Archive</h2>
+          <p class="section-sub">Hover to pluck · click play to hear the notes fly</p>
+        </div>
+      </div>
+      <div class="playlist-grid" id="grid"><!-- cards injected --></div>
+    </section>
+
+    <footer class="site-footer">
+      Preserving New Music Friday since 2015 · Not affiliated with Spotify
+    </footer>
+  </div>
+
+  <a class="mock-badge" href="../index.html"><em>06</em> · Sound Garden · all mocks</a>
+
+  <script>
+  // ---------- Sample data ----------
+  const REGION_COLORS = { US: '#f5c451', UK: '#6db9ff', CA: '#ff6b6b', BR: '#5ce08a', MX: '#ff7ee2', DE: '#5ee6d0' };
+  const PLAYLISTS = [
+    { title: 'New.Music.Friday.US.06.26.2026', region: 'US', date: 'June 26, 2026',
+      tracks: [['Neon Static','Vela Nova'],['Half Past Golden','The Marigold Theory'],['Gravity Well','Kess'],['Sugar & Cinder','Petra Lune'],['Wildfire Season','Coastal Youth'],['Glass Bones','MONA REY']] },
+    { title: 'New.Music.Friday.UK.06.26.2026', region: 'UK', date: 'June 26, 2026',
+      tracks: [['Brixton Rain','Ada & The Volts'],['Peripheral','Junes'],['Modern Ruins','Cathedral Park'],['Low Light','Yara Flynn'],['Terraform','Night Bus Home']] },
+    { title: 'New.Music.Friday.US.06.19.2026', region: 'US', date: 'June 19, 2026',
+      tracks: [['Cherry Cola Sky','Dime Store Saints'],['Anodyne','Val Verdier'],['Second Summer','Hotel Anywhere'],['Static Bloom','Ferra'],['Departures','El Camino Kid']] },
+    { title: 'New.Music.Friday.CA.06.12.2026', region: 'CA', date: 'June 12, 2026',
+      tracks: [['Aurora County','Wren North'],['Blue Hour','Saint-Laurent'],['Powder & Pine','The Hinterland'],['Comet Tail','Mirabel'],['True North Motel','Casey Rideau']] },
+  ];
+
+  const regionTitle = t => t.replace(/\b(US|UK|CA|BR|MX|DE)\b/, '<span class="region-accent">$1</span>');
+
+  // ---------- Render cards ----------
+  const grid = document.getElementById('grid');
+  PLAYLISTS.forEach((pl, pi) => {
+    const bars = Array.from({ length: 32 }, () => Math.round(6 + Math.random() * 22));
+    const card = document.createElement('article');
+    card.className = 'pcard';
+    card.style.setProperty('--rc', REGION_COLORS[pl.region]);
+    card.style.animationDelay = `${(pi + 1) * 0.08}s`;
+    card.innerHTML = `
+      <div class="pcard-head" role="button" tabindex="0" aria-expanded="false">
+        <div class="pcard-orb" aria-hidden="true"></div>
+        <div class="pcard-info">
+          <h3 class="pcard-title">${regionTitle(pl.title)}</h3>
+          <div class="pcard-meta"><span>${pl.date}</span><span>${pl.tracks.length} tracks</span></div>
+        </div>
+        <div class="pcard-wave" aria-hidden="true">${bars.map(h => `<i style="--h:${h}" data-h="${h}"></i>`).join('')}</div>
+        <button class="pcard-dl magnetic" aria-label="Download playlist" onclick="event.stopPropagation()">
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3v10M5.5 9l4.5 4.5L14.5 9M4 16.5h12"/></svg>
+        </button>
+        <svg class="pcard-chev" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 7.5 L10 12.5 L15 7.5"/></svg>
+      </div>
+      <div class="tracks">
+        <div class="tracks-inner">
+          ${pl.tracks.map(([name, artist], i) => `
+            <div class="track-row" style="--i:${i}">
+              <span class="track-num">${String(i + 1).padStart(2, '0')}</span>
+              <button class="track-play" aria-label="Play ${name}">
+                <svg width="11" height="12" viewBox="0 0 10 12" fill="currentColor"><path d="M0 0l10 6-10 6z"/></svg>
+              </button>
+              <div class="track-details">
+                <div class="track-name">${name}</div>
+                <div class="track-artist">${artist}</div>
+              </div>
+              <a class="track-open" href="#" onclick="return false" aria-label="Open in Spotify">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 4h8v8M16 4L7 13"/></svg>
+              </a>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  // ---------- Expand / collapse ----------
+  document.querySelectorAll('.pcard-head').forEach(head => {
+    const card = head.closest('.pcard');
+    const tracks = card.querySelector('.tracks');
+    const toggle = () => {
+      const open = card.classList.toggle('open');
+      head.setAttribute('aria-expanded', open);
+      tracks.style.maxHeight = open ? tracks.scrollHeight + 'px' : '0px';
+    };
+    head.addEventListener('click', toggle);
+    head.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+  });
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const finePointer = window.matchMedia('(pointer: fine)').matches;
+
+  // ---------- Cursor state ----------
+  const cursor = { x: -1000, y: -1000, vx: 0, vy: 0, lastX: -1000, lastY: -1000 };
+  const halo = document.getElementById('halo');
+  window.addEventListener('pointermove', e => {
+    cursor.x = e.clientX; cursor.y = e.clientY;
+    halo.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+  }, { passive: true });
+
+  // ---------- The hidden waveform field (canvas spotlight) ----------
+  const canvas = document.getElementById('field');
+  const ctx = canvas.getContext('2d');
+  let W, H, cols;
+  const COL_W = 14;
+
+  function sizeField() {
+    W = canvas.width = window.innerWidth * devicePixelRatio;
+    H = canvas.height = window.innerHeight * devicePixelRatio;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    cols = Math.ceil(window.innerWidth / COL_W) + 1;
+  }
+  sizeField();
+  window.addEventListener('resize', sizeField);
+
+  const SPOT_R = 320; // reveal radius in CSS px
+  let t = 0;
+
+  function drawField() {
+    ctx.clearRect(0, 0, W, H);
+    // cursor velocity → louder bars
+    cursor.vx = cursor.x - cursor.lastX; cursor.vy = cursor.y - cursor.lastY;
+    cursor.lastX = cursor.x; cursor.lastY = cursor.y;
+    const speed = Math.min(40, Math.hypot(cursor.vx, cursor.vy));
+    const energy = 1 + speed / 18;
+    t += 0.035;
+
+    const midY = cursor.y; // bars grow around the cursor's row
+    for (let i = 0; i < cols; i++) {
+      const x = i * COL_W;
+      const d = Math.hypot(x - cursor.x, 0) + Math.abs(midY - cursor.y); // horizontal falloff
+      const dist = Math.abs(x - cursor.x);
+      if (dist > SPOT_R) continue;
+      const fall = Math.cos((dist / SPOT_R) * Math.PI * 0.5); // 1 at cursor → 0 at edge
+      const wob = Math.sin(t + i * 0.55) * 0.5 + Math.sin(t * 1.7 + i * 0.23) * 0.5;
+      const h = (12 + Math.abs(wob) * 52 * energy) * fall;
+      const alpha = 0.5 * fall * fall;
+      const hue = 250 - (dist / SPOT_R) * 60 + wob * 14;
+      ctx.fillStyle = `hsla(${hue}, 90%, 70%, ${alpha})`;
+      const px = x * devicePixelRatio;
+      const ph = h * devicePixelRatio;
+      const pw = (COL_W - 5) * devicePixelRatio;
+      const py = cursor.y * devicePixelRatio;
+      ctx.beginPath();
+      ctx.roundRect(px, py - ph, pw, ph * 2, 3 * devicePixelRatio);
+      ctx.fill();
+    }
+    requestAnimationFrame(drawField);
+  }
+  if (!reduceMotion && finePointer) requestAnimationFrame(drawField);
+
+  // ---------- Magnetic elements (spring physics) ----------
+  const springs = [];
+  class MagneticSpring {
+    constructor(el, { radius = 90, strength = 0.36, k = 0.12, damp = 0.72 } = {}) {
+      this.el = el; this.radius = radius; this.strength = strength;
+      this.k = k; this.damp = damp;
+      this.x = 0; this.y = 0; this.vx = 0; this.vy = 0; this.tx = 0; this.ty = 0;
+    }
+    update() {
+      const r = this.el.getBoundingClientRect();
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const dx = cursor.x - cx, dy = cursor.y - cy;
+      const d = Math.hypot(dx, dy);
+      if (d < this.radius) {
+        const pull = 1 - d / this.radius;
+        this.tx = dx * pull * this.strength;
+        this.ty = dy * pull * this.strength;
+      } else { this.tx = 0; this.ty = 0; }
+      this.vx = (this.vx + (this.tx - this.x) * this.k) * this.damp;
+      this.vy = (this.vy + (this.ty - this.y) * this.k) * this.damp;
+      this.x += this.vx; this.y += this.vy;
+      if (Math.abs(this.x) > 0.05 || Math.abs(this.y) > 0.05 || Math.abs(this.tx) > 0.05) {
+        this.el.style.transform = `translate(${this.x.toFixed(2)}px, ${this.y.toFixed(2)}px)`;
+      }
+    }
+  }
+  document.querySelectorAll('.magnetic').forEach(el => springs.push(new MagneticSpring(el)));
+
+  // Headline words lean gently away from the cursor
+  document.querySelectorAll('.hero-title .w').forEach(el => {
+    springs.push(new MagneticSpring(el, { radius: 170, strength: -0.12, k: 0.09, damp: 0.78 }));
+  });
+
+  function springLoop() {
+    springs.forEach(s => s.update());
+    requestAnimationFrame(springLoop);
+  }
+  if (!reduceMotion && finePointer) requestAnimationFrame(springLoop);
+
+  // ---------- Waveform bars pluck under the cursor ----------
+  document.querySelectorAll('.pcard-wave').forEach(wave => {
+    const bars = Array.from(wave.children);
+    wave.closest('.pcard').addEventListener('pointermove', () => {
+      const wr = wave.getBoundingClientRect();
+      bars.forEach((bar, i) => {
+        const bx = wr.left + (i + 0.5) * (wr.width / bars.length);
+        const d = Math.abs(cursor.x - bx);
+        const base = Number(bar.dataset.h);
+        if (d < 70 && cursor.x > wr.left - 40 && cursor.x < wr.right + 40
+            && cursor.y > wr.top - 30 && cursor.y < wr.bottom + 30) {
+          const boost = (1 - d / 70) * 16;
+          bar.style.setProperty('--h', Math.min(33, base + boost));
+          bar.style.opacity = 1;
+        } else {
+          bar.style.setProperty('--h', base);
+          bar.style.opacity = '';
+        }
+      });
+    }, { passive: true });
+  });
+
+  // ---------- Pluck: track rows bend toward the cursor ----------
+  document.querySelectorAll('.track-row').forEach(row => {
+    row.addEventListener('pointermove', e => {
+      const r = row.getBoundingClientRect();
+      const nx = ((e.clientX - r.left) / r.width) * 2 - 1;  // -1 .. 1
+      row.style.transition = 'background 0.25s';
+      row.style.transform = `translateY(-1.5px) rotate(${nx * 0.5}deg) scale(1.006)`;
+    }, { passive: true });
+    row.addEventListener('pointerleave', () => {
+      row.style.transition = 'background 0.25s, transform 0.55s var(--ease-spring)';
+      row.style.transform = '';
+    });
+  });
+
+  // ---------- Note glyphs fly on play ----------
+  const GLYPHS = ['♪', '♫', '♩', '♬'];
+  document.querySelectorAll('.track-play').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      btn.classList.toggle('played');
+      const rc = getComputedStyle(btn.closest('.pcard')).getPropertyValue('--rc').trim() || '#38e1ff';
+      const r = btn.getBoundingClientRect();
+      const n = 3 + Math.floor(Math.random() * 2);
+      for (let i = 0; i < n; i++) {
+        const note = document.createElement('span');
+        note.className = 'note-fx';
+        note.textContent = GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+        note.style.left = r.left + r.width / 2 + 'px';
+        note.style.top = r.top + 'px';
+        note.style.color = rc;
+        document.body.appendChild(note);
+        const dx = (Math.random() - 0.5) * 90;
+        const dy = -(70 + Math.random() * 70);
+        const rot = (Math.random() - 0.5) * 60;
+        note.animate([
+          { transform: 'translate(0, 0) rotate(0deg) scale(0.7)', opacity: 1 },
+          { transform: `translate(${dx}px, ${dy}px) rotate(${rot}deg) scale(1.15)`, opacity: 0 },
+        ], { duration: 1100 + Math.random() * 400, easing: 'cubic-bezier(0.2, 0.6, 0.3, 1)' })
+          .onfinish = () => note.remove();
+      }
+    });
+  });
+  </script>
+</body>
+</html>

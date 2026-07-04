@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SpotifyUnchained — Mock 07: Observatory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;800&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* =========================================================
+     Mock 07 — OBSERVATORY
+     Concept: the archive as a night sky. A drifting starfield
+     with shooting stars lives behind the page; every archived
+     week is a constellation that lights up when you hover its
+     card; aurora ribbons breathe behind the hero.
+     100% dependency-free (canvas + rAF).
+     ========================================================= */
+  :root {
+    --ink: #07070e;
+    --ink-2: #0c0c18;
+    --text: #f2f1ff;
+    --text-dim: rgba(242, 241, 255, 0.55);
+    --text-faint: rgba(242, 241, 255, 0.3);
+    --glass: rgba(255, 255, 255, 0.04);
+    --glass-hover: rgba(255, 255, 255, 0.07);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --c-violet: #7c5cff;
+    --c-cyan: #38e1ff;
+    --c-magenta: #ff4ecd;
+    --font-display: 'Unbounded', sans-serif;
+    --font-body: 'Sora', sans-serif;
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: radial-gradient(ellipse 100% 80% at 50% -20%, #0d0d20 0%, var(--ink) 60%);
+    color: var(--text);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  #sky { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
+
+  /* ---- Aurora ribbons ---- */
+  .aurora { position: absolute; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
+  .aurora i {
+    position: absolute; display: block; border-radius: 50%;
+    filter: blur(70px); mix-blend-mode: screen; opacity: 0.35;
+  }
+  .aurora i:nth-child(1) {
+    width: 60vw; height: 34vh; left: 8vw; top: 4vh;
+    background: linear-gradient(100deg, rgba(124,92,255,0.5), rgba(56,225,255,0.25), transparent);
+    animation: aurora-a 17s ease-in-out infinite alternate;
+  }
+  .aurora i:nth-child(2) {
+    width: 50vw; height: 30vh; right: -6vw; top: 22vh;
+    background: linear-gradient(260deg, rgba(255,78,205,0.34), rgba(124,92,255,0.22), transparent);
+    animation: aurora-b 23s ease-in-out infinite alternate;
+  }
+  .aurora i:nth-child(3) {
+    width: 42vw; height: 22vh; left: 30vw; top: 40vh;
+    background: linear-gradient(80deg, rgba(56,225,255,0.28), transparent);
+    animation: aurora-a 29s ease-in-out infinite alternate-reverse;
+  }
+  @keyframes aurora-a {
+    0% { transform: translate(0, 0) rotate(-4deg) scaleX(1); opacity: 0.26; }
+    50% { opacity: 0.45; }
+    100% { transform: translate(6vw, 3vh) rotate(5deg) scaleX(1.15); opacity: 0.3; }
+  }
+  @keyframes aurora-b {
+    0% { transform: translate(0, 0) rotate(6deg); opacity: 0.22; }
+    50% { opacity: 0.42; }
+    100% { transform: translate(-5vw, -2vh) rotate(-4deg) scale(1.12); opacity: 0.26; }
+  }
+
+  .vignette {
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background: radial-gradient(ellipse 120% 90% at 50% 30%, transparent 55%, rgba(0,0,0,0.55) 100%);
+  }
+
+  .page { position: relative; z-index: 2; }
+
+  @keyframes orb-spin { to { transform: rotate(360deg); } }
+  @keyframes gradient-slide {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(36px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  /* Cards breathe — a slow shimmer that ripples down the list via --d */
+  @keyframes breathe {
+    0%, 100% { box-shadow: 0 0 0 0 transparent, inset 0 0 0 0 transparent; border-color: var(--glass-border); }
+    50% { box-shadow: 0 0 44px -14px var(--rc), inset 0 0 24px -18px var(--rc); border-color: color-mix(in srgb, var(--rc) 32%, var(--glass-border)); }
+  }
+  @keyframes twinkle-dot {
+    0%, 100% { opacity: 0.35; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.35); }
+  }
+
+  /* ---- Header ---- */
+  .site-header {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    background: linear-gradient(to bottom, rgba(7,7,14,0.7), rgba(7,7,14,0.3));
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .header-inner {
+    max-width: 1180px; margin: 0 auto; padding: 18px 32px;
+    display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand-orb {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: conic-gradient(from 180deg, var(--c-violet), var(--c-cyan), var(--c-magenta), var(--c-violet));
+    animation: orb-spin 9s linear infinite;
+    position: relative; box-shadow: 0 0 24px rgba(124, 92, 255, 0.5); flex-shrink: 0;
+  }
+  .brand-orb::after { content: ''; position: absolute; inset: 11px; border-radius: 50%; background: var(--ink); }
+  .brand-name { font-family: var(--font-display); font-weight: 600; font-size: 1rem; white-space: nowrap; }
+  .brand-name em {
+    font-style: normal;
+    background: linear-gradient(110deg, var(--c-violet), var(--c-cyan), var(--c-magenta));
+    background-size: 200% 100%;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    animation: gradient-slide 6s ease infinite;
+  }
+  .header-controls { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .region-filter {
+    display: flex; gap: 4px; padding: 4px; border-radius: 100px;
+    background: var(--glass); border: 1px solid var(--glass-border);
+  }
+  .region-btn {
+    font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
+    color: var(--text-dim); background: transparent; border: none; border-radius: 100px;
+    padding: 7px 14px; cursor: pointer; transition: all 0.3s var(--ease-smooth);
+  }
+  .region-btn:hover { color: var(--text); }
+  .region-btn.active { color: var(--ink); background: #fff; box-shadow: 0 0 18px rgba(255,255,255,0.4); }
+  .spotify-btn {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-family: var(--font-body); font-size: 0.8rem; font-weight: 600;
+    color: var(--ink); background: #fff; border: none; border-radius: 100px; padding: 10px 20px;
+    cursor: pointer; white-space: nowrap;
+    transition: transform 0.3s var(--ease-spring), box-shadow 0.3s;
+  }
+  .spotify-btn:hover { transform: scale(1.05); box-shadow: 0 0 32px rgba(255,255,255,0.25); }
+
+  /* ---- Hero ---- */
+  .hero {
+    max-width: 1180px; margin: 0 auto; padding: 120px 32px 110px; position: relative;
+  }
+  .hero-eyebrow {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.35em; text-transform: uppercase;
+    color: var(--text-faint); margin-bottom: 28px;
+    opacity: 0; animation: rise 1s var(--ease-smooth) 0.1s forwards;
+  }
+  .hero-title {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(3rem, 7.5vw, 6.2rem); line-height: 1.02; letter-spacing: -0.02em; max-width: 14ch;
+  }
+  .hero-title .line { display: block; opacity: 0; animation: rise 1.1s var(--ease-smooth) forwards; }
+  .hero-title .line:nth-child(1) { animation-delay: 0.25s; }
+  .hero-title .line:nth-child(2) { animation-delay: 0.45s; }
+  .hero-title .liquid {
+    background: linear-gradient(110deg, var(--c-violet) 0%, var(--c-cyan) 40%, var(--c-magenta) 80%, var(--c-violet) 100%);
+    background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    animation: rise 1.1s var(--ease-smooth) 0.45s forwards, gradient-slide 7s ease infinite;
+  }
+  .hero-sub {
+    margin-top: 30px; font-size: 1.05rem; font-weight: 300; color: var(--text-dim);
+    max-width: 46ch; line-height: 1.7;
+    opacity: 0; animation: rise 1s var(--ease-smooth) 0.65s forwards;
+  }
+  .hero-hint {
+    margin-top: 22px; display: inline-flex; align-items: center; gap: 10px;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--text-faint);
+    opacity: 0; animation: rise 1s var(--ease-smooth) 0.9s forwards;
+  }
+  .hero-hint .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--c-cyan); box-shadow: 0 0 12px var(--c-cyan);
+    animation: twinkle-dot 2.4s ease-in-out infinite;
+  }
+
+  /* ---- Archive ---- */
+  .archive { max-width: 1180px; margin: 0 auto; padding: 0 32px 120px; }
+  .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 36px; flex-wrap: wrap; }
+  .section-title { font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; }
+  .section-sub { margin-top: 8px; font-size: 0.85rem; color: var(--text-faint); font-weight: 300; }
+  .playlist-grid { display: flex; flex-direction: column; gap: 18px; }
+
+  /* ---- Playlist cards (breathing) ---- */
+  .pcard {
+    --rc: var(--c-violet);
+    border-radius: 22px; background: var(--glass); border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    position: relative; overflow: hidden;
+    transition: background 0.4s, transform 0.5s var(--ease-smooth);
+    opacity: 0; animation: rise 0.9s var(--ease-smooth) var(--enter-delay, 0s) forwards, breathe 7s ease-in-out var(--d, 0s) infinite;
+  }
+  .pcard:hover {
+    background: var(--glass-hover);
+    transform: translateY(-4px);
+    animation-play-state: running, paused;
+    border-color: color-mix(in srgb, var(--rc) 45%, var(--glass-border));
+    box-shadow: 0 18px 60px rgba(0,0,0,0.45), 0 0 60px -16px var(--rc);
+  }
+  .pcard.open { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); box-shadow: 0 24px 80px rgba(0,0,0,0.55), 0 0 60px -20px var(--rc); animation-play-state: running, paused; }
+  .pcard.open:hover { transform: none; }
+  .pcard::before {
+    content: ''; position: absolute; top: -60px; left: -40px; width: 280px; height: 200px;
+    background: radial-gradient(ellipse at center, var(--rc) 0%, transparent 70%);
+    opacity: 0.12; filter: blur(30px); transition: opacity 0.5s; pointer-events: none;
+  }
+  .pcard:hover::before { opacity: 0.28; }
+
+  .pcard-head {
+    display: grid; grid-template-columns: 56px 1fr 150px auto auto; align-items: center;
+    gap: 22px; padding: 22px 28px; cursor: pointer; user-select: none;
+  }
+  .pcard-orb {
+    width: 50px; height: 50px; border-radius: 50%; position: relative;
+    background:
+      radial-gradient(circle at 32% 30%, rgba(255,255,255,0.35), transparent 45%),
+      conic-gradient(from 0deg, var(--rc), transparent 65%, var(--rc));
+    opacity: 0.85;
+  }
+  .pcard-orb::after { content: ''; position: absolute; inset: 16px; border-radius: 50%; background: var(--ink-2); }
+  .pcard:not(.open):hover .pcard-orb { animation: orb-spin 1.2s linear; }
+  .pcard.open .pcard-orb { animation: orb-spin 4s linear infinite; }
+  .pcard-info { min-width: 0; }
+  .pcard-title {
+    font-family: var(--font-display); font-weight: 400; font-size: 1.02rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .pcard-title .region-accent { color: var(--rc); font-weight: 600; }
+  .pcard-meta { display: flex; gap: 16px; margin-top: 7px; font-size: 0.74rem; color: var(--text-faint); font-weight: 300; }
+
+  /* Mini constellation preview inside the card */
+  .pcard-const { width: 150px; height: 40px; opacity: 0.7; }
+  .pcard-const circle { fill: var(--rc); }
+  .pcard-const path {
+    stroke: var(--rc); stroke-width: 0.8; fill: none; opacity: 0.4;
+    stroke-dasharray: 200; stroke-dashoffset: 200;
+    transition: stroke-dashoffset 1.1s var(--ease-smooth);
+  }
+  .pcard:hover .pcard-const path, .pcard.open .pcard-const path { stroke-dashoffset: 0; }
+
+  .pcard-dl {
+    background: transparent; border: 1px solid var(--glass-border); color: var(--text-dim);
+    width: 38px; height: 38px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+    transition: all 0.3s var(--ease-spring);
+  }
+  .pcard-dl:hover { color: var(--ink); background: var(--rc); border-color: var(--rc); transform: scale(1.12); box-shadow: 0 0 20px var(--rc); }
+  .pcard-chev { color: var(--text-faint); transition: transform 0.45s var(--ease-spring), color 0.3s; }
+  .pcard.open .pcard-chev { transform: rotate(180deg); color: var(--rc); }
+
+  .tracks { max-height: 0; overflow: hidden; transition: max-height 0.65s var(--ease-smooth); }
+  .tracks-inner { padding: 4px 28px 26px; }
+  .track-row {
+    display: grid; grid-template-columns: 34px 40px 1fr auto; align-items: center;
+    gap: 16px; padding: 11px 14px; border-radius: 14px; cursor: pointer;
+    transition: background 0.25s; opacity: 0; transform: translateY(14px);
+  }
+  .pcard.open .track-row { animation: rise 0.5s var(--ease-smooth) forwards; animation-delay: calc(var(--i) * 0.05s); }
+  .track-row:hover { background: rgba(255,255,255,0.05); }
+  .track-num { font-size: 0.72rem; color: var(--text-faint); font-variant-numeric: tabular-nums; text-align: center; }
+  .track-play {
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--glass-border);
+    background: transparent; color: var(--text-dim); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 0.3s var(--ease-spring);
+  }
+  .track-play:hover { border-color: var(--rc); color: var(--rc); transform: scale(1.1); }
+  .track-details { min-width: 0; }
+  .track-name { font-size: 0.88rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .track-artist { font-size: 0.74rem; color: var(--text-faint); margin-top: 3px; font-weight: 300; }
+  .track-open { color: var(--text-faint); display: inline-flex; transition: color 0.25s, transform 0.25s; text-decoration: none; }
+  .track-open:hover { color: var(--rc); transform: scale(1.15); }
+
+  /* ---- Mock badge / footer ---- */
+  .mock-badge {
+    position: fixed; right: 20px; bottom: 20px; z-index: 60;
+    font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-dim); text-decoration: none;
+    background: rgba(12, 12, 24, 0.8); border: 1px solid var(--glass-border);
+    border-radius: 100px; padding: 8px 16px;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    transition: color 0.25s, border-color 0.25s;
+  }
+  .mock-badge:hover { color: var(--text); border-color: rgba(255,255,255,0.3); }
+  .mock-badge em { font-style: normal; color: var(--c-violet); }
+
+  .site-footer {
+    border-top: 1px solid var(--glass-border); padding: 36px 32px; text-align: center;
+    font-size: 0.74rem; color: var(--text-faint); font-weight: 300; letter-spacing: 0.05em;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(242,241,255,0.2); border-radius: 3px; }
+  ::selection { background: var(--c-violet); color: var(--ink); }
+
+  @media (max-width: 860px) {
+    .pcard-head { grid-template-columns: 50px 1fr auto auto; gap: 14px; padding: 18px 18px; }
+    .pcard-const { display: none; }
+    .hero { padding: 70px 24px 60px; }
+    .archive { padding: 0 24px 80px; }
+  }
+  @media (max-width: 480px) {
+    .brand-name { font-size: 0.85rem; }
+    .region-btn { padding: 6px 9px; font-size: 0.65rem; }
+    .track-num { display: none; }
+    .track-row { grid-template-columns: 40px 1fr auto; gap: 10px; padding: 10px 8px; }
+    .pcard-title { font-size: 0.82rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    #sky, .aurora { display: none; }
+  }
+</style>
+</head>
+<body>
+  <canvas id="sky" aria-hidden="true"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <div class="page">
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="brand">
+          <div class="brand-orb" aria-hidden="true"></div>
+          <div class="brand-name">Spotify<em>Unchained</em></div>
+        </div>
+        <div class="header-controls">
+          <div class="region-filter" role="group" aria-label="Region filter">
+            <button class="region-btn active">ALL</button>
+            <button class="region-btn">US</button>
+            <button class="region-btn">UK</button>
+            <button class="region-btn">CA</button>
+            <button class="region-btn">BR</button>
+            <button class="region-btn">MX</button>
+            <button class="region-btn">DE</button>
+          </div>
+          <button class="spotify-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3a.75.75 0 0 1-1.03.25c-2.82-1.72-6.37-2.11-10.55-1.16a.75.75 0 1 1-.33-1.46c4.58-1.05 8.51-.6 11.66 1.34.35.22.47.68.25 1.03zm1.47-3.26a.94.94 0 0 1-1.29.31c-3.23-1.98-8.16-2.56-11.98-1.4a.94.94 0 1 1-.55-1.79c4.37-1.33 9.8-.68 13.51 1.6.44.27.58.85.31 1.28zm.13-3.4C15.24 8.34 8.84 8.13 5.14 9.25a1.13 1.13 0 1 1-.65-2.15c4.24-1.29 11.28-1.04 15.72 1.6a1.13 1.13 0 0 1-1.11 1.94z"/></svg>
+            Sign in
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+      <p class="hero-eyebrow">The New Music Friday Archive</p>
+      <h1 class="hero-title">
+        <span class="line">Every Friday,</span>
+        <span class="line liquid">preserved.</span>
+      </h1>
+      <p class="hero-sub">
+        Spotify's New Music Friday refreshes every week — and last week's discoveries
+        vanish. Every Friday we save becomes a constellation in this sky, so the music
+        you almost loved is never lost.
+      </p>
+      <div class="hero-hint" aria-hidden="true">
+        <span class="dot"></span> Hover a week to light up its stars
+      </div>
+    </section>
+
+    <section class="archive">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">The Archive</h2>
+          <p class="section-sub">Four weeks · four constellations</p>
+        </div>
+      </div>
+      <div class="playlist-grid" id="grid"><!-- cards injected --></div>
+    </section>
+
+    <footer class="site-footer">
+      Preserving New Music Friday since 2015 · Not affiliated with Spotify
+    </footer>
+  </div>
+
+  <a class="mock-badge" href="../index.html"><em>07</em> · Observatory · all mocks</a>
+
+  <script>
+  // ---------- Sample data ----------
+  const REGION_COLORS = { US: '#f5c451', UK: '#6db9ff', CA: '#ff6b6b', BR: '#5ce08a', MX: '#ff7ee2', DE: '#5ee6d0' };
+  const PLAYLISTS = [
+    { title: 'New.Music.Friday.US.06.26.2026', region: 'US', date: 'June 26, 2026',
+      tracks: [['Neon Static','Vela Nova'],['Half Past Golden','The Marigold Theory'],['Gravity Well','Kess'],['Sugar & Cinder','Petra Lune'],['Wildfire Season','Coastal Youth'],['Glass Bones','MONA REY']] },
+    { title: 'New.Music.Friday.UK.06.26.2026', region: 'UK', date: 'June 26, 2026',
+      tracks: [['Brixton Rain','Ada & The Volts'],['Peripheral','Junes'],['Modern Ruins','Cathedral Park'],['Low Light','Yara Flynn'],['Terraform','Night Bus Home']] },
+    { title: 'New.Music.Friday.US.06.19.2026', region: 'US', date: 'June 19, 2026',
+      tracks: [['Cherry Cola Sky','Dime Store Saints'],['Anodyne','Val Verdier'],['Second Summer','Hotel Anywhere'],['Static Bloom','Ferra'],['Departures','El Camino Kid']] },
+    { title: 'New.Music.Friday.CA.06.12.2026', region: 'CA', date: 'June 12, 2026',
+      tracks: [['Aurora County','Wren North'],['Blue Hour','Saint-Laurent'],['Powder & Pine','The Hinterland'],['Comet Tail','Mirabel'],['True North Motel','Casey Rideau']] },
+  ];
+
+  // Constellation shapes: normalized 0..1 point sets + connection order.
+  // Anchored in viewport fractions (upper sky, clear of the headline).
+  const CONSTELLATIONS = [
+    { anchor: [0.74, 0.16], size: 150, pts: [[0.1,0.7],[0.3,0.35],[0.52,0.5],[0.7,0.15],[0.92,0.4],[0.78,0.75]], links: [0,1,2,3,4,5,2] },
+    { anchor: [0.88, 0.42], size: 120, pts: [[0.15,0.2],[0.45,0.4],[0.5,0.75],[0.8,0.85],[0.85,0.3]], links: [0,1,2,3,1,4] },
+    { anchor: [0.63, 0.52], size: 130, pts: [[0.1,0.3],[0.35,0.6],[0.6,0.4],[0.9,0.6],[0.7,0.9]], links: [0,1,2,3,4,1] },
+    { anchor: [0.80, 0.72], size: 140, pts: [[0.2,0.85],[0.35,0.5],[0.2,0.15],[0.6,0.35],[0.85,0.2],[0.75,0.65]], links: [0,1,2,3,4,3,5] },
+  ];
+
+  const regionTitle = t => t.replace(/\b(US|UK|CA|BR|MX|DE)\b/, '<span class="region-accent">$1</span>');
+
+  // Mini constellation SVG for the card (same shape, squashed viewBox)
+  function miniConst(ci) {
+    const c = CONSTELLATIONS[ci];
+    const px = p => (6 + p[0] * 138).toFixed(1);
+    const py = p => (5 + p[1] * 30).toFixed(1);
+    const dots = c.pts.map(p => `<circle cx="${px(p)}" cy="${py(p)}" r="1.6"/>`).join('');
+    const d = 'M ' + c.links.map(i => `${px(c.pts[i])} ${py(c.pts[i])}`).join(' L ');
+    return `<svg class="pcard-const" viewBox="0 0 150 40" aria-hidden="true"><path d="${d}"/>${dots}</svg>`;
+  }
+
+  // ---------- Render cards ----------
+  const grid = document.getElementById('grid');
+  PLAYLISTS.forEach((pl, pi) => {
+    const card = document.createElement('article');
+    card.className = 'pcard';
+    card.dataset.const = pi;
+    card.style.setProperty('--rc', REGION_COLORS[pl.region]);
+    card.style.setProperty('--enter-delay', `${(pi + 1) * 0.08}s`);
+    card.style.setProperty('--d', `${pi * 1.7}s`);
+    card.innerHTML = `
+      <div class="pcard-head" role="button" tabindex="0" aria-expanded="false">
+        <div class="pcard-orb" aria-hidden="true"></div>
+        <div class="pcard-info">
+          <h3 class="pcard-title">${regionTitle(pl.title)}</h3>
+          <div class="pcard-meta"><span>${pl.date}</span><span>${pl.tracks.length} tracks</span></div>
+        </div>
+        ${miniConst(pi)}
+        <button class="pcard-dl" aria-label="Download playlist" onclick="event.stopPropagation()">
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3v10M5.5 9l4.5 4.5L14.5 9M4 16.5h12"/></svg>
+        </button>
+        <svg class="pcard-chev" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 7.5 L10 12.5 L15 7.5"/></svg>
+      </div>
+      <div class="tracks">
+        <div class="tracks-inner">
+          ${pl.tracks.map(([name, artist], i) => `
+            <div class="track-row" style="--i:${i}">
+              <span class="track-num">${String(i + 1).padStart(2, '0')}</span>
+              <button class="track-play" aria-label="Play ${name}" onclick="event.stopPropagation()">
+                <svg width="11" height="12" viewBox="0 0 10 12" fill="currentColor"><path d="M0 0l10 6-10 6z"/></svg>
+              </button>
+              <div class="track-details">
+                <div class="track-name">${name}</div>
+                <div class="track-artist">${artist}</div>
+              </div>
+              <a class="track-open" href="#" onclick="return false" aria-label="Open in Spotify">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 4h8v8M16 4L7 13"/></svg>
+              </a>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    grid.appendChild(card);
+
+    card.addEventListener('pointerenter', () => setActiveConstellation(pi));
+    card.addEventListener('pointerleave', () => setActiveConstellation(-1));
+  });
+
+  // ---------- Expand / collapse ----------
+  document.querySelectorAll('.pcard-head').forEach(head => {
+    const card = head.closest('.pcard');
+    const tracks = card.querySelector('.tracks');
+    const toggle = () => {
+      const open = card.classList.toggle('open');
+      head.setAttribute('aria-expanded', open);
+      tracks.style.maxHeight = open ? tracks.scrollHeight + 'px' : '0px';
+    };
+    head.addEventListener('click', toggle);
+    head.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+  });
+
+  // ---------- The sky ----------
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const canvas = document.getElementById('sky');
+  const ctx = canvas.getContext('2d');
+  const DPR = Math.min(2, devicePixelRatio || 1);
+  let W = 0, H = 0;
+
+  const LAYERS = [
+    { n: 90, speed: 2.2, size: [0.5, 1.1], alpha: 0.35, par: 6 },
+    { n: 55, speed: 4.5, size: [0.8, 1.6], alpha: 0.55, par: 12 },
+    { n: 25, speed: 8.0, size: [1.1, 2.2], alpha: 0.8, par: 20 },
+  ];
+  let stars = [];
+
+  function buildSky() {
+    W = canvas.width = Math.round(innerWidth * DPR);
+    H = canvas.height = Math.round(innerHeight * DPR);
+    canvas.style.width = innerWidth + 'px';
+    canvas.style.height = innerHeight + 'px';
+    stars = [];
+    LAYERS.forEach((layer, li) => {
+      for (let i = 0; i < layer.n; i++) {
+        stars.push({
+          li,
+          x: Math.random() * innerWidth,
+          y: Math.random() * innerHeight,
+          r: layer.size[0] + Math.random() * (layer.size[1] - layer.size[0]),
+          tw: Math.random() * Math.PI * 2,
+          twSpeed: 0.4 + Math.random() * 1.2,
+        });
+      }
+    });
+  }
+  buildSky();
+  window.addEventListener('resize', buildSky);
+
+  // Gentle mouse parallax
+  const par = { x: 0, y: 0, tx: 0, ty: 0 };
+  window.addEventListener('pointermove', e => {
+    par.tx = (e.clientX / innerWidth - 0.5) * 2;
+    par.ty = (e.clientY / innerHeight - 0.5) * 2;
+  }, { passive: true });
+
+  // Shooting stars
+  let meteor = null;
+  let nextMeteor = performance.now() + 3500;
+  function spawnMeteor(now) {
+    const fromX = innerWidth * (0.25 + Math.random() * 0.65);
+    meteor = {
+      x: fromX, y: -20 + Math.random() * innerHeight * 0.25,
+      vx: -(4 + Math.random() * 5), vy: 3 + Math.random() * 2.5,
+      life: 1, born: now,
+    };
+    nextMeteor = now + 5000 + Math.random() * 6000;
+  }
+
+  // Active constellation (hovered card)
+  let activeConst = -1;
+  let constProgress = 0; // 0..1 line draw
+  function setActiveConstellation(i) {
+    if (i !== activeConst) constProgress = i === -1 ? constProgress : 0;
+    activeConst = i;
+  }
+
+  function constellationScreenPts(c) {
+    return c.pts.map(p => [
+      c.anchor[0] * innerWidth + (p[0] - 0.5) * c.size,
+      c.anchor[1] * innerHeight + (p[1] - 0.5) * c.size,
+    ]);
+  }
+
+  let t = 0;
+  function draw(now) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    ctx.scale(DPR, DPR);
+    t += 0.016;
+
+    par.x += (par.tx - par.x) * 0.04;
+    par.y += (par.ty - par.y) * 0.04;
+
+    // Stars
+    for (const s of stars) {
+      const layer = LAYERS[s.li];
+      s.x -= layer.speed * 0.016; // slow leftward drift
+      if (s.x < -4) s.x = innerWidth + 4;
+      const twinkle = 0.6 + 0.4 * Math.sin(s.tw + t * s.twSpeed);
+      ctx.globalAlpha = layer.alpha * twinkle;
+      ctx.fillStyle = '#dcd8ff';
+      ctx.beginPath();
+      ctx.arc(s.x + par.x * layer.par, s.y + par.y * layer.par, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Meteor
+    if (!meteor && now > nextMeteor) spawnMeteor(now);
+    if (meteor) {
+      meteor.x += meteor.vx; meteor.y += meteor.vy;
+      meteor.life -= 0.012;
+      if (meteor.life <= 0 || meteor.x < -80 || meteor.y > innerHeight + 80) {
+        meteor = null;
+      } else {
+        const tail = 16;
+        const grad = ctx.createLinearGradient(
+          meteor.x, meteor.y,
+          meteor.x - meteor.vx * tail, meteor.y - meteor.vy * tail);
+        grad.addColorStop(0, `rgba(220, 230, 255, ${0.9 * meteor.life})`);
+        grad.addColorStop(1, 'rgba(124, 92, 255, 0)');
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(meteor.x, meteor.y);
+        ctx.lineTo(meteor.x - meteor.vx * tail, meteor.y - meteor.vy * tail);
+        ctx.stroke();
+        ctx.fillStyle = `rgba(255,255,255,${meteor.life})`;
+        ctx.beginPath();
+        ctx.arc(meteor.x, meteor.y, 1.7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Constellations: faint always; active one draws its lines + glows
+    CONSTELLATIONS.forEach((c, ci) => {
+      const pts = constellationScreenPts(c).map(([x, y]) => [x + par.x * 14, y + par.y * 14]);
+      const isActive = ci === activeConst;
+      const color = REGION_COLORS[PLAYLISTS[ci].region];
+
+      // stars of the constellation
+      pts.forEach(([x, y], i) => {
+        const twinkle = 0.7 + 0.3 * Math.sin(t * 1.3 + i * 1.7 + ci);
+        ctx.globalAlpha = (isActive ? 0.95 : 0.4) * twinkle;
+        ctx.fillStyle = isActive ? color : '#cfc9ff';
+        ctx.beginPath();
+        ctx.arc(x, y, isActive ? 2.4 : 1.6, 0, Math.PI * 2);
+        ctx.fill();
+        if (isActive) {
+          ctx.globalAlpha = 0.28 * twinkle;
+          ctx.beginPath();
+          ctx.arc(x, y, 7, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+
+      // connecting lines
+      if (isActive && constProgress < 1) constProgress = Math.min(1, constProgress + 0.035);
+      const prog = isActive ? constProgress : 0;
+      if (prog > 0) {
+        const linkPts = c.links.map(i => pts[i]);
+        const segs = linkPts.length - 1;
+        const shown = prog * segs;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.moveTo(linkPts[0][0], linkPts[0][1]);
+        for (let i = 1; i <= Math.floor(shown); i++) ctx.lineTo(linkPts[i][0], linkPts[i][1]);
+        const fpart = shown - Math.floor(shown);
+        if (fpart > 0 && Math.floor(shown) < segs) {
+          const a = linkPts[Math.floor(shown)], b = linkPts[Math.floor(shown) + 1];
+          ctx.lineTo(a[0] + (b[0] - a[0]) * fpart, a[1] + (b[1] - a[1]) * fpart);
+        }
+        ctx.globalAlpha = 0.8;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+    });
+
+    ctx.restore();
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(draw);
+  }
+  if (!reduceMotion) requestAnimationFrame(draw);
+  </script>
+</body>
+</html>
