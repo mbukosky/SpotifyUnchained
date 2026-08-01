@@ -29,3 +29,5 @@ Thumbs.db
 .claude/plans
 
 info
+# Local database backups (contain production data)
+backup-*/

@@ -49,21 +49,38 @@ if (config.nodeEnv === 'production') {
   app.use(express.static(clientDist));
 }
 
-// CORS — restrict to allowed origins (API routes only)
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:3000')
+// CORS — restrict to allowed origins
+export const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:3000')
   .split(',')
-  .map(o => o.trim());
+  .map(o => o.trim())
+  .filter(Boolean);
 
-app.use(cors({
+// Remember which unknown origins we've already logged so a scanner hammering the
+// host produces one line, not one per request. Capped so it can't grow unbounded.
+const loggedOrigins = new Set();
+const LOGGED_ORIGINS_MAX = 100;
+
+const corsMiddleware = cors({
   origin(origin, callback) {
     // Allow requests with no origin (server-to-server, curl, etc.)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+      return;
     }
+    // Deny by withholding the CORS headers instead of throwing. An unknown Origin
+    // is routine (bots, hotlinkers, extensions); throwing turned every one of them
+    // into a 500 plus a stack trace, which buried real errors in the logs.
+    if (loggedOrigins.size < LOGGED_ORIGINS_MAX && !loggedOrigins.has(origin)) {
+      loggedOrigins.add(origin);
+      console.warn(`CORS: rejected origin ${origin}`);
+    }
+    callback(null, false);
   },
-}));
+});
+
+// Scope CORS to the JSON API. Static assets and the SPA shell are same-origin and
+// never need it, so a 404 on a static path no longer reaches this middleware.
+app.use(['/api', '/spotify', '/rss'], corsMiddleware);
 
 app.use(express.json({ limit: '10kb' }));
 
@@ -83,9 +100,27 @@ app.use(spotifyRoutes);
 // SPA fallback — serve index.html for unmatched routes
 if (config.nodeEnv === 'production') {
   const clientDist = path.join(__dirname, '../client/dist');
-  app.get('*', (req, res) => {
+  app.get('*', (req, res, next) => {
+    // Anything that looks like a file (/foo.js, /wp-admin/setup.php) missed the
+    // static handler, so it genuinely does not exist — don't answer it with the
+    // SPA shell and a 200.
+    if (path.extname(req.path)) {
+      next();
+      return;
+    }
     res.sendFile(path.join(clientDist, 'index.html'));
   });
 }
+
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
+// eslint-disable-next-line no-unused-vars -- Express identifies error handlers by arity
+app.use((err, req, res, next) => {
+  console.error(`${req.method} ${req.originalUrl} failed:`, err.message);
+  if (config.nodeEnv !== 'production') console.error(err.stack);
+  res.status(err.status || 500).json({ error: 'Internal server error' });
+});
 
 export default app;

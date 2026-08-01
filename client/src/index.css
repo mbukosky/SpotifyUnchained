@@ -746,8 +746,18 @@ body {
 /* --- Save playlist button --- */
 .save-row {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   padding-top: 20px;
+}
+
+.save-error {
+  font-size: 0.76rem;
+  color: #ff9a9a;
+  text-align: center;
+  max-width: 34ch;
+  margin: 0;
 }
 
 .save-btn {
