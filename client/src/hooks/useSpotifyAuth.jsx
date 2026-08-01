@@ -151,17 +151,39 @@ export function SpotifyAuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, [storeTokens, logout]);
 
-  // Fetch user profile when authenticated
+  // Fetch user profile when authenticated. A failure here used to be swallowed
+  // and left `user` null forever, which broke every later action that needed the
+  // account id — retry once, then let callers look the id up on demand.
   useEffect(() => {
     if (!accessToken || !isAuthenticated) return;
-    getCurrentUser(accessToken)
-      .then(setUser)
-      .catch(() => {});
+    let cancelled = false;
+
+    const load = (attempt = 0) => {
+      getCurrentUser(accessToken)
+        .then(profile => { if (!cancelled) setUser(profile); })
+        .catch(err => {
+          if (cancelled) return;
+          console.warn('Could not load Spotify profile:', err?.message);
+          if (attempt === 0 && err?.status !== 401) setTimeout(() => load(1), 1500);
+        });
+    };
+    load();
+
+    return () => { cancelled = true; };
   }, [accessToken, isAuthenticated]);
 
   // Auto-refresh 5 minutes before expiry
   useEffect(() => {
-    if (!refreshToken || !expiresAt) return;
+    if (!expiresAt) return;
+
+    // With no refresh token there is nothing to renew, but the component still
+    // has to re-render at expiry — otherwise `isAuthenticated` stays stale at
+    // true and actions fire with a dead token.
+    if (!refreshToken) {
+      const timer = setTimeout(logout, Math.max(0, expiresAt - Date.now()));
+      return () => clearTimeout(timer);
+    }
+
     const msUntilRefresh = expiresAt - Date.now() - 5 * 60 * 1000;
     if (msUntilRefresh <= 0) {
       refreshAccessToken();
@@ -169,7 +191,7 @@ export function SpotifyAuthProvider({ children }) {
     }
     const timer = setTimeout(refreshAccessToken, msUntilRefresh);
     return () => clearTimeout(timer);
-  }, [expiresAt, refreshToken, refreshAccessToken]);
+  }, [expiresAt, refreshToken, refreshAccessToken, logout]);
 
   const value = { user, isAuthenticated, loading, login, logout, accessToken, sessionExpired, dismissSessionExpired };
 

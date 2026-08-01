@@ -1,10 +1,24 @@
 import { useState } from 'react';
 import { useSpotifyAuth } from '../hooks/useSpotifyAuth';
-import { createPlaylist, addPlaylistTracks } from '../lib/spotify';
+import { savePlaylist } from '../lib/spotify';
+
+function messageFor(err) {
+  switch (err?.status) {
+    case 401:
+      return 'Your Spotify session expired. Sign in again and retry.';
+    case 403:
+      return 'Spotify denied the request. Sign in again to grant playlist access.';
+    case 429:
+      return 'Spotify is busy right now. Try again in a minute.';
+    default:
+      return err?.message || 'Something went wrong saving this playlist.';
+  }
+}
 
 export default function SavePlaylist({ playlist }) {
   const { user, isAuthenticated, login, accessToken } = useSpotifyAuth();
   const [status, setStatus] = useState('idle'); // idle | loading | success | error
+  const [error, setError] = useState(null);
 
   const handleSave = async () => {
     if (!isAuthenticated) {
@@ -13,14 +27,20 @@ export default function SavePlaylist({ playlist }) {
     }
 
     setStatus('loading');
+    setError(null);
     try {
-      const uris = playlist.tracks.map(t => t.uri).filter(Boolean);
-      const created = await createPlaylist(accessToken, user.id, playlist.title.replace(/\./g, ' '));
-      await addPlaylistTracks(accessToken, created.id, uris);
+      await savePlaylist(accessToken, {
+        userId: user?.id,
+        name: playlist.title.replace(/\./g, ' '),
+        uris: (playlist.tracks || []).map(t => t.uri),
+      });
       setStatus('success');
-    } catch {
+    } catch (err) {
+      // Logged so anyone reporting a failure has something concrete to paste.
+      console.error('Save to Spotify failed:', err);
+      setError(messageFor(err));
       setStatus('error');
-      setTimeout(() => setStatus('idle'), 3000);
+      setTimeout(() => setStatus('idle'), 6000);
     }
   };
 
@@ -31,6 +51,7 @@ export default function SavePlaylist({ playlist }) {
       onClick={handleSave}
       disabled={status === 'loading' || status === 'success'}
       aria-label="Save playlist to Spotify"
+      title={status === 'error' ? error : undefined}
     >
       {status === 'idle' && (
         <>
@@ -65,6 +86,9 @@ export default function SavePlaylist({ playlist }) {
         </>
       )}
     </button>
+    {status === 'error' && error && (
+      <p className="save-error" role="alert">{error}</p>
+    )}
     </div>
   );
 }
