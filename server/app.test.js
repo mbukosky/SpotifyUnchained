@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import mongoose from 'mongoose';
 import app from './app.js';
 
 let server;
@@ -57,6 +58,22 @@ describe('CORS', () => {
     });
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ error: 'Not found' });
+  });
+});
+
+describe('trust proxy', () => {
+  it('is off by default, so a local request cannot spoof its address', () => {
+    expect(app.get('trust proxy')).toBe(false);
+  });
+
+  it('trusts exactly one hop in production, so rate limits key on the real client', async () => {
+    vi.resetModules();
+    vi.stubEnv('NODE_ENV', 'production');
+    // A second copy of app.js re-runs the model definitions it pulls in.
+    mongoose.deleteModel(/.*/);
+    const { default: prodApp } = await import('./app.js?trust-proxy');
+    expect(prodApp.get('trust proxy')).toBe(1);
+    vi.unstubAllEnvs();
   });
 });
 
