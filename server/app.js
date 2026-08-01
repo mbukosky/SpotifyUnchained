@@ -14,6 +14,14 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// Railway terminates TLS at its edge and forwards with X-Forwarded-For. Without
+// this, req.ip is the edge proxy's address, so every visitor shares one rate
+// limit bucket. Trust exactly one hop — trusting the whole chain would let a
+// client spoof its address by sending its own X-Forwarded-For.
+if (config.nodeEnv === 'production') {
+  app.set('trust proxy', 1);
+}
+
 app.use(compression());
 
 // Helmet with CSP
