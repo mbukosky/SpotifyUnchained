@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import config from './config.js';
 import playlistRoutes from './routes/playlist.js';
 import spotifyRoutes from './routes/spotify.js';
+import healthRoutes from './routes/health.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -104,6 +105,7 @@ app.use('/api/', apiLimiter);
 
 app.use(playlistRoutes);
 app.use(spotifyRoutes);
+app.use(healthRoutes);
 
 // SPA fallback — serve index.html for unmatched routes
 if (config.nodeEnv === 'production') {

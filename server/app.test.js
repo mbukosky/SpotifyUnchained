@@ -84,3 +84,14 @@ describe('unmatched routes', () => {
     expect(await res.json()).toEqual({ error: 'Not found' });
   });
 });
+
+describe('/health', () => {
+  it('is a real route that reports the database, not the SPA shell', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    // No database is connected in tests, so the check must fail loudly.
+    const res = await fetch(`${base}/health`);
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ status: 'unavailable' });
+    error.mockRestore();
+  });
+});

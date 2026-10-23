@@ -31,3 +31,6 @@ Thumbs.db
 info
 # Local database backups (contain production data)
 backup-*/
+
+# Local-only notes/runbooks
+*.local.md
