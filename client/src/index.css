@@ -104,7 +104,6 @@ body {
   top: 0;
   z-index: 50;
   backdrop-filter: blur(24px) saturate(1.4);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
   background: linear-gradient(to bottom, rgba(7, 7, 14, 0.7), rgba(7, 7, 14, 0.3));
   border-bottom: 1px solid var(--glass-border);
 }
@@ -140,7 +139,6 @@ body {
   border-radius: 22px;
   overflow: hidden;
   backdrop-filter: blur(20px) saturate(1.5);
-  -webkit-backdrop-filter: blur(20px) saturate(1.5);
   background: linear-gradient(100deg, rgba(124, 92, 255, 0.4), rgba(255, 78, 205, 0.4));
   border: 1px solid rgba(255, 120, 220, 0.5);
   box-shadow: inset 4px 0 0 var(--c-magenta), 0 10px 36px rgba(255, 78, 205, 0.3);
@@ -466,7 +464,6 @@ body {
   background: var(--glass);
   border: 1px solid var(--glass-border);
   backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   position: relative;
   overflow: hidden;
   transition: background 0.4s, border-color 0.4s, transform 0.15s ease-out, box-shadow 0.5s;
@@ -943,6 +940,11 @@ body {
 }
 
 @media (max-width: 480px) {
+  /* Content scrolls under the sticky header, so give it more body. */
+  .site-header { background: rgba(7, 7, 14, 0.85); }
+  /* Two rows instead of three: the icon-only Spotify button joins the brand row. */
+  .header-inner { position: relative; gap: 12px; }
+  .spotify-btn { position: absolute; top: 14px; right: 20px; }
   .brand-name { font-size: 0.85rem; }
   .region-btn { padding: 6px 9px; font-size: 0.65rem; }
   .spotify-btn-label,
@@ -951,7 +953,8 @@ body {
   .pcard-head { grid-template-columns: 38px 1fr auto auto; gap: 10px; padding: 16px 14px; }
   .pcard-orb { width: 38px; height: 38px; }
   .pcard-orb::after { inset: 12px; }
-  .pcard-title { font-size: 0.82rem; }
+  /* Wrap rather than truncate: the region and date are at the end. */
+  .pcard-title { font-size: 0.82rem; white-space: normal; line-height: 1.4; }
   .pcard-meta { gap: 10px; font-size: 0.68rem; flex-wrap: wrap; }
   .tracks-inner { padding: 4px 14px 20px; }
   .track-row { gap: 10px; padding: 10px 8px; }
@@ -964,6 +967,8 @@ body {
 @media (max-width: 360px) {
   .region-filter { gap: 2px; }
   .region-btn { padding: 6px 7px; }
+  /* The 3rem clamp floor makes "preserved." wider than a 320px screen. */
+  .hero-title { font-size: min(3rem, 12.5vw); }
 }
 
 /* --- Reduced motion --- */
