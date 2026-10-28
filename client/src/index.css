@@ -946,7 +946,7 @@ body {
   .header-inner { position: relative; gap: 12px; }
   .spotify-btn { position: absolute; top: 14px; right: 20px; }
   .brand-name { font-size: 0.85rem; }
-  .region-btn { padding: 6px 9px; font-size: 0.65rem; }
+  .region-btn { padding: 6px 8px; font-size: 0.65rem; }
   .spotify-btn-label,
   .spotify-user-name { display: none; }
   .spotify-btn { gap: 0; padding: 9px; }
@@ -963,10 +963,10 @@ body {
   .track-embed-container { padding-left: 8px; padding-right: 8px; }
 }
 
-/* Eight region buttons overflow the pill on 320px-class phones. */
+/* Eight region buttons (one reading AU/NZ) overflow the pill on 320px-class phones. */
 @media (max-width: 360px) {
   .region-filter { gap: 2px; }
-  .region-btn { padding: 6px 7px; }
+  .region-btn { padding: 6px 6px; letter-spacing: 0.04em; }
   /* The 3rem clamp floor makes "preserved." wider than a 320px screen. */
   .hero-title { font-size: min(3rem, 12.5vw); }
 }

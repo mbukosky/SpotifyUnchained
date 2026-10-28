@@ -1,6 +1,6 @@
 import { useRegion } from '../hooks/useRegion';
 import { useSpotifyAuth } from '../hooks/useSpotifyAuth';
-import { REGIONS, REGION_COLORS } from '../lib/regions';
+import { REGIONS, REGION_COLORS, REGION_LABELS } from '../lib/regions';
 
 function regionStyle(r) {
   const color = REGION_COLORS[r];
@@ -29,7 +29,7 @@ export default function Header() {
                 style={regionStyle(r)}
                 onClick={() => changeRegion(r)}
               >
-                {r}
+                {REGION_LABELS[r] || r}
               </button>
             ))}
           </div>

@@ -11,3 +11,9 @@ export const REGION_COLORS = {
   DE: '#5ee6d0',
   AU: '#b48cff',
 };
+
+// Button text where the region code alone undersells it. Spotify's AU
+// playlist is shared with New Zealand ("New Music Friday AU & NZ").
+export const REGION_LABELS = {
+  AU: 'AU/NZ',
+};
