@@ -960,6 +960,12 @@ body {
   .track-embed-container { padding-left: 8px; padding-right: 8px; }
 }
 
+/* Eight region buttons overflow the pill on 320px-class phones. */
+@media (max-width: 360px) {
+  .region-filter { gap: 2px; }
+  .region-btn { padding: 6px 7px; }
+}
+
 /* --- Reduced motion --- */
 @media (prefers-reduced-motion: reduce) {
   *,

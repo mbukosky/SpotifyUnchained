@@ -4,7 +4,7 @@
 
 Backfills historical New Music Friday playlists by reconstructing weekly snapshots from [mackorone/spotify-playlist-archive](https://github.com/mackorone/spotify-playlist-archive) cumulative data. Idempotent — safe to re-run.
 
-**Regions:** UK, CA, BR, MX, DE
+**Regions:** UK, CA, BR, MX, DE, AU
 
 ### Usage
 

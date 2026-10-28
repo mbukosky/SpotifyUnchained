@@ -5,7 +5,7 @@
 SpotifyUnchained is a web application that automatically archives Spotify's "New Music Friday" playlists before they refresh weekly. This ensures music lovers never lose track of previously featured songs.
 
 **Key Features:**
-- Automatically archives Spotify's New Music Friday playlist (US & UK regions)
+- Automatically archives Spotify's New Music Friday playlist (US, UK, CA, BR, MX, DE, and AU — Australia & New Zealand share one playlist)
 - Web interface to browse historical playlist archives
 - Spotify OAuth (PKCE) integration for playlist export
 - Dark theme UI with per-region accent colors
@@ -117,7 +117,7 @@ Backend tests use **Vitest** with test files co-located next to source files (`s
 
 ### Playlist API
 - `GET /spotify` - List archived playlists
-  - Query params: `page`, `size`, `sort` (asc/desc), `region` (US/UK)
+  - Query params: `page`, `size`, `sort` (asc/desc), `region` (US/UK/CA/BR/MX/DE/AU)
   - Returns paginated playlist data with track information
 
 ### Spotify OAuth API
@@ -130,7 +130,7 @@ Backend tests use **Vitest** with test files co-located next to source files (`s
 ```javascript
 {
   title: String,          // e.g., "New.Music.Friday.US.02.14.2026"
-  region: String,         // "US" or "UK"
+  region: String,         // US, UK, CA, BR, MX, DE, or AU
   published_date: Date,
   tracks: [{
     id: String,           // Spotify track ID

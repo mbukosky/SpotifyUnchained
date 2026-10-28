@@ -13,10 +13,11 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
-const REGION_CODES = ['US', 'UK', 'CA', 'BR', 'MX', 'DE'];
+const REGION_CODES = Object.keys(REGION_COLORS);
+const REGION_SPLIT = new RegExp(`\\b(${REGION_CODES.join('|')})\\b`);
 
 function RegionTitle({ title }) {
-  const parts = title.replace(/\./g, ' . ').split(/\b(US|UK|CA|BR|MX|DE)\b/);
+  const parts = title.replace(/\./g, ' . ').split(REGION_SPLIT);
   return parts.map((part, i) =>
     REGION_CODES.includes(part)
       ? <span key={i} className="region-accent">{part}</span>
