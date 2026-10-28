@@ -281,6 +281,42 @@ body {
   box-shadow: 0 0 18px var(--region-glow, rgba(255, 255, 255, 0.4));
 }
 
+/* Shared-playlist regions (AU & NZ) coin-spin between faces instead of
+   widening the button. Both faces share one grid cell, so the button is
+   only as wide as the wider code. */
+.region-btn-flip { perspective: 240px; }
+
+.flip {
+  display: inline-grid;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.flip-face {
+  grid-area: 1 / 1;
+  backface-visibility: hidden;
+}
+
+.flip-back { transform: rotateY(180deg); }
+
+@media (hover: hover) {
+  .region-btn-flip:hover .flip { transform: rotateY(180deg); }
+}
+
+.region-btn-flip:focus-visible .flip { transform: rotateY(180deg); }
+
+/* No hover on touch screens, so spin on a slow loop to reveal the
+   second face. 360deg lands back on the front, so the loop is seamless. */
+@media (hover: none) {
+  .flip { animation: flip-idle 6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite; }
+}
+
+@keyframes flip-idle {
+  0%, 40% { transform: rotateY(0deg); }
+  50%, 90% { transform: rotateY(180deg); }
+  100% { transform: rotateY(360deg); }
+}
+
 .spotify-btn {
   display: inline-flex;
   align-items: center;
@@ -946,7 +982,7 @@ body {
   .header-inner { position: relative; gap: 12px; }
   .spotify-btn { position: absolute; top: 14px; right: 20px; }
   .brand-name { font-size: 0.85rem; }
-  .region-btn { padding: 6px 8px; font-size: 0.65rem; }
+  .region-btn { padding: 6px 9px; font-size: 0.65rem; }
   .spotify-btn-label,
   .spotify-user-name { display: none; }
   .spotify-btn { gap: 0; padding: 9px; }
@@ -963,10 +999,10 @@ body {
   .track-embed-container { padding-left: 8px; padding-right: 8px; }
 }
 
-/* Eight region buttons (one reading AU/NZ) overflow the pill on 320px-class phones. */
+/* Eight region buttons overflow the pill on 320px-class phones. */
 @media (max-width: 360px) {
   .region-filter { gap: 2px; }
-  .region-btn { padding: 6px 6px; letter-spacing: 0.04em; }
+  .region-btn { padding: 6px 7px; }
   /* The 3rem clamp floor makes "preserved." wider than a 320px screen. */
   .hero-title { font-size: min(3rem, 12.5vw); }
 }

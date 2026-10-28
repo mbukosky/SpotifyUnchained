@@ -12,8 +12,9 @@ export const REGION_COLORS = {
   AU: '#b48cff',
 };
 
-// Button text where the region code alone undersells it. Spotify's AU
-// playlist is shared with New Zealand ("New Music Friday AU & NZ").
-export const REGION_LABELS = {
-  AU: 'AU/NZ',
+// Regions whose playlist covers more than one country. The button spins
+// between the code and the alternate face rather than widening to fit both:
+// Spotify's AU playlist is "New Music Friday AU & NZ".
+export const REGION_FLIP = {
+  AU: { alt: 'NZ', name: 'Australia & New Zealand' },
 };
