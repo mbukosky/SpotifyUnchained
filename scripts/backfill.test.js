@@ -4,6 +4,7 @@ import {
   reconstructPlaylist,
   generateFridays,
   formatTitle,
+  lastChangeDate,
 } from './backfill.js';
 
 describe('parseCumulativeMarkdown', () => {
@@ -117,6 +118,32 @@ describe('generateFridays', () => {
       const diff = fridays[i - 1].getTime() - fridays[i].getTime();
       expect(diff).toBe(7 * 24 * 60 * 60 * 1000);
     }
+  });
+});
+
+describe('generateFridays from an anchor date', () => {
+  it('starts at the anchor when it is a Friday', () => {
+    const fridays = generateFridays(3, new Date(2025, 11, 19)); // Fri Dec 19, 2025
+    expect(fridays.map((f) => f.toDateString())).toEqual([
+      'Fri Dec 19 2025',
+      'Fri Dec 12 2025',
+      'Fri Dec 05 2025',
+    ]);
+  });
+
+  it('steps back to the previous Friday otherwise', () => {
+    const fridays = generateFridays(1, new Date(2025, 11, 18)); // Thu Dec 18, 2025
+    expect(fridays[0].toDateString()).toBe('Fri Dec 12 2025');
+  });
+});
+
+describe('lastChangeDate', () => {
+  it('returns the latest added or removed date as a local date', () => {
+    const tracks = [
+      { added: new Date('2025-12-11T00:00:00Z'), removed: new Date('2025-12-19T00:00:00Z') },
+      { added: new Date('2025-12-18T00:00:00Z'), removed: null },
+    ];
+    expect(lastChangeDate(tracks)).toEqual(new Date(2025, 11, 19));
   });
 });
 

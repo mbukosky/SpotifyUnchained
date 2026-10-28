@@ -4,7 +4,10 @@ import Playlist from '../server/models/playlist.js';
 import { PLAYLIST_IDS } from '../server/lib/regions.js';
 
 const BACKFILL_WEEKS = parseInt(process.env.BACKFILL_WEEKS || '50', 10);
-const BACKFILL_REGIONS = ['UK', 'CA', 'BR', 'MX', 'DE', 'AU'];
+const BACKFILL_REGIONS = (process.env.BACKFILL_REGIONS || 'UK,CA,BR,MX,DE,AU')
+  .split(',')
+  .map((r) => r.trim().toUpperCase())
+  .filter(Boolean);
 
 const CUMULATIVE_URL = (id) =>
   `https://raw.githubusercontent.com/mackorone/spotify-playlist-archive/main/playlists/cumulative/${id}.md`;
@@ -62,9 +65,9 @@ export function parseCumulativeMarkdown(text) {
   return tracks;
 }
 
-export function generateFridays(weeksBack) {
+export function generateFridays(weeksBack, from = new Date()) {
   const fridays = [];
-  const now = new Date();
+  const now = new Date(from);
   const day = now.getDay();
   // Days since last Friday: Sun=2, Mon=3, Tue=4, Wed=5, Thu=6, Fri=0, Sat=1
   const diff = (day + 2) % 7;
@@ -79,6 +82,17 @@ export function generateFridays(weeksBack) {
   }
 
   return fridays;
+}
+
+// The upstream archive can stop tracking a playlist, so anchor the backfill to its
+// last recorded change (as a local date) rather than today.
+export function lastChangeDate(allTracks) {
+  let latest = 0;
+  for (const t of allTracks) {
+    latest = Math.max(latest, t.added.getTime(), t.removed ? t.removed.getTime() : 0);
+  }
+  const d = new Date(latest);
+  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
 }
 
 export function reconstructPlaylist(allTracks, friday) {
@@ -112,8 +126,12 @@ async function backfillRegion(region, playlistId) {
   const allTracks = parseCumulativeMarkdown(text);
   console.log(`  Parsed ${allTracks.length} cumulative tracks`);
 
-  const fridays = generateFridays(BACKFILL_WEEKS);
+  const lastChange = lastChangeDate(allTracks);
+  console.log(`  Archive last changed ${lastChange.toDateString()}`);
+
+  const fridays = generateFridays(BACKFILL_WEEKS, lastChange);
   let created = 0;
+  let existing = 0;
   let skipped = 0;
 
   for (const friday of fridays) {
@@ -134,15 +152,17 @@ async function backfillRegion(region, playlistId) {
       added_at: t.added,
     }));
 
-    await Playlist.findOneAndUpdate(
+    // Insert-only: never overwrite a playlist that already exists (e.g. one saved by the live sync)
+    const result = await Playlist.updateOne(
       { title, region },
-      { title, region, published_date: friday, tracks: playlistTracks },
-      { upsert: true, new: true }
+      { $setOnInsert: { title, region, published_date: friday, tracks: playlistTracks } },
+      { upsert: true }
     );
-    created++;
+    if (result.upsertedCount) created++;
+    else existing++;
   }
 
-  console.log(`  ${region}: ${created} playlists upserted, ${skipped} empty weeks skipped`);
+  console.log(`  ${region}: ${created} playlists inserted, ${existing} already existed, ${skipped} empty weeks skipped`);
 }
 
 async function main() {
