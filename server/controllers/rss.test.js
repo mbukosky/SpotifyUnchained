@@ -91,6 +91,17 @@ describe('rss controller - feed', () => {
     expect(xml).toContain('New Music Friday (BR)');
   });
 
+  it('filters by new region AU', async () => {
+    mockLean.mockResolvedValue([]);
+
+    const { req, res } = mockReqRes({ region: 'AU' });
+    await feed(req, res);
+
+    expect(mockFind).toHaveBeenCalledWith({ region: 'AU' });
+    const xml = res.send.mock.calls[0][0];
+    expect(xml).toContain('New Music Friday (AU)');
+  });
+
   it('uses "All Regions" label when no region filter is set', async () => {
     mockLean.mockResolvedValue([]);
 

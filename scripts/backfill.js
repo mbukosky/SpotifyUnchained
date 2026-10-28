@@ -4,7 +4,7 @@ import Playlist from '../server/models/playlist.js';
 import { PLAYLIST_IDS } from '../server/lib/regions.js';
 
 const BACKFILL_WEEKS = parseInt(process.env.BACKFILL_WEEKS || '50', 10);
-const BACKFILL_REGIONS = ['UK', 'CA', 'BR', 'MX', 'DE'];
+const BACKFILL_REGIONS = ['UK', 'CA', 'BR', 'MX', 'DE', 'AU'];
 
 const CUMULATIVE_URL = (id) =>
   `https://raw.githubusercontent.com/mackorone/spotify-playlist-archive/main/playlists/cumulative/${id}.md`;

@@ -5,6 +5,7 @@ export const PLAYLIST_IDS = {
   BR: '37i9dQZF1DX34KNiFQJNVm',
   MX: '37i9dQZF1DWWZJHBoz7SEG',
   DE: '37i9dQZF1DWUW2bvSkjcJ6',
+  AU: '37i9dQZF1DWT2SPAYawYcO',
 };
 
 export const VALID_REGIONS = Object.keys(PLAYLIST_IDS);

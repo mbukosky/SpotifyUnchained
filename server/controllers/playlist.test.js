@@ -115,7 +115,7 @@ describe('playlist controller - list', () => {
     expect(mockCountDocuments).toHaveBeenCalledWith({});
   });
 
-  it('ranks regions by menu order (US, UK, CA, BR, MX, DE) within a date', async () => {
+  it('ranks regions by menu order (US, UK, CA, BR, MX, DE, AU) within a date', async () => {
     mockCountDocuments.mockResolvedValue(0);
 
     const { req, res } = mockReqRes();
@@ -124,7 +124,7 @@ describe('playlist controller - list', () => {
     // The $addFields stage computes a rank via the canonical region list, and
     // $sort applies it after published_date so same-date regions follow it.
     const rank = stage('$addFields')._regionRank;
-    expect(rank).toEqual({ $indexOfArray: [['US', 'UK', 'CA', 'BR', 'MX', 'DE'], '$region'] });
+    expect(rank).toEqual({ $indexOfArray: [['US', 'UK', 'CA', 'BR', 'MX', 'DE', 'AU'], '$region'] });
     expect(stage('$sort')).toEqual({ published_date: 1, _regionRank: 1 });
   });
 

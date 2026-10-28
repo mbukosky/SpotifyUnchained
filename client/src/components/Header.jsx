@@ -1,6 +1,6 @@
 import { useRegion } from '../hooks/useRegion';
 import { useSpotifyAuth } from '../hooks/useSpotifyAuth';
-import { REGIONS, REGION_COLORS } from '../lib/regions';
+import { REGIONS, REGION_COLORS, REGION_FLIP } from '../lib/regions';
 
 function regionStyle(r) {
   const color = REGION_COLORS[r];
@@ -22,16 +22,25 @@ export default function Header() {
 
         <nav className="header-controls">
           <div className="region-filter" role="group" aria-label="Region filter">
-            {REGIONS.map(r => (
-              <button
-                key={r}
-                className={`region-btn${region === r ? ' active' : ''}`}
-                style={regionStyle(r)}
-                onClick={() => changeRegion(r)}
-              >
-                {r}
-              </button>
-            ))}
+            {REGIONS.map(r => {
+              const flip = REGION_FLIP[r];
+              return (
+                <button
+                  key={r}
+                  className={`region-btn${flip ? ' region-btn-flip' : ''}${region === r ? ' active' : ''}`}
+                  style={regionStyle(r)}
+                  onClick={() => changeRegion(r)}
+                  aria-label={flip?.name}
+                >
+                  {flip ? (
+                    <span className="flip" aria-hidden="true">
+                      <span className="flip-face">{r}</span>
+                      <span className="flip-face flip-back">{flip.alt}</span>
+                    </span>
+                  ) : r}
+                </button>
+              );
+            })}
           </div>
 
           {isAuthenticated ? (

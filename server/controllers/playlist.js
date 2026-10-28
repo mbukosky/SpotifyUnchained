@@ -16,7 +16,7 @@ export async function list(req, res) {
     const [count, items] = await Promise.all([
       Playlist.countDocuments(filter),
       // Order same-date playlists by region to match the menu order in
-      // VALID_REGIONS (US, UK, CA, BR, MX, DE) rather than insertion order.
+      // VALID_REGIONS (US, UK, CA, BR, MX, DE, AU) rather than insertion order.
       Playlist.aggregate([
         { $match: filter },
         { $addFields: { _regionRank: { $indexOfArray: [VALID_REGIONS, '$region'] } } },
