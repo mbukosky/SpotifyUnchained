@@ -59,6 +59,7 @@ test('first visit defaults to ALL', async ({ app, screen, browser }) => {
   await expect(browser).toHaveClass(screen.getByRole('button', 'ALL'), /\bactive\b/);
   await expect(screen.getByText('1–5 of 64')).toBeVisible();
 
+  // Scripted: the seed's long playlists push this control past the agent's snapshot.
   await screen.getByLabel('Per page').selectOption('10');
   await expect(screen.getByText('1–10 of 64')).toBeVisible();
   const regions = (await listedTitles(browser)).map((title) => title.split('.')[3]);
@@ -67,9 +68,9 @@ test('first visit defaults to ALL', async ({ app, screen, browser }) => {
 
 // openspec/specs/archive-browsing/spec.md
 // Requirement: Default and remembered region. Scenario: Choice survives a reload.
-test('region choice survives a reload', async ({ app, screen, browser }) => {
+test('region choice survives a reload', async ({ agent, app, screen, browser }) => {
   await app.open('/');
-  await screen.getByRole('button', 'UK').tap();
+  await agent.act('Filter the archive to the UK region');
   await expect(screen.getByText('1–2 of 2')).toBeVisible();
 
   await browser.reload();
@@ -81,7 +82,7 @@ test('region choice survives a reload', async ({ app, screen, browser }) => {
 
 // openspec/specs/archive-browsing/spec.md
 // Requirement: Region accent colors. Scenario: Active region button takes its accent.
-test('active region button takes its accent', async ({ app, screen, browser }) => {
+test('active region button takes its accent', async ({ agent, app, screen, browser }) => {
   const fill = (name: string) =>
     browser.evaluate((label: string) => {
       const button = [...document.querySelectorAll('.region-btn')].find((b) => b.textContent === label)!;
@@ -91,7 +92,8 @@ test('active region button takes its accent', async ({ app, screen, browser }) =
   await app.open('/');
   await expect.poll(() => fill('ALL'), { timeout: 3000 }).toBe('rgb(255, 255, 255)');
 
-  await screen.getByRole('button', 'CA').tap();
+  await agent.act('Filter the archive to the CA region');
+  await expect(browser).toHaveClass(screen.getByRole('button', 'CA'), /\bactive\b/);
   await expect.poll(() => fill('CA'), { timeout: 3000 }).toBe('rgb(255, 107, 107)');
 });
 
@@ -143,6 +145,7 @@ test('region filter narrows the list', async ({ app, agent, screen }) => {
 // Requirement: Archive filtering and order. Scenario: ALL shows newest first across regions.
 test('ALL shows newest first across regions', async ({ app, screen, browser }) => {
   await app.open('/');
+  // Scripted: the seed's long playlists push this control past the agent's snapshot.
   await screen.getByLabel('Per page').selectOption('10');
   await expect(screen.getByText('1–10 of 64')).toBeVisible();
 
@@ -164,15 +167,13 @@ test('default page size is 5', async ({ app, screen }) => {
 
 // openspec/specs/archive-browsing/spec.md
 // Requirement: Pagination. Scenario: Changing page size resets to the first page.
-test('changing page size resets to the first page', async ({ app, screen }) => {
+test('changing page size resets to the first page', async ({ agent, app, screen }) => {
   await app.open('/');
   await expect(screen.getByText('1–5 of 64')).toBeVisible();
-  await screen.getByRole('button', 'Next page').tap();
-  await expect(screen.getByText('6–10 of 64')).toBeVisible();
-  await screen.getByRole('button', 'Next page').tap();
+  await agent.act('Go to the third page of playlists');
   await expect(screen.getByText('11–15 of 64')).toBeVisible();
 
-  await screen.getByLabel('Per page').selectOption('10');
+  await agent.act('Show 10 playlists per page');
 
   await expect(screen.getByText('1–10 of 64')).toBeVisible();
   await expect(screen.getByRole('article')).toHaveCount(10);
@@ -181,7 +182,7 @@ test('changing page size resets to the first page', async ({ app, screen }) => {
 
 // openspec/specs/archive-browsing/spec.md
 // Requirement: Pagination. Scenario: Navigation buttons respect the ends.
-test('navigation buttons respect the ends', async ({ app, screen, browser }) => {
+test('navigation buttons respect the ends', async ({ agent, app, screen, browser }) => {
   await presetRegion(browser, 'AU');
   await app.open('/');
   await screen.getByLabel('Per page').selectOption('20');
@@ -189,9 +190,7 @@ test('navigation buttons respect the ends', async ({ app, screen, browser }) => 
   await expect(screen.getByRole('button', 'Previous page')).toBeDisabled();
   await expect(screen.getByRole('button', 'Next page')).toBeEnabled();
 
-  await screen.getByRole('button', 'Next page').tap();
-  await expect(screen.getByText('21–40 of 52')).toBeVisible();
-  await screen.getByRole('button', 'Next page').tap();
+  await agent.act('Go to the last page of playlists');
 
   await expect(screen.getByText('41–52 of 52')).toBeVisible();
   await expect(screen.getByRole('button', 'Next page')).toBeDisabled();
@@ -231,7 +230,7 @@ test('loading state shows while fetching', async ({ app, screen, browser }) => {
 
 // openspec/specs/archive-browsing/spec.md
 // Requirement: Loading, empty and error states. Scenario: Request fails.
-test('failed request shows the error state', async ({ app, screen, browser }) => {
+test('failed request shows the error state', async ({ agent, app, screen, browser }) => {
   const message = 'Failed to load playlists. Please try again.';
 
   await browser.route(LIST, (route) => route.fulfill({ status: 500, json: { error: 'Internal server error' } }));
@@ -242,7 +241,8 @@ test('failed request shows the error state', async ({ app, screen, browser }) =>
   // The other half: a request that can't complete at all.
   await browser.unroute(LIST);
   await browser.route(LIST, (route) => route.abort());
-  await screen.getByRole('button', 'US').tap();
+  await agent.act('Filter the archive to the US region');
+  await expect(browser).toHaveClass(screen.getByRole('button', 'US'), /\bactive\b/);
   await expect(screen.getByText(message)).toBeVisible();
   await expect(browser.locator('.pagination')).toHaveCount(0);
 });
@@ -282,7 +282,7 @@ test('card shows title, date and count', async ({ app, screen, browser }) => {
 
 // openspec/specs/archive-browsing/spec.md
 // Requirement: Playlist card expansion. Scenario: Card expands and collapses.
-test('card expands and collapses', async ({ app, screen, browser }) => {
+test('card expands and collapses', async ({ agent, app, screen, browser }) => {
   await presetRegion(browser, 'DE');
   await app.open('/');
   const head = screen.getByRole('button', toggleName('DE'));
@@ -298,7 +298,7 @@ test('card expands and collapses', async ({ app, screen, browser }) => {
   };
 
   await expectState(false);
-  await head.tap();
+  await agent.act('Expand the DE playlist from February 14, 2026');
   await expectState(true);
   await head.tap();
   await expectState(false);
@@ -317,10 +317,11 @@ test('card expands and collapses', async ({ app, screen, browser }) => {
 
 // openspec/specs/archive-browsing/spec.md
 // Requirement: Track listing. Scenario: Long playlist shows every track.
-test('long playlist shows every track', async ({ app, screen, browser }) => {
+test('long playlist shows every track', async ({ agent, app, screen, browser }) => {
   await presetRegion(browser, 'UK');
   await app.open('/');
-  await screen.getByRole('button', toggleName('UK')).tap();
+  await agent.act('Expand the UK playlist from February 14, 2026');
+  await expect(screen.getByRole('button', toggleName('UK'))).toHaveAttribute('aria-expanded', 'true');
   const card = cardSelector('UK');
 
   const numbers = await browser.locator(`${card} .track-num`).allTextContents();
@@ -343,7 +344,7 @@ test('long playlist shows every track', async ({ app, screen, browser }) => {
 // openspec/specs/archive-browsing/spec.md
 // Requirement: Track preview. Scenario: Preview opens and closes.
 // Checks the embed element only. appHostOnly blocks its request to open.spotify.com.
-test('track preview opens and closes', async ({ app, screen, browser }) => {
+test('track preview opens and closes', async ({ agent, app, screen, browser }) => {
   await presetRegion(browser, 'DE');
   await app.open('/');
   await screen.getByRole('button', toggleName('DE')).tap();
@@ -351,7 +352,7 @@ test('track preview opens and closes', async ({ app, screen, browser }) => {
   const row = browser.locator(`${card} .track-row`).first();
   const embed = browser.locator(`${card} iframe[title="Spotify embed: Test Track 1 DE"]`);
 
-  await row.tap();
+  await agent.act('Play the first track of the expanded playlist');
 
   await expect(embed).toBeAttached();
   const src = await embed.getAttribute('src');
@@ -498,7 +499,7 @@ test('without a fine pointer nothing tilts or parallaxes', async ({ app, browser
 // openspec/specs/archive-browsing/spec.md
 // Requirement: Analytics. Scenario: Page load is tagged.
 // The tag's request is answered here with an empty script, so it never reaches Google.
-test('page load is tagged', async ({ app, screen, browser }) => {
+test('page load is tagged', async ({ agent, app, screen, browser }) => {
   const tagRequests: string[] = [];
   await browser.route('https://www.googletagmanager.com/**', async (route) => {
     tagRequests.push(route.request.url);
@@ -520,7 +521,7 @@ test('page load is tagged', async ({ app, screen, browser }) => {
   expect(await commands()).toEqual(onLoad);
 
   // The requirement also rules out custom events from the archive page.
-  await screen.getByRole('button', 'UK').tap();
+  await agent.act('Filter the archive to the UK region');
   await expect(screen.getByText('1–2 of 2')).toBeVisible();
   expect(await commands()).toEqual(onLoad);
 });

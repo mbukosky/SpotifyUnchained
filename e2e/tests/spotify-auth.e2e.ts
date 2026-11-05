@@ -40,11 +40,12 @@ test.beforeEach(async ({ browser }) => {
 
 // openspec/specs/spotify-auth/spec.md
 // Requirement: PKCE sign-in redirect. Scenario: User clicks Sign in.
-test('sign-in redirects to Spotify with PKCE', async ({ app, screen, browser }) => {
+test('sign-in redirects to Spotify with PKCE', async ({ agent, app, screen, browser }) => {
   const authorize = await mockAuthorize(browser);
   await app.open('/');
 
-  await screen.getByRole('button', 'Sign in with Spotify').tap();
+  await agent.act('Sign in with Spotify');
+  await expect(browser).toHaveURL(/^https:\/\/accounts\.spotify\.com\/authorize\?/);
   await expect.poll(() => authorize.length).toBe(1);
   await browser.back();
 
@@ -322,7 +323,7 @@ for (const [name, refresh] of [
 
 // openspec/specs/spotify-auth/spec.md
 // Requirement: Session-expired notice. Scenario: Banner shown after invalid grant.
-test('session-expired banner shows its message and buttons', async ({ app, screen, browser }) => {
+test('session-expired banner shows its message and buttons', async ({ agent, app, screen, browser }) => {
   const authorize = await mockAuthorize(browser);
   await mockTokenEndpoints(browser, { refresh: { status: 400, json: { error: 'invalid_grant' } } });
   await mockSpotifyApi(browser);
@@ -333,13 +334,14 @@ test('session-expired banner shows its message and buttons', async ({ app, scree
   const banner = screen.getByRole('alert');
   await expect(banner.getByText(BANNER)).toBeVisible();
   await expect(banner.getByRole('button', 'Dismiss notification')).toBeVisible();
-  await banner.getByRole('button', 'Sign in').tap();
+  await agent.act('Click the Sign in button in the session-expired notice');
+  await expect(browser).toHaveURL(/^https:\/\/accounts\.spotify\.com\/authorize\?/);
   await expect.poll(() => authorize.length).toBe(1);
 });
 
 // openspec/specs/spotify-auth/spec.md
 // Requirement: Session-expired notice. Scenario: User dismisses the banner.
-test('session-expired banner can be dismissed', async ({ app, screen, browser }) => {
+test('session-expired banner can be dismissed', async ({ agent, app, screen, browser }) => {
   await mockTokenEndpoints(browser, { refresh: { status: 400, json: { error: 'invalid_grant' } } });
   await mockSpotifyApi(browser);
   await seedSession(browser, { refreshToken: 'dead-refresh', expiresInMs: 60_000 });
@@ -347,21 +349,21 @@ test('session-expired banner can be dismissed', async ({ app, screen, browser })
   await app.open('/');
   await expect(screen.getByText(BANNER)).toBeVisible();
 
-  await screen.getByRole('button', 'Dismiss notification').tap();
+  await agent.act('Dismiss the session-expired notice');
 
   await expect(screen.getByText(BANNER)).toHaveCount(0);
 });
 
 // openspec/specs/spotify-auth/spec.md
 // Requirement: Sign-out. Scenario: User signs out.
-test('signing out removes the session', async ({ app, screen, browser }) => {
+test('signing out removes the session', async ({ agent, app, screen, browser }) => {
   const calls = await mockSpotifyApi(browser);
   await seedSession(browser, { refreshToken: 'a-refresh' });
   await app.open('/');
   await expect(browser.locator('.spotify-user-name')).toHaveText('E2E Listener');
   const before = calls.length;
 
-  await screen.getByRole('button', 'Sign out of Spotify').tap();
+  await agent.act('Sign out of Spotify');
 
   await expect(screen.getByRole('button', 'Sign in with Spotify')).toBeVisible();
   expect(await session(browser)).toEqual([null, null, null]);

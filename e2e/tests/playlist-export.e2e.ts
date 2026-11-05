@@ -19,6 +19,11 @@ const trackUris = (region: string, label: string, count: number) =>
     return `spotify:track:${id}`;
   });
 
+const SAVE_AT_END = 'Click the "Save to Spotify" button at the end of the expanded playlist\'s track list';
+const SAVE_IN_HEADER = (region: string) =>
+  `Click the save button in the header of the ${region} playlist from February 14, 2026, leaving the playlist collapsed`;
+const AT_SPOTIFY = /^https:\/\/accounts\.spotify\.com\/authorize\?/;
+
 /** The save button at the end of an expanded card. */
 const bottomSave = (browser: Browser, region: string) => browser.locator(`${cardSelector(region)} .save-btn`);
 /** The save button in a card header. */
@@ -41,10 +46,10 @@ async function openSignedIn(
 
 // openspec/specs/playlist-export/spec.md
 // Requirement: Save button at the end of the expanded track list. Scenario: Expanded card shows the save button.
-test('expanded card ends with the save button', async ({ app, screen, browser }) => {
+test('expanded card ends with the save button', async ({ agent, app, screen, browser }) => {
   await presetRegion(browser, 'DE');
   await app.open('/');
-  await screen.getByRole('button', toggleName('DE')).tap();
+  await agent.act('Expand the DE playlist from February 14, 2026');
 
   const save = bottomSave(browser, 'DE');
   await expect(save).toBeVisible();
@@ -62,14 +67,15 @@ test('expanded card ends with the save button', async ({ app, screen, browser })
 
 // openspec/specs/playlist-export/spec.md
 // Requirement: Signed-out save starts sign-in. Scenario: Save clicked while signed out.
-test('save while signed out starts sign-in', async ({ app, screen, browser }) => {
+test('save while signed out starts sign-in', async ({ agent, app, screen, browser }) => {
   const authorize = await mockAuthorize(browser);
   const calls = await mockSpotifyApi(browser);
   await presetRegion(browser, 'DE');
   await app.open('/');
   await screen.getByRole('button', toggleName('DE')).tap();
 
-  await bottomSave(browser, 'DE').tap();
+  await agent.act(SAVE_AT_END);
+  await expect(browser).toHaveURL(AT_SPOTIFY);
 
   await expect.poll(() => authorize.length).toBe(1);
   expect(authorize[0]).toContain('https://accounts.spotify.com/authorize?');
@@ -78,11 +84,11 @@ test('save while signed out starts sign-in', async ({ app, screen, browser }) =>
 
 // openspec/specs/playlist-export/spec.md
 // Requirement: Playlist name derived from the archive title. Scenario: Dotted archive title.
-test('saved playlist is named from the archive title', async ({ app, screen, browser }) => {
+test('saved playlist is named from the archive title', async ({ agent, app, screen, browser }) => {
   const calls = await mockSpotifyApi(browser);
   await openSignedIn(browser, () => app.open('/'), screen, 'US');
 
-  await bottomSave(browser, 'US').tap();
+  await agent.act(SAVE_AT_END);
 
   await expect(bottomSave(browser, 'US')).toHaveText('Saved!');
   expect(saveCalls(calls)[0].body.name).toBe('New Music Friday US 02 14 2026');
@@ -90,11 +96,11 @@ test('saved playlist is named from the archive title', async ({ app, screen, bro
 
 // openspec/specs/playlist-export/spec.md
 // Requirement: Saved playlists are private and owned by the signed-in user. Scenario: Playlist creation request.
-test('playlist is created private before any track is added', async ({ app, screen, browser }) => {
+test('playlist is created private before any track is added', async ({ agent, app, screen, browser }) => {
   const calls = await mockSpotifyApi(browser);
   await openSignedIn(browser, () => app.open('/'), screen, 'DE');
 
-  await bottomSave(browser, 'DE').tap();
+  await agent.act(SAVE_AT_END);
 
   await expect(bottomSave(browser, 'DE')).toHaveText('Saved!');
   const [create, ...rest] = saveCalls(calls);
@@ -105,7 +111,7 @@ test('playlist is created private before any track is added', async ({ app, scre
 
 // openspec/specs/playlist-export/spec.md
 // Requirement: Account id lookup for the expanded-card save. Scenario: Cached profile unavailable.
-test('save looks the account id up when no profile is cached', async ({ app, screen, browser }) => {
+test('save looks the account id up when no profile is cached', async ({ agent, app, screen, browser }) => {
   // The sign-in lookup and its one retry fail, which leaves no cached profile.
   const calls = await mockSpotifyApi(browser, (call, all) => {
     if (call.path === '/me' && all.filter((c) => c.path === '/me').length <= 2) return { status: 500 };
@@ -115,7 +121,7 @@ test('save looks the account id up when no profile is cached', async ({ app, scr
   await expect(browser.locator('.spotify-user-name')).toHaveText('User');
   await expect.poll(() => calls.length, { timeout: 4000 }).toBe(2);
 
-  await bottomSave(browser, 'DE').tap();
+  await agent.act(SAVE_AT_END);
 
   await expect(bottomSave(browser, 'DE')).toHaveText('Saved!');
   expect(calls.slice(2).map((c) => `${c.method} ${c.path}`).slice(0, 2)).toEqual([
@@ -126,11 +132,11 @@ test('save looks the account id up when no profile is cached', async ({ app, scr
 
 // openspec/specs/playlist-export/spec.md
 // Requirement: Expanded-card save sends only valid track URIs. Scenario: Archive with some malformed entries.
-test('save sends only the valid track URIs', async ({ app, screen, browser }) => {
+test('save sends only the valid track URIs', async ({ agent, app, screen, browser }) => {
   const calls = await mockSpotifyApi(browser);
   await openSignedIn(browser, () => app.open('/'), screen, 'BR');
 
-  await bottomSave(browser, 'BR').tap();
+  await agent.act(SAVE_AT_END);
 
   await expect(bottomSave(browser, 'BR')).toHaveText('Saved!');
   const uris = trackUris('BR', '02.14.2026', 3);
@@ -152,11 +158,11 @@ test('save with no valid URIs reports it and calls nothing', async ({ app, scree
 
 // openspec/specs/playlist-export/spec.md
 // Requirement: Tracks are added in batches of up to 100. Scenario: More than 100 tracks.
-test('tracks are added in batches of 100', async ({ app, screen, browser }) => {
+test('tracks are added in batches of 100', async ({ agent, app, screen, browser }) => {
   const calls = await mockSpotifyApi(browser);
   await openSignedIn(browser, () => app.open('/'), screen, 'CA');
 
-  await bottomSave(browser, 'CA').tap();
+  await agent.act(SAVE_AT_END);
 
   await expect(bottomSave(browser, 'CA')).toHaveText('Saved!');
   const batches = saveCalls(calls).slice(1);
@@ -167,11 +173,11 @@ test('tracks are added in batches of 100', async ({ app, screen, browser }) => {
 
 // openspec/specs/playlist-export/spec.md
 // Requirement: Expanded-card save button states. Scenario: Successful save.
-test('successful save leaves the button disabled on Saved!', async ({ app, screen, browser }) => {
+test('successful save leaves the button disabled on Saved!', async ({ agent, app, screen, browser }) => {
   await mockSpotifyApi(browser);
   await openSignedIn(browser, () => app.open('/'), screen, 'DE');
 
-  await bottomSave(browser, 'DE').tap();
+  await agent.act(SAVE_AT_END);
 
   await expect(bottomSave(browser, 'DE')).toHaveText('Saved!');
   await expect(bottomSave(browser, 'DE')).toBeDisabled();
@@ -234,13 +240,13 @@ test('still rate limited after retries shows the busy message', async ({ app, sc
 
 // openspec/specs/playlist-export/spec.md
 // Requirement: Rate-limit retries for Spotify requests. Scenario: Retry-After honoured.
-test('Retry-After is honoured and the save completes', async ({ app, screen, browser }) => {
+test('Retry-After is honoured and the save completes', async ({ agent, app, screen, browser }) => {
   const calls = await mockSpotifyApi(browser, (call, all) => {
     if (call.method === 'POST' && saveCalls(all).length === 1) return { status: 429, headers: { 'retry-after': '1' } };
   });
   await openSignedIn(browser, () => app.open('/'), screen, 'DE');
 
-  await bottomSave(browser, 'DE').tap();
+  await agent.act(SAVE_AT_END);
 
   await expect(bottomSave(browser, 'DE')).toHaveText('Saved!', { timeout: 10_000 });
   const [first, second] = saveCalls(calls);
@@ -251,13 +257,13 @@ test('Retry-After is honoured and the save completes', async ({ app, screen, bro
 
 // openspec/specs/playlist-export/spec.md
 // Requirement: Rate-limit retries for Spotify requests. Scenario: Retry-After capped.
-test('Retry-After is capped at ten seconds', async ({ app, screen, browser }) => {
+test('Retry-After is capped at ten seconds', async ({ agent, app, screen, browser }) => {
   const calls = await mockSpotifyApi(browser, (call, all) => {
     if (call.method === 'POST' && saveCalls(all).length === 1) return { status: 429, headers: { 'retry-after': '60' } };
   });
   await openSignedIn(browser, () => app.open('/'), screen, 'DE');
 
-  await bottomSave(browser, 'DE').tap();
+  await agent.act(SAVE_AT_END);
 
   await expect(bottomSave(browser, 'DE')).toHaveText('Saved!', { timeout: 20_000 });
   const [first, second] = saveCalls(calls);
@@ -267,7 +273,7 @@ test('Retry-After is capped at ten seconds', async ({ app, screen, browser }) =>
 
 // openspec/specs/playlist-export/spec.md
 // Requirement: Save from the card header. Scenario: Header save clicked while signed out.
-test('header save while signed out starts sign-in without toggling the card', async ({ app, screen, browser }) => {
+test('header save while signed out starts sign-in without toggling the card', async ({ agent, app, screen, browser }) => {
   const authorize = await mockAuthorize(browser);
   await presetRegion(browser, 'DE');
   // The redirect replaces the page, so note the card's state as the page goes.
@@ -279,7 +285,8 @@ test('header save while signed out starts sign-in without toggling the card', as
   });
   await app.open('/');
 
-  await headerSave(browser, 'DE').tap();
+  await agent.act(SAVE_IN_HEADER('DE'));
+  await expect(browser).toHaveURL(AT_SPOTIFY);
 
   await expect.poll(() => authorize.length).toBe(1);
   await browser.back();
@@ -288,12 +295,12 @@ test('header save while signed out starts sign-in without toggling the card', as
 
 // openspec/specs/playlist-export/spec.md
 // Requirement: Save from the card header. Scenario: Header save succeeds.
-test('header save succeeds with a check mark', async ({ app, screen, browser }) => {
+test('header save succeeds with a check mark', async ({ agent, app, screen, browser }) => {
   const calls = await mockSpotifyApi(browser);
   await openSignedIn(browser, () => app.open('/'), screen, 'BR', { expand: false });
   const save = headerSave(browser, 'BR');
 
-  await save.tap();
+  await agent.act(SAVE_IN_HEADER('BR'));
 
   await expect(browser).toHaveClass(save, 'pcard-dl success');
   await expect(save).toBeDisabled();
