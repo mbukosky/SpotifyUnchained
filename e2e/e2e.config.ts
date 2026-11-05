@@ -7,7 +7,8 @@ export default {
   agents: { default: { executor: claudeCode({ model: 'haiku' }) } },
   targets: [
     {
-      engine: web(),
+      // Dates render in the visitor's time zone, so pin it.
+      engine: web({ timezoneId: 'UTC' }),
       app: {
         // Not 3000, so a run can never attach to a dev server on another database.
         url: 'http://127.0.0.1:3100',
