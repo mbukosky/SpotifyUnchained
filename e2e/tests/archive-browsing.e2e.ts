@@ -92,7 +92,7 @@ test('active region button takes its accent', async ({ agent, app, screen, brows
   await app.open('/');
   await expect.poll(() => fill('ALL'), { timeout: 3000 }).toBe('rgb(255, 255, 255)');
 
-  await agent.act('Filter the archive to the CA region');
+  await agent.act('Click the CA region button and do nothing else');
   await expect(browser).toHaveClass(screen.getByRole('button', 'CA'), /\bactive\b/);
   await expect.poll(() => fill('CA'), { timeout: 3000 }).toBe('rgb(255, 107, 107)');
 });
@@ -173,7 +173,7 @@ test('changing page size resets to the first page', async ({ agent, app, screen 
   await agent.act('Go to the third page of playlists');
   await expect(screen.getByText('11–15 of 64')).toBeVisible();
 
-  await agent.act('Show 10 playlists per page');
+  await screen.getByLabel('Per page').selectOption('10');
 
   await expect(screen.getByText('1–10 of 64')).toBeVisible();
   await expect(screen.getByRole('article')).toHaveCount(10);
@@ -230,7 +230,7 @@ test('loading state shows while fetching', async ({ app, screen, browser }) => {
 
 // openspec/specs/archive-browsing/spec.md
 // Requirement: Loading, empty and error states. Scenario: Request fails.
-test('failed request shows the error state', async ({ agent, app, screen, browser }) => {
+test('failed request shows the error state', async ({ app, screen, browser }) => {
   const message = 'Failed to load playlists. Please try again.';
 
   await browser.route(LIST, (route) => route.fulfill({ status: 500, json: { error: 'Internal server error' } }));
@@ -241,8 +241,7 @@ test('failed request shows the error state', async ({ agent, app, screen, browse
   // The other half: a request that can't complete at all.
   await browser.unroute(LIST);
   await browser.route(LIST, (route) => route.abort());
-  await agent.act('Filter the archive to the US region');
-  await expect(browser).toHaveClass(screen.getByRole('button', 'US'), /\bactive\b/);
+  await screen.getByRole('button', 'US').tap();
   await expect(screen.getByText(message)).toBeVisible();
   await expect(browser.locator('.pagination')).toHaveCount(0);
 });

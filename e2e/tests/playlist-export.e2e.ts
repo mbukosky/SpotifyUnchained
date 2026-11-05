@@ -20,8 +20,7 @@ const trackUris = (region: string, label: string, count: number) =>
   });
 
 const SAVE_AT_END = 'Click the "Save to Spotify" button at the end of the expanded playlist\'s track list';
-const SAVE_IN_HEADER = (region: string) =>
-  `Click the save button in the header of the ${region} playlist from February 14, 2026, leaving the playlist collapsed`;
+const TO_SIGN_IN = 'You are signed out, so being sent to a Spotify authorize page is the expected result';
 const AT_SPOTIFY = /^https:\/\/accounts\.spotify\.com\/authorize\?/;
 
 /** The save button at the end of an expanded card. */
@@ -74,7 +73,7 @@ test('save while signed out starts sign-in', async ({ agent, app, screen, browse
   await app.open('/');
   await screen.getByRole('button', toggleName('DE')).tap();
 
-  await agent.act(SAVE_AT_END);
+  await agent.act(`${SAVE_AT_END}. ${TO_SIGN_IN}`);
   await expect(browser).toHaveURL(AT_SPOTIFY);
 
   await expect.poll(() => authorize.length).toBe(1);
@@ -285,7 +284,7 @@ test('header save while signed out starts sign-in without toggling the card', as
   });
   await app.open('/');
 
-  await agent.act(SAVE_IN_HEADER('DE'));
+  await agent.act(`Click the save button in the header of the DE playlist from February 14, 2026. ${TO_SIGN_IN}`);
   await expect(browser).toHaveURL(AT_SPOTIFY);
 
   await expect.poll(() => authorize.length).toBe(1);
@@ -295,12 +294,12 @@ test('header save while signed out starts sign-in without toggling the card', as
 
 // openspec/specs/playlist-export/spec.md
 // Requirement: Save from the card header. Scenario: Header save succeeds.
-test('header save succeeds with a check mark', async ({ agent, app, screen, browser }) => {
+test('header save succeeds with a check mark', async ({ app, screen, browser }) => {
   const calls = await mockSpotifyApi(browser);
   await openSignedIn(browser, () => app.open('/'), screen, 'BR', { expand: false });
   const save = headerSave(browser, 'BR');
 
-  await agent.act(SAVE_IN_HEADER('BR'));
+  await save.tap();
 
   await expect(browser).toHaveClass(save, 'pcard-dl success');
   await expect(save).toBeDisabled();

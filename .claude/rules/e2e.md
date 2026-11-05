@@ -21,8 +21,8 @@ Keep `claudeCode({ model: 'haiku' })`, using `agent.act` and `agent.assert` only
 
 Aim for about half of the browser tests driven by the agent, using it where it fits:
 
-- **`agent.act` plus `expect`:** for a user-goal action in a browser test. Follow it with a locator or `expect(browser)` assertion, because plain values and `expect.poll` leave it unconfirmed, and it then calls the model on every run. A confirmed act replays from `.e2e/cache` for free.
-- **Scripted actions:** for keyboard and pointer input, states that revert on a timer (a cold act can outlast them), steps with no visible change, which never cache, and controls on the first page of ALL below the long playlists, which fall past the agent's truncated snapshot.
+- **`agent.act` plus `expect`:** for a user-goal action in a browser test. Follow it with a locator or `expect(browser)` assertion, because plain values and `expect.poll` leave it unconfirmed, and it then calls the model on every run. A confirmed act replays from `.e2e/cache` for free. Word it as one plain action: extra checking by the agent gets recorded and can go stale on replay, which calls the model again. Check `step.cache.write` in `.e2e/report.json` when a warm run's tokens rise.
+- **Scripted actions:** for keyboard and pointer input, states that revert on a timer (a cold act can outlast them), steps with no state change in the page's accessibility tree, such as an icon swap, which never cache and call the model every run, and `<select>` controls below the seed's long playlists, which fall past the agent's truncated snapshot.
 - **`agent.assert`:** only for judgement a locator can't make from the page's text. It runs live every run at about 30k tokens, and it reads text only: this executor rejects `vision`. When adding one, confirm a false version fails.
 
 Use `--no-cache` only when debugging. The cache isn't committed, so a fresh checkout records every act once.
