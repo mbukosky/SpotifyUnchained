@@ -15,7 +15,7 @@
     "start": "node server/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "bun run build && cd e2e && bun run test"
+    "test:e2e": "SPOTIFY_CLIENT_ID=e2e-client-id bun run build && cd e2e && bun run test"
   },
   "dependencies": {
     "compression": "^1.8.1",
