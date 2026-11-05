@@ -1,0 +1,17 @@
+schema: spec-driven
+
+context: |
+  Archived weeks cannot be re-fetched: Spotify overwrites its playlists weekly
+  and the upstream backfill source stopped around December 2025. Treat
+  production MongoDB data as irreplaceable.
+  One-time scripts stay standalone, not in package.json or the Vitest config.
+  UI depth comes from vignettes and glows, never noise or film-grain textures.
+
+rules:
+  proposal:
+    - State which regions are affected, or that all are
+    - State whether production data is read or changed, and how to roll back
+  design:
+    - Call out any new external origin, because the CSP must allow it
+  tasks:
+    - Include co-located Vitest tests for server logic changes

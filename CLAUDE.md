@@ -41,12 +41,17 @@ SpotifyUnchained is a web application that automatically archives Spotify's "New
 │   ├── models/               # Mongoose schemas
 │   └── routes/               # API route definitions
 ├── scripts/                   # Utility scripts
+├── openspec/                  # Behavior specs and proposed changes (OpenSpec)
 ├── vitest.config.js           # Vitest configuration
 ├── package.json              # Root package.json (Bun scripts)
 ├── bun.lock                  # Bun lockfile
 ├── railway.toml              # Railway deployment config
 └── docker-compose.yml        # Local MongoDB via Docker
 ```
+
+## OpenSpec
+
+`openspec/specs/` is the source of truth for current behavior. Start new features and behavior changes with `/opsx:propose`; go straight to code for small fixes and one-time scripts.
 
 ## Development Setup
 
