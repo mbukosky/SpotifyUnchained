@@ -118,6 +118,30 @@ Backend tests use **Vitest** with test files co-located next to source files (`s
 - **Coverage areas**: Sync logic (date math, track fetching), playlist controller (pagination, filtering), OAuth controller (token exchange/refresh)
 - **Mocking**: `vi.mock()` for Mongoose models, `vi.stubGlobal('fetch')` for Spotify API calls, `vi.useFakeTimers()` for date-dependent logic
 
+## E2E Tests
+
+`e2e/` runs browser and HTTP tests (the `e2e` package, offline docs in `e2e/node_modules/e2e/docs`) against a real server and a throwaway seeded Mongo on port 27018. Each test is one scenario from `openspec/specs/`, named in a comment above it. `playlist-sync` and `archive-backfill` belong in Vitest.
+
+- **Full run:** `bun run test:e2e` rebuilds the client with a fake Spotify client ID, reseeds Mongo and runs the suite. Rebuild with `bun run build` before using `bun run start` locally.
+- **One file:** from `e2e/`, `bun run db:up`, then `E2E_TELEMETRY_DISABLED=1 bunx e2e run tests/<file>`. `bun run db:down` when finished.
+- **Node:** run under Node 22, as `.nvmrc` says.
+
+Rules:
+
+- **Real data:** tests use only `e2e/seed/seed.js`, fake Spotify credentials and port 27018. Dev Mongo on 27017, its `su_prod` restore, `.env`, `.env.prod` and `backup-*/` stay out of it, because production data is irreplaceable.
+- **Spotify:** the server's token endpoints call Spotify from Node, where `browser.route` can't reach. Browser tests mock `/api/spotify/*` (`mockTokenEndpoints`), and direct HTTP tests send only requests the server rejects before contacting Spotify.
+- **External hosts:** import `test` from `tests/fixtures.ts`, whose `appHostOnly` keeps fake visits out of production GA4. Mock hosts with `browser.route`; a test's own route runs first. Verify GA4 with a stubbed tag, never a real request.
+- **Tokens:** use locators and `expect`, and `agent.assert` only where judgement is needed (about 30k tokens each, every run). Keep `claudeCode({ model: 'haiku' })`, with `agent.act` and `agent.assert` only, since this setup can't run `agent.waitFor` or `agent.extract`. Use `--no-cache` only when debugging.
+- **Telemetry:** set `E2E_TELEMETRY_DISABLED=1` on every `e2e` command, and keep the opt-out in `~/.config/e2e/telemetry.json`.
+- **Spec disagreements:** when the app disagrees with a spec, leave the test red and report it. App code and specs change only after review.
+
+Gotchas:
+
+- `seed.js` runs in the `mongo:5.0` legacy shell, so it stays plain ES5. Its header lists the data tests depend on, and tests hardcode its counts.
+- `/spotify` and `/rss` share 100 requests per 15 minutes per server process, and browser tests spend that budget. Non-browser tests send their own address with `asClient`. Report 429s rather than changing the limits.
+- `app.command` gets only the env vars listed in `e2e.config.ts`.
+- `toBeVisible` ignores overflow clipping, so measure against the clipping box when clipping matters.
+
 ## API Endpoints
 
 ### Playlist API
