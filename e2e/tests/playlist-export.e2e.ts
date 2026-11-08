@@ -293,6 +293,28 @@ test('header save while signed out starts sign-in without toggling the card', as
 });
 
 // openspec/specs/playlist-export/spec.md
+// Requirement: Save from the card header. Scenario: Header save from the keyboard.
+// Enter on one DE card and Space on the other, since a saved button stays disabled.
+test('Enter or Space on the header save button saves without toggling the card', async ({ app, screen, browser }) => {
+  const calls = await mockSpotifyApi(browser);
+  await openSignedIn(browser, () => app.open('/'), screen, 'DE', { expand: false });
+
+  for (const [label, key] of [['02.14.2026', 'Enter'], ['02.07.2026', 'Space']] as const) {
+    const save = browser.locator(`${cardSelector('DE', label)} .pcard-dl`);
+    await save.focus();
+    await browser.keyboard.press(key);
+
+    await expect(browser).toHaveClass(save, 'pcard-dl success');
+    await expect(screen.getByRole('button', toggleName('DE', label))).toHaveAttribute('aria-expanded', 'false');
+  }
+
+  const names = saveCalls(calls)
+    .map((call) => call.body?.name)
+    .filter(Boolean);
+  expect(names).toEqual(['New Music Friday DE 02 14 2026', 'New Music Friday DE 02 07 2026']);
+});
+
+// openspec/specs/playlist-export/spec.md
 // Requirement: Save from the card header. Scenario: Header save succeeds.
 test('header save succeeds with a check mark', async ({ app, screen, browser }) => {
   const calls = await mockSpotifyApi(browser);

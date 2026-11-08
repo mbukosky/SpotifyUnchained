@@ -181,6 +181,20 @@ test('changing page size resets to the first page', async ({ agent, app, screen 
 });
 
 // openspec/specs/archive-browsing/spec.md
+// Requirement: Pagination. Scenario: Changing region resets to the first page.
+test('changing region resets to the first page', async ({ agent, app, screen }) => {
+  await app.open('/');
+  await screen.getByRole('button', 'Next page').tap();
+  await expect(screen.getByText('6–10 of 64')).toBeVisible();
+
+  await agent.act('Filter the archive to the DE region');
+
+  await expect(screen.getByText('1–2 of 2')).toBeVisible();
+  await expect(screen.getByRole('article')).toHaveCount(2);
+  await expect(screen.getByRole('button', 'Previous page')).toBeDisabled();
+});
+
+// openspec/specs/archive-browsing/spec.md
 // Requirement: Pagination. Scenario: Navigation buttons respect the ends.
 test('navigation buttons respect the ends', async ({ agent, app, screen, browser }) => {
   await presetRegion(browser, 'AU');
@@ -315,6 +329,46 @@ test('card expands and collapses', async ({ agent, app, screen, browser }) => {
 });
 
 // openspec/specs/archive-browsing/spec.md
+// Requirement: Playlist card expansion. Scenario: Collapsed tracks are skipped by the keyboard.
+test('Tab skips the tracks of a collapsed card', async ({ app, screen, browser }) => {
+  await presetRegion(browser, 'DE');
+  await app.open('/');
+  const card = cardSelector('DE');
+  const save = browser.locator(`${card} .pcard-dl`);
+  // Locators still find inert content (docs/browser.mdx, "Inert content"), so ask
+  // the browser whether the track controls sit under an inert subtree, which
+  // takes them out of the accessibility tree.
+  const tracksInert = () =>
+    browser.evaluate(
+      (selector: string) =>
+        [...document.querySelectorAll(`${selector} .track-row, ${selector} .track-open`)].every(
+          (el) => el.closest('[inert]') !== null,
+        ),
+      card,
+    );
+  await expect(save).toBeVisible();
+  await expect(browser.locator('.pcard-head[aria-expanded="true"]')).toHaveCount(0);
+
+  expect(await tracksInert()).toBe(true);
+  await save.focus();
+  await browser.keyboard.press('Tab');
+  // The seed's other DE card is the week before.
+  const focusedLabel = await browser.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? '');
+  expect(focusedLabel).toBe(toggleName('DE', '02.07.2026'));
+
+  await screen.getByRole('button', toggleName('DE')).tap();
+  await expect(screen.getByRole('button', toggleName('DE'))).toHaveAttribute('aria-expanded', 'true');
+  expect(await tracksInert()).toBe(false);
+  await save.focus();
+  await browser.keyboard.press('Tab');
+  const onFirstRow = await browser.evaluate(
+    (selector: string) => document.activeElement === document.querySelector(`${selector} .track-row`),
+    card,
+  );
+  expect(onFirstRow).toBe(true);
+});
+
+// openspec/specs/archive-browsing/spec.md
 // Requirement: Track listing. Scenario: Long playlist shows every track.
 test('long playlist shows every track', async ({ agent, app, screen, browser }) => {
   await presetRegion(browser, 'UK');
@@ -387,6 +441,44 @@ test('Spotify link does not toggle the preview', async ({ app, screen, browser }
   await browser.locator(`${card} .track-row`).first().tap();
   await expect(embeds).toHaveCount(1);
   await link.tap();
+  await expect(embeds).toHaveCount(1);
+  await expect(browser).toHaveURL(/127\.0\.0\.1:3100\/$/);
+});
+
+// openspec/specs/archive-browsing/spec.md
+// Requirement: Track preview. Scenario: Spotify link from the keyboard.
+// Enter on a link fires its click, which opens the new tab. A row handler that
+// cancelled the key would stop that click, so count clicks on the link.
+test('Enter on the Spotify link opens it without a preview', async ({ app, screen, browser }) => {
+  await presetRegion(browser, 'DE');
+  await app.open('/');
+  await screen.getByRole('button', toggleName('DE')).tap();
+  const card = cardSelector('DE');
+  const link = browser.locator(card).getByRole('link', 'Open Test Track 1 DE on Spotify');
+  const embeds = browser.locator(`${card} iframe`);
+  await expect(link).toBeVisible();
+  await browser.evaluate(() => {
+    document.body.dataset.linkClicks = '0';
+    document.addEventListener('click', (e) => {
+      if ((e.target as Element).closest('.track-open')) {
+        document.body.dataset.linkClicks = String(Number(document.body.dataset.linkClicks) + 1);
+      }
+    }, true);
+  });
+  const linkClicks = () => browser.evaluate(() => document.body.dataset.linkClicks);
+
+  // Doesn't open one.
+  await link.focus();
+  await browser.keyboard.press('Enter');
+  await expect.poll(linkClicks).toBe('1');
+  await expect(embeds).toHaveCount(0);
+
+  // Doesn't close one either.
+  await browser.locator(`${card} .track-row`).first().tap();
+  await expect(embeds).toHaveCount(1);
+  await link.focus();
+  await browser.keyboard.press('Enter');
+  await expect.poll(linkClicks).toBe('2');
   await expect(embeds).toHaveCount(1);
   await expect(browser).toHaveURL(/127\.0\.0\.1:3100\/$/);
 });

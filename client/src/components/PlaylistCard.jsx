@@ -3,6 +3,7 @@ import TrackItem from './TrackItem';
 import SavePlaylist from './SavePlaylist';
 import PlaylistDownload from './PlaylistDownload';
 import { REGION_COLORS } from '../lib/regions';
+import { onOwnActivateKey } from '../lib/keys';
 
 function generateWaveformHeights() {
   return Array.from({ length: 36 }, () => Math.round(4 + Math.random() * 24));
@@ -39,10 +40,21 @@ export default function PlaylistCard({ playlist, index }) {
   // playlists (a fixed max-height cap clipped lists past ~26 tracks — issue #156).
   // The embed container animates its own max-height after this measurement runs,
   // so leave headroom for it whenever a track is playing.
+  // Content that appears later, like the save error alert, re-measures through
+  // the ResizeObserver.
   useLayoutEffect(() => {
-    if (!trackListRef.current) return;
+    const list = trackListRef.current;
+    if (!list) return;
+    if (!expanded) {
+      setMaxHeight(0);
+      return;
+    }
     const embedHeadroom = activeTrack ? 190 : 0;
-    setMaxHeight(expanded ? trackListRef.current.scrollHeight + embedHeadroom : 0);
+    const measure = () => setMaxHeight(list.scrollHeight + embedHeadroom);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(list.firstElementChild);
+    return () => observer.disconnect();
   }, [expanded, playlist.tracks.length, activeTrack]);
 
   const waveformHeights = useMemo(() => generateWaveformHeights(), []);
@@ -138,7 +150,7 @@ export default function PlaylistCard({ playlist, index }) {
         aria-expanded={expanded}
         aria-label={`Toggle ${playlist.title}`}
         onClick={() => setExpanded(prev => !prev)}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(prev => !prev); } }}
+        onKeyDown={onOwnActivateKey(() => setExpanded(prev => !prev))}
       >
         <div className="pcard-orb" aria-hidden="true" />
         <div className="pcard-info">
@@ -158,7 +170,8 @@ export default function PlaylistCard({ playlist, index }) {
           <path d="M5 7.5 L10 12.5 L15 7.5" />
         </svg>
       </div>
-      <div className="tracks" ref={trackListRef} style={{ maxHeight }}>
+      {/* inert keeps a collapsed card's tracks out of the tab order and the accessibility tree. */}
+      <div className="tracks" ref={trackListRef} style={{ maxHeight }} inert={!expanded}>
         <div className="tracks-inner">
           {playlist.tracks.map((track, i) => (
             <TrackItem

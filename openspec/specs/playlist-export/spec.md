@@ -99,11 +99,16 @@ The system SHALL retry a Spotify request that receives HTTP 429 at most twice, w
 - **THEN** the wait before the retry is 10 seconds
 
 ### Requirement: Save from the card header
-The system SHALL show a save button in each card header that saves the archive as a new private playlist named by the same rule as the expanded-card save, SHALL NOT toggle the card's expanded state when it is clicked, and SHALL send every present (non-empty) track URI in the archive without checking their format.
+The system SHALL show a save button in each card header that saves the archive as a new private playlist named by the same rule as the expanded-card save, SHALL NOT toggle the card's expanded state when it is clicked or activated with Enter or Space, and SHALL send every present (non-empty) track URI in the archive without checking their format.
 
 #### Scenario: Header save clicked while signed out
 - **WHEN** a signed-out user clicks the header save button
 - **THEN** the Spotify sign-in flow starts
+- **AND** the card does not expand or collapse
+
+#### Scenario: Header save from the keyboard
+- **WHEN** a signed-in user focuses the header save button and presses Enter or Space
+- **THEN** the archive is saved as with a click
 - **AND** the card does not expand or collapse
 
 #### Scenario: Header save succeeds

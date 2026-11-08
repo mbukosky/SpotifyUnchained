@@ -10,6 +10,14 @@ export default function PlaylistList() {
   const [size, setSize] = useState(5);
   const [sort] = useState('desc');
 
+  // Back to page 1 when the region changes. Resetting during render, not in an
+  // effect, avoids first fetching the old page number for the new region.
+  const [prevRegion, setPrevRegion] = useState(region);
+  if (prevRegion !== region) {
+    setPrevRegion(region);
+    setPage(1);
+  }
+
   const { playlists, totalCount, loading, error } = usePlaylists({ page, size, sort, region });
 
   const handleSizeChange = (newSize) => {

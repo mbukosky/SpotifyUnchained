@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import { onOwnActivateKey } from '../lib/keys';
 
 export default function TrackItem({ track, index, isPlaying, onTogglePlay, autoplay }) {
   const iframeRef = useRef(null);
@@ -39,7 +40,7 @@ export default function TrackItem({ track, index, isPlaying, onTogglePlay, autop
         onClick={handleRowClick}
         role="button"
         tabIndex={0}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTogglePlay(track.id); } }}
+        onKeyDown={onOwnActivateKey(() => onTogglePlay(track.id))}
       >
         <span className="track-num">{String(index + 1).padStart(2, '0')}</span>
         <button
