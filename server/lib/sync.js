@@ -79,6 +79,12 @@ async function syncPlaylist(region, token) {
 
   const tracks = await fetchPlaylistTracks(playlistId, token);
 
+  // An empty write would wipe a week archived earlier, and it can't be re-fetched.
+  if (tracks.length === 0) {
+    console.warn(`Skipping ${title}: Spotify returned no tracks`);
+    return;
+  }
+
   const parts = fridayDate.split('.');
   const publishedDate = new Date(`${parts[2]}-${parts[0]}-${parts[1]}`);
 
@@ -103,7 +109,7 @@ async function sync() {
   }
 }
 
-export { getRecentFriday, fetchPlaylistTracks, syncPlaylist };
+export { getRecentFriday, fetchPlaylistTracks, syncPlaylist, sync };
 
 export function startSync() {
   if (config.skipSync) {

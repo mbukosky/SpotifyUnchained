@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getRecentFriday, fetchPlaylistTracks, syncPlaylist } from './sync.js';
+import { getRecentFriday, fetchPlaylistTracks, syncPlaylist, sync } from './sync.js';
+import { PLAYLIST_IDS } from './regions.js';
+import Playlist from '../models/playlist.js';
+
+vi.mock('../models/playlist.js', () => ({
+  default: { findOneAndUpdate: vi.fn() },
+}));
 
 describe('getRecentFriday', () => {
   afterEach(() => {
@@ -162,5 +168,82 @@ describe('syncPlaylist', () => {
     await syncPlaylist('XX', 'token');
     expect(fetch).not.toHaveBeenCalled();
     vi.restoreAllMocks();
+  });
+
+  // Issue #169: an empty fetch must not wipe an archived week.
+  describe('when Spotify returns no storable tracks', () => {
+    const page = (items) => ({ ok: true, json: async () => ({ items, next: null }) });
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-02-14T12:00:00Z'));
+      vi.stubGlobal('fetch', vi.fn());
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      Playlist.findOneAndUpdate.mockReset();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    });
+
+    it('does not write the archive when items is empty, and logs a warning', async () => {
+      fetch.mockResolvedValueOnce(page([]));
+
+      await syncPlaylist('US', 'token');
+
+      expect(Playlist.findOneAndUpdate).not.toHaveBeenCalled();
+      expect(console.warn).toHaveBeenCalledWith(
+        expect.stringContaining('New.Music.Friday.US.02.13.2026')
+      );
+    });
+
+    it('does not write the archive when every item has a null track', async () => {
+      fetch.mockResolvedValueOnce(page([{ track: null }, { track: null }]));
+
+      await syncPlaylist('US', 'token');
+
+      expect(Playlist.findOneAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it('still upserts, replacing the track list, when at least one track comes back', async () => {
+      fetch.mockResolvedValueOnce(
+        page([
+          { track: null },
+          { track: { id: 't1', name: 'Song', artists: [{ name: 'A' }], external_urls: {}, uri: '' } },
+        ])
+      );
+
+      await syncPlaylist('US', 'token');
+
+      expect(Playlist.findOneAndUpdate).toHaveBeenCalledTimes(1);
+      expect(Playlist.findOneAndUpdate).toHaveBeenCalledWith(
+        { title: 'New.Music.Friday.US.02.13.2026', region: 'US' },
+        expect.objectContaining({
+          tracks: [expect.objectContaining({ id: 't1' })],
+        }),
+        { upsert: true, new: true }
+      );
+    });
+
+    it('keeps syncing later regions in the same run', async () => {
+      const [first, ...rest] = Object.keys(PLAYLIST_IDS);
+      const track = { id: 't1', name: 'Song', artists: [{ name: 'A' }], external_urls: {}, uri: '' };
+      fetch.mockImplementation(async (url) => {
+        if (url.startsWith('https://accounts.spotify.com/')) {
+          return { ok: true, json: async () => ({ access_token: 'token' }) };
+        }
+        return page(url.includes(`/playlists/${PLAYLIST_IDS[first]}/`) ? [] : [{ track }]);
+      });
+
+      await sync();
+
+      expect(Playlist.findOneAndUpdate).toHaveBeenCalledTimes(rest.length);
+      const writtenRegions = Playlist.findOneAndUpdate.mock.calls.map(([filter]) => filter.region);
+      expect(writtenRegions).toEqual(rest);
+      expect(console.warn).toHaveBeenCalledWith(expect.stringContaining(`.${first}.`));
+    });
   });
 });
