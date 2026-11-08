@@ -1,0 +1,22 @@
+# Throwaway database for e2e runs. Separate project, port and storage from the
+# dev Mongo in ../docker-compose.yml. tmpfs means every recreate re-seeds.
+name: spotifyunchained-e2e
+
+services:
+  mongo:
+    image: mongo:5.0
+    ports:
+      - '127.0.0.1:27018:27017'
+    environment:
+      MONGO_INITDB_DATABASE: spotifyunchained_e2e
+    tmpfs:
+      - /data/db
+    volumes:
+      - ./seed:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # Connect by hostname: the image's seeding mongod binds only to 127.0.0.1,
+      # so this passes only once seeding is done and the real server is up.
+      test: ['CMD-SHELL', 'mongosh --quiet --host "$$(hostname)" --eval "db.adminCommand({ping:1})"']
+      interval: 1s
+      timeout: 5s
+      retries: 60

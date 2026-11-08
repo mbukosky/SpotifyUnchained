@@ -41,12 +41,17 @@ SpotifyUnchained is a web application that automatically archives Spotify's "New
 │   ├── models/               # Mongoose schemas
 │   └── routes/               # API route definitions
 ├── scripts/                   # Utility scripts
+├── openspec/                  # Behavior specs and proposed changes (OpenSpec)
 ├── vitest.config.js           # Vitest configuration
 ├── package.json              # Root package.json (Bun scripts)
 ├── bun.lock                  # Bun lockfile
 ├── railway.toml              # Railway deployment config
 └── docker-compose.yml        # Local MongoDB via Docker
 ```
+
+## OpenSpec
+
+`openspec/specs/` is the source of truth for current behavior. Start new features and behavior changes with `/opsx:propose`; go straight to code for small fixes and one-time scripts.
 
 ## Development Setup
 
@@ -112,6 +117,13 @@ Backend tests use **Vitest** with test files co-located next to source files (`s
 - **Test pattern**: `server/**/*.test.js`
 - **Coverage areas**: Sync logic (date math, track fetching), playlist controller (pagination, filtering), OAuth controller (token exchange/refresh)
 - **Mocking**: `vi.mock()` for Mongoose models, `vi.stubGlobal('fetch')` for Spotify API calls, `vi.useFakeTimers()` for date-dependent logic
+
+## E2E Tests
+
+`e2e/` runs browser and HTTP tests against a real server and a throwaway seeded Mongo on port 27018, with one test per scenario in `openspec/specs/`. `.claude/rules/e2e.md` holds the rules for working in that folder.
+
+- **Full run:** `bun run test:e2e` rebuilds the client with a fake Spotify client ID, reseeds Mongo and runs the suite under Node 22. Rebuild with `bun run build` before using `bun run start` locally.
+- **One file:** from `e2e/`, `bun run db:up`, then `E2E_TELEMETRY_DISABLED=1 bunx e2e run tests/<file>`. `bun run db:down` when finished.
 
 ## API Endpoints
 
