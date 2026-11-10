@@ -45,7 +45,7 @@ The client treats `date` as a plain calendar date and builds `new Date(y, m - 1,
 
 ### 3. A short browser cache, and a pre-compressed in-memory server cache
 
-The index query reads about 1,300 small projections and took under 100 ms in the prototype. It gets `Cache-Control: public, max-age=300`. A single edition never changes after its week, so it gets `max-age=3600`. Responses are also held pre-compressed in an in-process cache with a strong `ETag`, answered with 304 on a matching `If-None-Match`, and the cache is cleared when the Friday sync writes.
+The index query reads about 1,300 small projections and took under 100 ms in the prototype. It gets `Cache-Control: public, max-age=300`. A single edition never changes after its week, so it gets `max-age=3600`. Responses (for `GET /spotify`, only pages up to 128 kB, so a visitor cannot make the server Brotli-encode and hold megabyte pages) are also held pre-compressed in an in-process cache with a strong `ETag`, answered with 304 on a matching `If-None-Match`, and the cache is cleared when the Friday sync writes.
 
 ### 4. A separate rate limit for the edition endpoints
 
@@ -108,7 +108,9 @@ The first build reused `TrackItem`, one 60-pixel row per track with the embed op
 
 ### 11. Covers come from Spotify oEmbed, in the browser
 
-The database stores no image addresses, and the Web API needs a token. `https://open.spotify.com/oembed?url=https://open.spotify.com/track/<id>` returns a `thumbnail_url` on Spotify's image CDN with no credentials and `Access-Control-Allow-Origin: *`. The client requests covers for tiles within about 400 pixels of the viewport, six at a time, and keeps results in a `Map` for the life of the page.
+The database stores no image addresses, and the Web API needs a token. `https://open.spotify.com/oembed?url=https://open.spotify.com/track/<id>` returns a `thumbnail_url` on Spotify's image CDN with no credentials and `Access-Control-Allow-Origin: *`. The client requests covers for tiles in the viewport first (top to bottom), then for tiles within about 400 pixels of it, six at a time (a 429 stops all lookups for 30 seconds, doubling up to five minutes while 429s continue, then they resume one at a time; a dropped connection pauses them the same way from 5 seconds; the player embed shares Spotify's limit, so while limited a newly opened track shows a notice with "Try now" instead of the embed), and drops queued lookups for tiles that are gone when the edition changes. Results live in a `Map` for the life of the page, and found ones also in `localStorage` (`su:covers:v1`, at most 2,000 tracks, 30 days each, Spotify image-CDN URLs only, every access in `try`), so a reopened edition paints without lookups. Pressing or resting on a wall tile preconnects to oEmbed and the two image CDN hosts.
+
+oEmbed hands out the 300 px album image (`ab67616d00001e02<id>`); the CDN also serves the same image at 64 px (`ab67616d00004851<id>`) and 640 px. Where a tile is at most about 74 device pixels wide (a ~61 px tile on a 1x screen), the tile shows the 64 px variant (2–3 kB instead of ~27 kB) and swaps in the 300 px one, decoded first, when it is enlarged by hover or keyboard focus, or if the small one fails. Thumbnails in any other form are used as returned. Hedging slow lookups with a second request was measured and does not help: a slow track is slow for both requests.
 
 Every tile starts as a generated fallback (initials on a hue hashed from the lead artist's name, offset from the region accent) and the image fades in over it, so a failed or slow lookup costs nothing but the picture.
 

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import CoverGrid from './CoverGrid';
 import PlayerBar from './PlayerBar';
 import PlaylistDownload from './PlaylistDownload';
-import { loadEdition, prefetchEditions } from '../hooks/useEditions';
+import { loadEdition, peekEdition, prefetchEditions } from '../hooks/useEditions';
 import { REGION_COLORS } from '../lib/regions';
 import { formatLongDate } from '../lib/wall';
 import { mark, markPainted } from '../lib/perf';
@@ -41,13 +41,21 @@ export default function EditionPanel({
     setActiveTrack(luckyTrackId ? { id: luckyTrackId, index: -1 } : null);
   }
 
+  // An edition already in the page cache (a deep link's early request, a
+  // prefetched neighbour, one opened before) is taken during render, so its
+  // tiles arrive in the same commit as its heading.
+  if (load.id !== edition.id) {
+    const cached = peekEdition(edition.id);
+    if (cached) setLoad({ id: edition.id, data: cached, error: false });
+  }
+
   useEffect(() => {
     let live = true;
     markPainted('panel-open', edition.id);
     loadEdition(edition.id)
       .then(data => {
         mark('edition-loaded', edition.id);
-        return live && setLoad({ id: edition.id, data, error: false });
+        if (live) setLoad(l => (l.id === edition.id && l.data === data ? l : { id: edition.id, data, error: false }));
       })
       .catch(() => live && setLoad({ id: edition.id, data: null, error: true }));
     return () => { live = false; };

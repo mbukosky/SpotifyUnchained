@@ -1093,15 +1093,13 @@ body {
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
-  background: var(--tile-g);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
   /* Clear the sticky header and the player bar when focus or a lucky dip
      scrolls a tile into view. */
   scroll-margin: 96px 0 calc(var(--player-h) + 28px);
-  transition: transform 0.4s var(--ease-spring), box-shadow 0.3s, border-radius 0.3s, filter 0.3s;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s, border-radius 0.3s, filter 0.3s;
   /* backwards, not both: a held end frame would pin transform and kill the hover grow. */
-  animation: cover-in 0.5s var(--ease-smooth) backwards;
-  animation-delay: calc(min(var(--i), 160) * 3ms);
+  animation: cover-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) backwards;
 }
 
 @keyframes cover-in { from { opacity: 0; transform: scale(0.6); } }
@@ -1111,7 +1109,7 @@ body {
   inset: 0;
   display: grid;
   place-items: center;
-  font: 700 0.85rem var(--font-display);
+  font: 700 0.85rem 'Unbounded', sans-serif;
   color: rgba(7, 7, 14, 0.7);
 }
 
@@ -1123,7 +1121,7 @@ body {
   object-fit: cover;
   opacity: 0;
   transform: scale(1.08);
-  transition: opacity 0.5s, transform 0.6s var(--ease-smooth);
+  transition: opacity 0.5s, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .cover-tile.has-cover img { opacity: 1; transform: none; }
@@ -1319,8 +1317,21 @@ body {
 .player-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .player-btn:focus-visible { outline: 2px solid var(--rc); outline-offset: 2px; }
 
-.player-frame { grid-area: frame; min-width: 0; height: 80px; }
+.player-frame { grid-area: frame; min-width: 0; height: 80px; position: relative; }
 .player-embed { display: block; border-radius: 12px; background: rgba(255, 255, 255, 0.04); }
+.player-limited {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  position: absolute; inset: 0; padding: 0 14px; border-radius: 12px;
+  background: #16161f; color: var(--text-dim);
+  font-size: 0.78rem; line-height: 1.35;
+}
+.player-retry {
+  flex: none; padding: 7px 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.18); background: transparent;
+  color: inherit; font: inherit; white-space: nowrap;
+}
+.player-retry:hover { background: rgba(255, 255, 255, 0.08); }
+.player-retry:focus-visible { outline: 2px solid var(--rc); outline-offset: 2px; }
 
 @media (max-width: 1020px) {
   .player-bar.is-open {

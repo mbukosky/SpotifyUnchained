@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRegion } from '../hooks/useRegion';
-import { useEditions, loadEdition } from '../hooks/useEditions';
+import { useEditions, loadEdition, adoptLinkedEdition } from '../hooks/useEditions';
+import { warmCovers } from '../lib/covers';
 import { REGION_COLORS } from '../lib/regions';
 import {
   adjacentEditions,
@@ -29,6 +30,8 @@ function setEditionParam(id) {
   if (url.href !== window.location.href) window.history.replaceState(window.history.state, '', url);
 }
 
+const linkedId = () => new URLSearchParams(window.location.search).get('edition') || null;
+
 export default function Archive() {
   const { region, showRegion } = useRegion();
   const { editions, loading, error } = useEditions();
@@ -42,18 +45,32 @@ export default function Archive() {
   const numbers = useMemo(() => headlineNumbers(tiles), [tiles]);
   const tilesByKey = useMemo(() => new Map(tiles.map(t => [t.key, t])), [tiles]);
 
-  const [openId, setOpenId] = useState(null);
+  // A deep link's edition is open from the first render, so the panel mounts
+  // in the same commit as the wall (its data is already on the way from
+  // index.html). Until the index confirms the id, nothing is shown for it.
+  const [openId, setOpenId] = useState(() => {
+    adoptLinkedEdition();
+    return linkedId();
+  });
   const [focus, setFocus] = useState({ token: 0, heading: false });
   const [lucky, setLucky] = useState(null);
   const [dipping, setDipping] = useState(false);
   const wallRef = useRef(null);
+  const linkHandled = useRef(false);
+  const linkRegion = useRef(null); // the region a deep link is switching to
 
-  const openEdition = (openId && byId.get(openId)) || null;
+  // Before the deep link is confirmed, its edition shows only on a wall that
+  // holds it; otherwise it waits one render for the switch to its region.
+  const candidate = (openId && byId.get(openId)) || null;
+  const openEdition = candidate && (linkHandled.current || isAll || candidate.region === region) ? candidate : null;
 
   const open = useCallback((id, { reveal = true, focusHeading = true } = {}) => {
     // Start the request before React renders the panel; the panel picks up
     // the same promise from the page cache.
-    if (id) loadEdition(id).catch(() => {});
+    if (id) {
+      warmCovers();
+      loadEdition(id).catch(() => {});
+    }
     setOpenId(id);
     setEditionParam(id);
     if (reveal) setFocus(f => ({ token: f.token + 1, heading: focusHeading }));
@@ -68,8 +85,7 @@ export default function Archive() {
     if (refocus) requestAnimationFrame(() => wallRef.current?.focusTile(key));
   }, [openEdition]);
 
-  // Deep link: once the index is in, open `?edition=` or drop it if unknown.
-  const linkHandled = useRef(false);
+  // Deep link: once the index is in, confirm `?edition=` or drop it if unknown.
   useEffect(() => {
     if (loading || error || linkHandled.current) return;
     linkHandled.current = true;
@@ -77,17 +93,26 @@ export default function Archive() {
     if (!id) return;
     const linked = byId.get(id);
     if (!linked) {
+      setOpenId(null);
       setEditionParam(null);
       return;
     }
     // Show the linked edition's region for this visit only; the saved choice stays.
-    if (region !== 'ALL' && linked.region !== region) showRegion(linked.region);
+    if (region !== 'ALL' && linked.region !== region) {
+      linkRegion.current = linked.region;
+      showRegion(linked.region);
+    }
     open(id);
   }, [loading, error, byId, region, showRegion, open]);
 
   // Picking a region the open edition is not in closes it. ALL holds every
-  // region, so switching to ALL keeps the panel.
+  // region, so switching to ALL keeps the panel. A deep link's own switch to
+  // its edition's region is not a pick.
   useEffect(() => {
+    if (linkRegion.current) {
+      if (linkRegion.current !== region) return;
+      linkRegion.current = null;
+    }
     if (openEdition && !isAll && openEdition.region !== region) close({ refocus: false });
   }, [openEdition, isAll, region, close]);
 
@@ -100,6 +125,7 @@ export default function Archive() {
   // open it: start fetching so the panel has its data sooner.
   const intendTile = useCallback((tile) => {
     loadEdition(tile.editions[0].id).catch(() => {});
+    warmCovers();
   }, []);
 
   const jump = (date) => {

@@ -1,6 +1,6 @@
 import Playlist from '../models/playlist.js';
 import { VALID_REGIONS } from '../lib/regions.js';
-import { encodeJson, sendEncoded } from '../lib/encodedResponse.js';
+import { encodeBody, sendEncoded } from '../lib/encodedResponse.js';
 import { listCache } from '../lib/archiveCache.js';
 
 /** The page, size, sort and region a list request asks for, with defaults and limits applied. */
@@ -34,14 +34,36 @@ export async function buildList({ size, page, sortDir, region }) {
   return { count, items };
 }
 
-// The response is the same JSON `res.json` would send; it is encoded once and
-// kept briefly in memory, so repeat requests skip the database and compression.
+// Bodies above this size are neither pre-encoded nor cached. Any visitor can
+// ask for 100 full playlists per page (over a megabyte), and paying Brotli 11
+// plus the memory for each distinct page would let one address tie up the
+// compression threads and fill the cache. Those go out the ordinary way.
+const MAX_CACHED_LIST_BYTES = 128 * 1024;
+
+// The response is the same JSON `res.json` would send. Small pages (the
+// default five playlists is about 70 kB) are encoded once and kept briefly in
+// memory, so repeat requests skip the database and compression.
 export async function list(req, res) {
   try {
     const q = listQuery(req.query);
     const key = `${q.page}|${q.size}|${q.sortDir}|${q.region || ''}`;
-    const entry = await listCache.getOrFill(key, async () => encodeJson(await buildList(q)));
-    sendEncoded(req, res, entry);
+    let large = null;
+    const entry = await listCache.getOrFill(key, async () => {
+      const body = Buffer.from(JSON.stringify(await buildList(q)));
+      if (body.length > MAX_CACHED_LIST_BYTES) {
+        large = body;
+        return null; // not stored
+      }
+      return encodeBody(body);
+    });
+    if (entry) {
+      sendEncoded(req, res, entry);
+      return;
+    }
+    // A concurrent request that shared the fill has no body of its own.
+    const body = large || Buffer.from(JSON.stringify(await buildList(q)));
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.end(body);
   } catch (err) {
     console.error('Error listing playlists:', err);
     res.status(500).json({ error: 'Internal server error' });

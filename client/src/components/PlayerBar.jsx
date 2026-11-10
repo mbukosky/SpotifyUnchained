@@ -1,39 +1,98 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import SavePlaylist from './SavePlaylist';
 import Equalizer from './Equalizer';
-import { requestCover, useCover } from '../lib/covers';
+import { reportSpotifyLimited, requestCover, useCover, useSpotifyLimited } from '../lib/covers';
 import { artistColor, clean, position } from '../lib/tracks';
 
 const finePointer = () => window.matchMedia?.('(hover: hover) and (pointer: fine)').matches;
 
+const SPOTIFY = 'https://open.spotify.com';
+const EMBED_READY_MS = 6000;
+
 // The compact Spotify player. It asks the embed to start once it loads;
-// browsers may still block autoplay until the visitor presses play.
-function Embed({ track }) {
+// browsers may still block autoplay until the visitor presses play. A working
+// embed posts messages to this page (first "ready"); the page cannot see
+// inside the frame, so when none arrives within a few seconds of the frame
+// loading, the frame is showing an error page (usually Spotify's 429) and
+// `onAlive(false)` is called. A message arriving later calls `onAlive(true)`.
+function Embed({ track, onAlive }) {
   const ref = useRef(null);
   useEffect(() => {
     const frame = ref.current;
     if (!frame) return undefined;
-    let timer;
+    let toggle;
+    let watchdog;
+    let alive = false;
     const onLoad = () => {
-      timer = setTimeout(() => frame.contentWindow?.postMessage({ command: 'toggle' }, 'https://open.spotify.com'), 500);
+      toggle = setTimeout(() => frame.contentWindow?.postMessage({ command: 'toggle' }, SPOTIFY), 500);
+      clearTimeout(watchdog);
+      if (!alive) watchdog = setTimeout(() => onAlive(false), EMBED_READY_MS);
+    };
+    const onMessage = (e) => {
+      if (e.origin !== SPOTIFY || e.source !== frame.contentWindow) return;
+      clearTimeout(watchdog);
+      if (!alive) onAlive(true);
+      alive = true;
     };
     frame.addEventListener('load', onLoad);
+    window.addEventListener('message', onMessage);
     return () => {
       frame.removeEventListener('load', onLoad);
-      clearTimeout(timer);
+      window.removeEventListener('message', onMessage);
+      clearTimeout(toggle);
+      clearTimeout(watchdog);
     };
-  }, []);
+  }, [onAlive]);
   return (
     <iframe
       ref={ref}
       className="player-embed"
-      src={`https://open.spotify.com/embed/track/${track.id}?utm_source=generator&theme=0`}
+      src={`${SPOTIFY}/embed/track/${track.id}?utm_source=generator&theme=0`}
       width="100%"
       height="80"
       frameBorder="0"
       allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
       title={`Spotify player: ${clean(track.name)}`}
     />
+  );
+}
+
+// The embed, with a notice in its place when Spotify is refusing requests.
+// Cover lookups and the embed share Spotify's limit per visitor, so:
+// - a track opened while lookups are being refused (429) does not load the
+//   embed at all until lookups succeed again;
+// - an embed that loads but never reports ready is covered by the notice,
+//   and cover lookups are paused to let the limit pass.
+// "Try now" loads the embed again. An embed that works is never taken away.
+function Frame({ track }) {
+  const limited = useSpotifyLimited();
+  const [held, setHeld] = useState(limited);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  if (held && !limited) setHeld(false);
+  const onAlive = useCallback((ok) => {
+    setFailed(!ok);
+    if (!ok) reportSpotifyLimited();
+  }, []);
+  const retry = () => {
+    setHeld(false);
+    setFailed(false);
+    setAttempt(n => n + 1);
+  };
+  return (
+    <>
+      {!held && <Embed key={attempt} track={track} onAlive={onAlive} />}
+      {(held || failed) && (
+        <div className="player-limited" role="status">
+          <span>
+            {held
+              ? 'Spotify is limiting requests right now. The player will be back shortly.'
+              : 'The Spotify player did not load. Spotify may be limiting requests right now.'}
+          </span>
+          <button type="button" className="player-retry" onClick={retry}>Try now</button>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -53,14 +112,27 @@ export default function PlayerBar({ edition, index, accent, onSelect, onClose })
     if (track) requestCover(track.id, true);
   }, [track]);
 
-  // Publish the bar's height so tiles scrolled into view clear it.
+  // Publish the bar's height so tiles scrolled into view clear it. The
+  // property is inherited by every tile, so changing it restyles them all:
+  // write it only when it changes, and after the frame that shows the tiles
+  // (the observer reports during that frame) rather than inside it.
   useEffect(() => {
     const bar = ref.current;
     const host = bar?.parentElement;
     if (!bar || !host || typeof ResizeObserver === 'undefined') return undefined;
-    const ro = new ResizeObserver(() => host.style.setProperty('--player-h', `${bar.offsetHeight}px`));
+    let timer;
+    const ro = new ResizeObserver(() => {
+      // Layout is clean while the observer reports, so read the height here.
+      const h = `${bar.offsetHeight}px`;
+      clearTimeout(timer);
+      if (host.style.getPropertyValue('--player-h') === h) return;
+      timer = setTimeout(() => host.style.setProperty('--player-h', h), 0);
+    });
     ro.observe(bar);
-    return () => ro.disconnect();
+    return () => {
+      ro.disconnect();
+      clearTimeout(timer);
+    };
   }, []);
 
   const color = track ? artistColor(track.artist, accent) : null;
@@ -97,7 +169,7 @@ export default function PlayerBar({ edition, index, accent, onSelect, onClose })
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
             </button>
           </div>
-          <div className="player-frame"><Embed key={`${track.id}-${index}`} track={track} /></div>
+          <div className="player-frame"><Frame key={`${track.id}-${index}`} track={track} /></div>
         </>
       ) : (
         <p className="player-hint">{finePointer() ? 'Hover a cover to see its track, click to play it here.' : 'Tap a cover to play it here.'}</p>

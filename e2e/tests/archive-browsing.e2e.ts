@@ -932,6 +932,50 @@ test('a missing cover shows the artist initials', async ({ agent, app, browser }
 });
 
 // openspec/specs/archive-browsing/spec.md
+// Requirement: Track preview. Scenario: Spotify is limiting requests.
+// Stands in for Spotify's oEmbed endpoint, answering every lookup with 429.
+test('a rate-limited player shows a notice until the visitor retries', async ({ app, browser }) => {
+  let refused = 0;
+  await browser.route(/^https:\/\/open\.spotify\.com\/oembed\?/, async (route) => {
+    refused += 1;
+    await route.fulfill({ status: 429, body: 'Too Many Requests', headers: { 'access-control-allow-origin': '*' } });
+  });
+  await presetRegion(browser, 'DE');
+  await openEdition(app, editionId('DE'));
+  await expect(coverTiles(browser)).toHaveCount(3);
+  await expect.poll(() => refused).toBeGreaterThan(0);
+
+  await coverTile(browser, 0).click();
+
+  await expect(browser.locator(`${PLAYER} .player-name`)).toHaveText('Test Track 1 DE');
+  await expect(browser.locator(`${PLAYER} .player-limited`)).toContainText('Spotify is limiting requests');
+  await expect(browser.locator(`${PLAYER} iframe.player-embed`)).toHaveCount(0);
+
+  await browser.locator(`${PLAYER} .player-retry`).click();
+
+  await expect(browser.locator(`${PLAYER} iframe.player-embed`)).toHaveAttribute('title', 'Spotify player: Test Track 1 DE');
+  await expect(browser.locator(`${PLAYER} .player-limited`)).toHaveCount(0);
+});
+
+// openspec/specs/archive-browsing/spec.md
+// Requirement: Track preview. Scenario: Spotify refuses the embed.
+// Stands in for Spotify's embed page with an error page, which never reports ready.
+test('an embed Spotify refuses is covered by a notice', async ({ app, browser }) => {
+  await browser.route(/^https:\/\/open\.spotify\.com\/embed\//, async (route) => {
+    await route.fulfill({ status: 429, contentType: 'text/html', body: '<h1>429</h1>Too Many Requests' });
+  });
+  await presetRegion(browser, 'DE');
+  await openEdition(app, editionId('DE'));
+  await expect(coverTiles(browser)).toHaveCount(3);
+
+  await coverTile(browser, 0).click();
+
+  await expect(browser.locator(`${PLAYER} iframe.player-embed`)).toHaveCount(1);
+  await expect(browser.locator(`${PLAYER} .player-limited`)).toContainText('The Spotify player did not load', { timeout: 10000 });
+  await expect(browser.locator(`${PLAYER} .player-retry`)).toHaveText('Try now');
+});
+
+// openspec/specs/archive-browsing/spec.md
 // Requirement: Outbound links. Scenario: Donation and project links.
 // Checks each link's target. Following one would leave the app host, which is blocked.
 test('donation and project links open in a new tab', async ({ app, screen }) => {

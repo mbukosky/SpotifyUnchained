@@ -1,5 +1,5 @@
 import { memo, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { formatLongDate, monthColumns, tileLabel } from '../lib/wall';
+import { formatMonthDate, monthColumns, tileLabel } from '../lib/wall';
 import { markPainted } from '../lib/perf';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -8,7 +8,13 @@ const HOP_DELAYS = [70, 80, 95, 115, 140, 175, 220, 280];
 // How long the pointer rests on a tile before its edition is fetched.
 const INTENT_DWELL_MS = 150;
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-const media = (q) => (typeof window !== 'undefined' && window.matchMedia ? window.matchMedia(q) : { matches: false });
+// One MediaQueryList per query, made on first use: pointerover runs on every
+// tile the pointer crosses. A list's `matches` stays live.
+const queries = new Map();
+const media = (q) => {
+  if (!queries.has(q)) queries.set(q, typeof window !== 'undefined' && window.matchMedia ? window.matchMedia(q) : { matches: false });
+  return queries.get(q);
+};
 const reducedMotion = () => media('(prefers-reduced-motion: reduce)').matches;
 // The ripple and the hover card are pointer effects; touch screens skip them.
 const pointerEffects = () => media('(pointer: fine)').matches && !reducedMotion();
@@ -111,8 +117,10 @@ function Wall({ wall, isAll, regionKey, selectedKey, latestKey, dipping, onOpen,
     if (el && e.pointerType === 'mouse') intentTimer.current = setTimeout(() => intend(el), INTENT_DWELL_MS);
     if (dipping || !pointerEffects()) return;
     if (!el) return;
-    ripple(el);
+    // Measure for the card before the ripple writes styles, so reading the
+    // geometry does not force a style and layout pass in between.
     showTip(el);
+    ripple(el);
   };
 
   const onPointerDown = (e) => {
@@ -323,7 +331,7 @@ function WallTip({ tip, isAll }) {
   const { tile } = tip;
   return (
     <div className={`wall-tip${tip.below ? ' is-below' : ''}`} style={{ left: tip.x, top: tip.y }} aria-hidden="true">
-      <strong>{isAll ? `Week of ${formatLongDate(tile.date)}` : formatLongDate(tile.date)}</strong>
+      <strong>{formatMonthDate(tile.date)}</strong>
       {isAll ? (
         <span className="wall-tip-regions">
           {tile.editions.map(e => <b key={e.region} data-region={e.region}>{e.region}</b>)}

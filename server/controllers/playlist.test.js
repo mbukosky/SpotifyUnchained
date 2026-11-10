@@ -166,6 +166,22 @@ describe('playlist controller - list', () => {
     expect(again.res.json).toHaveBeenCalledWith(JSON.parse(JSON.stringify({ count: 1, items })));
   });
 
+  it('does not pre-encode or cache a page over the size limit', async () => {
+    const items = [{ title: 'big', tracks: [{ name: 'x'.repeat(200 * 1024) }] }];
+    mockCountDocuments.mockResolvedValue(1);
+    mockAggregate.mockResolvedValue(items);
+
+    const first = mockReqRes({ size: '100' });
+    await list(first.req, first.res);
+    const second = mockReqRes({ size: '100' });
+    await list(second.req, second.res);
+
+    expect(first.res.json).toHaveBeenCalledWith({ count: 1, items });
+    expect(first.res.headers.etag).toBeUndefined();
+    expect(first.res.headers['content-encoding']).toBeUndefined();
+    expect(mockAggregate).toHaveBeenCalledTimes(2);
+  });
+
   it('returns 500 on database error', async () => {
     mockCountDocuments.mockRejectedValue(new Error('DB error'));
 

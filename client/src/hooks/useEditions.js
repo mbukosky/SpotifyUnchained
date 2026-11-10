@@ -86,13 +86,26 @@ export function expandTracks(columns) {
 // the page: reopening a tile or stepping back costs no request. Failures are
 // not kept, so a retry fetches again.
 const cache = new Map();
+// The same editions once they have arrived, readable during render.
+const arrived = new Map();
+
+/**
+ * An edition already in the page cache, or null. Lets the panel draw a cached
+ * edition's tiles in the same commit as its heading, instead of one render
+ * (and, on a busy frame, one paint) later.
+ */
+export const peekEdition = id => arrived.get(id) || null;
 
 /** Fetch one edition with its tracks, from the page-lifetime cache when possible. */
 export function loadEdition(id) {
   if (cache.has(id)) return cache.get(id);
   const response = takeEarly('edition', e => e.id === id) || fetchJson(`/spotify/editions/${encodeURIComponent(id)}`, 'edition');
   const request = response
-    .then(data => ({ ...data, tracks: expandTracks(data.tracks) }))
+    .then(data => {
+      const edition = { ...data, tracks: expandTracks(data.tracks) };
+      arrived.set(id, edition);
+      return edition;
+    })
     .catch(err => {
       cache.delete(id);
       throw err;
@@ -101,21 +114,37 @@ export function loadEdition(id) {
   return request;
 }
 
+/**
+ * Adopt the deep-linked edition request that index.html started (it checked
+ * the id's format), so its data is parsed and cached while the index is still
+ * on its way. Does nothing without one.
+ */
+export function adoptLinkedEdition() {
+  const id = early()?.edition?.id;
+  if (id) loadEdition(id).catch(() => {});
+}
+
 /** True once `id` is in the page cache or on its way. */
 export const isEditionLoading = id => cache.has(id);
 
 /**
  * Fetch editions the visitor is likely to open next (the neighbours of the
- * open one) when the browser is idle. Errors are ignored: a real open retries.
+ * open one), starting just after the next frame has been painted, so their
+ * responses never land between the open edition's data and its first paint.
+ * Not idle-time: the open edition's tile animation leaves a slow device no
+ * idle time for about a second, and a Previous pressed in that second found
+ * nothing cached. Errors are ignored: a real open retries.
  */
 export function prefetchEditions(ids) {
   const wanted = ids.filter(id => id && !cache.has(id));
   if (wanted.length === 0) return () => {};
   const run = () => wanted.forEach(id => loadEdition(id).catch(() => {}));
-  if (typeof requestIdleCallback === 'function') {
-    const handle = requestIdleCallback(run, { timeout: 2000 });
-    return () => cancelIdleCallback(handle);
-  }
-  const handle = setTimeout(run, 200);
-  return () => clearTimeout(handle);
+  let timer = null;
+  const frame = typeof requestAnimationFrame === 'function'
+    ? requestAnimationFrame(() => { timer = setTimeout(run, 0); })
+    : (timer = setTimeout(run, 0), null);
+  return () => {
+    if (frame !== null) cancelAnimationFrame(frame);
+    clearTimeout(timer);
+  };
 }

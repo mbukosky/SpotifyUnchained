@@ -1,5 +1,5 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { requestCover, useCover, useLazyCovers } from '../lib/covers';
+import { preloadImage, requestCover, smallCover, useCover, useLazyCovers, useSmallCovers } from '../lib/covers';
 import { mark, markPainted } from '../lib/perf';
 import { artistColor, clean, initials, moveIndex, position, tileLabel } from '../lib/tracks';
 import Equalizer from './Equalizer';
@@ -10,35 +10,46 @@ const TIP_GAP = 8;
 const grows = () => window.matchMedia?.('(hover: hover) and (pointer: fine)').matches;
 const TILE_SCALE = 1.7;
 
-const CoverTile = memo(function CoverTile({ track, index, gradient, color, playing, tabStop }) {
+const CoverTile = memo(function CoverTile({ track, index, gradient, color, playing, tabStop, small }) {
   const url = useCover(track.id);
   const [loaded, setLoaded] = useState(false);
+  // The 64 px variant until the tile is enlarged (hover or keyboard focus) or
+  // the variant fails; then the 300 px original, swapped in once decoded.
+  const [sharp, setSharp] = useState(false);
+  const smallUrl = small && !sharp ? smallCover(url) : null;
+  const sharpen = sharp ? undefined : () => {
+    if (!smallUrl) setSharp(true);
+    else preloadImage(url).then(() => setSharp(true), () => setSharp(true));
+  };
   const shown = Boolean(url && loaded);
   return (
     <button
       type="button"
       className={`cover-tile${playing ? ' is-playing' : ''}${shown ? ' has-cover' : ''}`}
-      style={{ '--tile-g': gradient, '--tile-c': color, '--i': index }}
+      style={{ background: gradient, '--tile-c': color, animationDelay: playing ? undefined : `${Math.min(index, 160) * 3}ms` }}
       data-index={index}
       data-track-id={track.id}
       data-cover={shown ? 'loaded' : 'fallback'}
       tabIndex={tabStop ? 0 : -1}
       aria-label={tileLabel(track)}
       aria-current={playing || undefined}
+      onPointerEnter={sharpen}
+      onFocus={sharpen}
     >
       <span className="cover-fallback" aria-hidden="true">{initials(track.artist)}</span>
       {url && (
         <img
-          src={url}
+          src={smallUrl ?? url}
           alt=""
           loading="lazy"
           decoding="async"
           draggable="false"
           onLoad={() => {
+            if (loaded) return;
             setLoaded(true);
             mark('cover-loaded', track.id);
           }}
-          onError={() => setLoaded(false)}
+          onError={() => (smallUrl ? setSharp(true) : setLoaded(false))}
         />
       )}
       {playing && <span className="cover-playing" aria-hidden="true"><Equalizer /></span>}
@@ -64,6 +75,7 @@ export default function CoverGrid({ tracks, accent, activeIndex, onPlay }) {
 
   const colors = useMemo(() => tracks.map(t => artistColor(t.artist, accent)), [tracks, accent]);
   useLazyCovers(gridRef, tracks);
+  const small = useSmallCovers(gridRef, tracks);
   useEffect(() => markPainted('tracks-rendered', tracks.length), [tracks]);
 
   const tileAt = (target) => {
@@ -165,6 +177,7 @@ export default function CoverGrid({ tracks, accent, activeIndex, onPlay }) {
           color={colors[i].color}
           playing={i === activeIndex}
           tabStop={i === focusIdx}
+          small={small}
         />
       ))}
       {t && (

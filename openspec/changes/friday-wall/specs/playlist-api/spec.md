@@ -90,7 +90,7 @@ The system SHALL allow at most 900 requests per client per 15-minute window to `
 - **THEN** its next `GET /spotify` request is not rejected for rate limiting
 
 ### Requirement: Compressed, revalidatable archive responses
-The system SHALL serve `GET /spotify/editions`, `GET /spotify/editions/{id}` and `GET /spotify` from a pre-compressed in-memory cache, choosing the encoding from the request's `Accept-Encoding`, and SHALL send each such response with a strong `ETag` and `Vary: Accept-Encoding`. The system SHALL respond with status 304 and no body when the request's `If-None-Match` matches the response's `ETag`. The body content of `GET /spotify` SHALL be unchanged.
+The system SHALL serve `GET /spotify/editions`, `GET /spotify/editions/{id}` and `GET /spotify` pages whose JSON body is at most 128 kB from a pre-compressed in-memory cache, choosing the encoding from the request's `Accept-Encoding`, and SHALL send each such response with a strong `ETag` and `Vary: Accept-Encoding`. The system SHALL respond with status 304 and no body when the request's `If-None-Match` matches the response's `ETag`. `GET /spotify` pages larger than 128 kB SHALL be neither pre-encoded nor cached; they are compressed per request by the compression middleware and carry no such `ETag`. The body content of `GET /spotify` SHALL be unchanged.
 
 #### Scenario: Conditional request matches
 - **WHEN** a client sends `GET /spotify/editions` and then repeats it with `If-None-Match` set to the `ETag` of the first response

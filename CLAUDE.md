@@ -136,7 +136,7 @@ Backend tests use **Vitest** with test files co-located next to source files (`s
   - `tuesday: true` only on New Music Tuesday editions
   - Rate limited separately (900 per 15 minutes, shared with the edition endpoint; the client prefetches the open edition's neighbours)
 - `GET /spotify/editions/:id` - One edition `{ id, title, region, date, tracks }` with `tracks` as columns `{ id: [], name: [], artist: [] }`; `uri`/`open_url` columns only when some stored value differs from `spotify:track:<id>` / `https://open.spotify.com/track/<id>`; 404 `{ "error": "Not found" }` for an unknown or malformed id
-- The index, editions and `GET /spotify` are served from an in-memory cache, pre-compressed (Brotli 11, gzip 9) with a strong ETag; a sync write clears it (`server/lib/archiveCache.js`)
+- The index, editions and `GET /spotify` pages up to 128 kB are served from an in-memory cache, pre-compressed (Brotli 11, gzip 9) with a strong ETag (larger `/spotify` pages go through the compression middleware uncached); a sync write clears it (`server/lib/archiveCache.js`)
 
 ### Spotify OAuth API
 - `POST /api/spotify/token` - Exchange authorization code for tokens (PKCE)

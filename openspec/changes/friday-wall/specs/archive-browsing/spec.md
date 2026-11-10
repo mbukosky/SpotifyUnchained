@@ -151,7 +151,7 @@ The system SHALL keep the page free of horizontal scrolling at any viewport widt
 - **AND** the latest tile is in view
 
 ### Requirement: Track cover art
-The system SHALL show each track's cover art on its tile, looked up in the visitor's browser from Spotify's public oEmbed endpoint (`https://open.spotify.com/oembed`), for tiles in or near the viewport only and at most six lookups at a time. Until a cover loads, and whenever the lookup or the image fails, the tile SHALL show the lead artist's initials on a color derived from the artist's name, with no error message.
+The system SHALL show each track's cover art on its tile, looked up in the visitor's browser from Spotify's public oEmbed endpoint (`https://open.spotify.com/oembed`), for tiles in or near the viewport only (tiles in the viewport first), at most six lookups at a time. When Spotify answers 429 the system SHALL stop sending lookups for at least 30 seconds (longer while 429s continue, up to five minutes), then resume one at a time, and tiles left unanswered SHALL get their cover once lookups resume. A cover found once MAY be kept in the browser's storage for up to 30 days, so the same track's tile shows it on a later visit without a lookup. Until a cover loads, and whenever the lookup or the image fails, the tile SHALL show the lead artist's initials on a color derived from the artist's name, with no error message.
 
 #### Scenario: Cover loads
 - **WHEN** a visitor opens an edition and Spotify returns a cover for a track
@@ -216,13 +216,22 @@ The system SHALL show every track of the open edition as a cover tile in a grid,
 - **AND** pressing Tab moves focus out of the grid
 
 ### Requirement: Track preview
-The system SHALL show a player bar with the track grid, which stays at the bottom of the viewport while the grid is taller than the screen. Activating a tile by click, Enter or Space SHALL open a Spotify player embed for that track in the player bar, mark the tile as playing, and attempt to start playback once the embed loads. At most one embed SHALL exist at a time: activating another tile SHALL replace it. While a track is open the player bar SHALL show "Now playing", the track's position as "NN/total", its name and its artist, with a "Previous track" button, a "Next track" button, a link named "Open <track name> on Spotify" and a "Close player" button. "Previous track" SHALL be disabled on the first track and "Next track" on the last. The Spotify link SHALL open the track on Spotify in a new tab without closing the embed. "Close player" SHALL remove the embed and the playing mark.
+The system SHALL show a player bar with the track grid, which stays at the bottom of the viewport while the grid is taller than the screen. Activating a tile by click, Enter or Space SHALL open a Spotify player embed for that track in the player bar, mark the tile as playing, and attempt to start playback once the embed loads. While Spotify is answering cover lookups with 429, a newly opened track SHALL show a notice with a "Try now" button in place of the embed, replaced by the embed when lookups succeed again or the visitor activates "Try now"; an embed that is already open SHALL stay. When an embed loads but does not report ready within six seconds (Spotify refused it), the same notice SHALL cover it, with "Try now" loading it again, and cover lookups SHALL pause as for a 429. At most one embed SHALL exist at a time: activating another tile SHALL replace it. While a track is open the player bar SHALL show "Now playing", the track's position as "NN/total", its name and its artist, with a "Previous track" button, a "Next track" button, a link named "Open <track name> on Spotify" and a "Close player" button. "Previous track" SHALL be disabled on the first track and "Next track" on the last. The Spotify link SHALL open the track on Spotify in a new tab without closing the embed. "Close player" SHALL remove the embed and the playing mark.
 
 #### Scenario: Preview opens and closes
 - **WHEN** a visitor clicks the fifth tile of a 30-track edition
 - **THEN** the player bar shows "05/30", that track's name and artist, and a Spotify embed for it
 - **AND** the tile is marked as playing
 - **AND** activating "Close player" removes the embed and the playing mark
+
+#### Scenario: Spotify is limiting requests
+- **WHEN** Spotify has answered a cover lookup with 429 and a visitor then activates a tile
+- **THEN** the player bar shows the track's name and a notice that Spotify is limiting requests, with a "Try now" button, in place of the embed
+- **AND** activating "Try now" loads the Spotify embed for that track
+
+#### Scenario: Spotify refuses the embed
+- **WHEN** a visitor activates a tile and Spotify answers the embed with an error page
+- **THEN** within a few seconds a notice that the Spotify player did not load covers the embed, with a "Try now" button
 
 #### Scenario: Another tile replaces the embed
 - **WHEN** a track is open in the player bar and a visitor activates a different tile
