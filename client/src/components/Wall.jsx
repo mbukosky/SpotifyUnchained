@@ -1,5 +1,6 @@
 import { memo, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { formatLongDate, monthColumns, tileLabel } from '../lib/wall';
+import { markPainted } from '../lib/perf';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const RIPPLE_RADIUS = 3;
@@ -184,6 +185,10 @@ function Wall({ wall, isAll, regionKey, selectedKey, latestKey, dipping, onOpen,
       setTimeout(() => setSpot(null), 1300);
     },
   }), [tabStop, tilesByKey]);
+
+  useEffect(() => {
+    if (rows.length) markPainted('wall-drawn', { region: regionKey, tiles: tilesByKey.size });
+  }, [rows, regionKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Drop a stale spotlight or hover card when the wall itself changes.
   useEffect(() => {

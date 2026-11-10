@@ -5,6 +5,7 @@ import PlaylistDownload from './PlaylistDownload';
 import { loadEdition } from '../hooks/useEditions';
 import { REGION_COLORS } from '../lib/regions';
 import { formatLongDate } from '../lib/wall';
+import { mark, markPainted } from '../lib/perf';
 
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
@@ -42,8 +43,12 @@ export default function EditionPanel({
 
   useEffect(() => {
     let live = true;
+    markPainted('panel-open', edition.id);
     loadEdition(edition.id)
-      .then(data => live && setLoad({ id: edition.id, data, error: false }))
+      .then(data => {
+        mark('edition-loaded', edition.id);
+        return live && setLoad({ id: edition.id, data, error: false });
+      })
       .catch(() => live && setLoad({ id: edition.id, data: null, error: true }));
     return () => { live = false; };
   }, [edition.id]);

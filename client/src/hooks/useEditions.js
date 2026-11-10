@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { mark } from '../lib/perf';
 
 // One index request per page load, shared by every mount (React's dev-mode
 // double effect included). A failure is dropped so a later mount can retry.
@@ -11,7 +12,11 @@ function loadIndex() {
         if (!res.ok) throw new Error(`Failed to fetch editions: ${res.status}`);
         return res.json();
       })
-      .then(data => data.items || [])
+      .then(data => {
+        const items = data.items || [];
+        mark('index-loaded', items.length);
+        return items;
+      })
       .catch(err => {
         indexRequest = null;
         throw err;

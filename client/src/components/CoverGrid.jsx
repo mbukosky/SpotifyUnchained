@@ -1,5 +1,6 @@
-import { memo, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { requestCover, useCover, useLazyCovers } from '../lib/covers';
+import { mark, markPainted } from '../lib/perf';
 import { artistColor, clean, initials, moveIndex, position, tileLabel } from '../lib/tracks';
 import Equalizer from './Equalizer';
 
@@ -33,7 +34,10 @@ const CoverTile = memo(function CoverTile({ track, index, gradient, color, playi
           loading="lazy"
           decoding="async"
           draggable="false"
-          onLoad={() => setLoaded(true)}
+          onLoad={() => {
+            setLoaded(true);
+            mark('cover-loaded', track.id);
+          }}
           onError={() => setLoaded(false)}
         />
       )}
@@ -60,6 +64,7 @@ export default function CoverGrid({ tracks, accent, activeIndex, onPlay }) {
 
   const colors = useMemo(() => tracks.map(t => artistColor(t.artist, accent)), [tracks, accent]);
   useLazyCovers(gridRef, tracks);
+  useEffect(() => markPainted('tracks-rendered', tracks.length), [tracks]);
 
   const tileAt = (target) => {
     const el = target?.closest?.('.cover-tile');
