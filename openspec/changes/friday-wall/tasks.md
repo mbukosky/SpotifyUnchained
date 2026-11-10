@@ -37,6 +37,15 @@
 - [x] 5.2 Run `bun run test:e2e` and verify the whole suite passes, reporting any 429 instead of changing a limit
 - [x] 5.3 Run `openspec validate friday-wall --strict` and verify it passes
 
+## 6. Cover mosaic
+
+- [x] 6.1 Add `https://open.spotify.com` to `connectSrc` in `server/app.js` and to any test that pins the list. Verify with `curl -sI http://localhost:3000/health` that `connect-src` carries it
+- [x] 6.2 Add `client/src/lib/covers.js` (lazy oEmbed lookup, six in flight, page-life cache, hook) and the pure helpers for lead artist, initials and artist color in `client/src/lib/`, with Vitest tests for the pure helpers. Verify `bun run test` passes
+- [x] 6.3 Build `CoverGrid` and `PlayerBar` from the `?variant=B` prototype in `client/src/prototypes/`, rewritten as production components with their CSS in `index.css`, and mount them in `EditionPanel` in place of the `TrackItem` list. Make lucky dip open its track in the player bar and scroll the tile into view. Verify every scenario of "Track listing", "Track preview" and "Track cover art" by hand at 1440 and 390 pixels wide, including that the player bar does not cover the last row at the end of the grid
+- [x] 6.4 Delete `TrackItem.jsx`, its CSS, and every prototype hook: `client/src/prototypes/`, the `// PROTOTYPE` lines in `App.jsx` and `EditionPanel.jsx`. Verify `grep -rn "PROTOTYPE\|prototypes/\|TrackItem\|track-row" client/src` finds nothing and `bun run build` succeeds
+- [x] 6.5 Update `e2e/tests/archive-browsing.e2e.ts`, `playlist-export.e2e.ts`, `service-runtime.e2e.ts` and `helpers.ts` to the changed scenarios, one test per scenario, following `.claude/rules/e2e.md`. Verify each changed file passes
+- [x] 6.6 Run `bun run test`, `bun run test:e2e` and `openspec validate friday-wall --strict` and verify all three pass
+
 ## Workflow follow-up
 
 - Archive the change after review, which merges the three deltas into `openspec/specs/`.

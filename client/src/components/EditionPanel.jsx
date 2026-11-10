@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import TrackItem from './TrackItem';
-import SavePlaylist from './SavePlaylist';
+import CoverGrid from './CoverGrid';
+import PlayerBar from './PlayerBar';
 import PlaylistDownload from './PlaylistDownload';
 import { loadEdition } from '../hooks/useEditions';
 import { REGION_COLORS } from '../lib/regions';
@@ -15,26 +15,29 @@ const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce
  * `focusToken` changes when the edition was opened from outside the panel
  * (a tile, a deep link, a jump or a lucky dip); the panel then brings its
  * heading into view. `lucky` ({ editionId, trackId }, a new object per dip)
- * asks for that track's preview to open and scroll into view.
+ * asks for that track to open in the player bar and its tile to scroll into
+ * view.
  */
 export default function EditionPanel({
   edition, previous, next, week, focusToken, focusHeading, lucky,
   onOpen, onClose,
 }) {
   const [load, setLoad] = useState({ id: null, data: null, error: false });
+  // The open track: { id, index }. A lucky dip knows only the id (index -1)
+  // until the tracks are in.
   const [activeTrack, setActiveTrack] = useState(null);
   const headingRef = useRef(null);
   const listRef = useRef(null);
   const prevRef = useRef(null);
   const nextRef = useRef(null);
 
-  // Each edition starts with no preview open, unless a lucky dip chose a
-  // track in it. Reset during render so the old preview never flashes.
+  // Each edition starts with the player closed, unless a lucky dip chose a
+  // track in it. Reset during render so the old embed never flashes.
   const luckyTrackId = lucky?.editionId === edition.id ? lucky.trackId : null;
   const [seen, setSeen] = useState({ id: null, lucky: null });
   if (seen.id !== edition.id || seen.lucky !== lucky) {
     setSeen({ id: edition.id, lucky });
-    setActiveTrack(luckyTrackId);
+    setActiveTrack(luckyTrackId ? { id: luckyTrackId, index: -1 } : null);
   }
 
   useEffect(() => {
@@ -58,11 +61,11 @@ export default function EditionPanel({
     if (!luckyTrackId) h.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'nearest' });
   }, [focusToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Lucky dip: once the tracks are in, scroll the chosen one into view.
+  // Lucky dip: once the tracks are in, scroll the chosen tile into view.
   useEffect(() => {
     if (!data || !luckyTrackId) return;
-    const row = listRef.current?.querySelector(`[data-track-id="${CSS.escape(luckyTrackId)}"]`);
-    row?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'center' });
+    const tile = listRef.current?.querySelector(`[data-track-id="${CSS.escape(luckyTrackId)}"]`);
+    tile?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'center' });
   }, [data, lucky]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Stepping onto the first or last edition disables the button that was
@@ -91,6 +94,15 @@ export default function EditionPanel({
   };
 
   const color = REGION_COLORS[edition.region] || REGION_COLORS.US;
+
+  const tracks = data?.tracks || [];
+  const activeIndex = !activeTrack ? -1
+    : activeTrack.index >= 0 ? activeTrack.index
+    : tracks.findIndex(t => t.id === activeTrack.id);
+  // Activating the open track again leaves it playing.
+  const play = (i) => {
+    if (tracks[i]) setActiveTrack({ id: tracks[i].id, index: i });
+  };
   const tuesday = /tuesday/i.test(edition.title);
 
   return (
@@ -185,17 +197,8 @@ export default function EditionPanel({
         )}
         {data && (
           <div className="ep-tracks" key={data.id}>
-            {data.tracks.map((track, i) => (
-              <TrackItem
-                key={`${track.id}-${i}`}
-                track={track}
-                index={i}
-                isPlaying={activeTrack === track.id}
-                onTogglePlay={(id) => setActiveTrack(prev => (prev === id ? null : id))}
-                autoplay
-              />
-            ))}
-            <SavePlaylist playlist={data} />
+            <CoverGrid tracks={data.tracks} accent={color} activeIndex={activeIndex} onPlay={play} />
+            <PlayerBar edition={data} index={activeIndex} accent={color} onSelect={play} onClose={() => setActiveTrack(null)} />
           </div>
         )}
       </div>

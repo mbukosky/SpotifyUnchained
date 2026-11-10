@@ -122,12 +122,12 @@ The system SHALL show a date field labelled "Jump to a date". When a visitor cho
 - **THEN** the panel shows the edition of 14 February 2026
 
 ### Requirement: Lucky dip
-The system SHALL show a "Lucky dip" button that opens an edition chosen at random from the selected region (from every region when ALL is selected), opens the preview of one track chosen at random from it, and scrolls that track into view. When reduced motion is not requested, the system SHALL animate a highlight across several tiles before opening the edition. When reduced motion is requested, it SHALL open the edition without that animation.
+The system SHALL show a "Lucky dip" button that opens an edition chosen at random from the selected region (from every region when ALL is selected), opens one track chosen at random from it in the player bar, and scrolls that track's tile into view. When reduced motion is not requested, the system SHALL animate a highlight across several tiles before opening the edition. When reduced motion is requested, it SHALL open the edition without that animation.
 
 #### Scenario: Lucky dip opens a track
 - **WHEN** a visitor activates "Lucky dip"
 - **THEN** the panel shows an edition of the selected region
-- **AND** exactly one track in the panel has its Spotify embed open
+- **AND** the player bar holds a Spotify embed for one track of that edition
 
 ### Requirement: All-regions wall
 The system SHALL, when ALL is selected, show one tile per week that has an edition in any region, drawn in white, with the accessible name "Week of Weekday, Month day, year, N regions", where the date is the latest edition date in that week. Activating the tile SHALL open the panel with one button per region archived that week, in the order US, UK, CA, BR, MX, DE, AU, with the first selected. Selecting a region button SHALL show that region's edition for the week.
@@ -149,6 +149,19 @@ The system SHALL keep the page free of horizontal scrolling at any viewport widt
 - **THEN** the page does not scroll horizontally
 - **AND** the wall scrolls horizontally with the year labels still visible
 - **AND** the latest tile is in view
+
+### Requirement: Track cover art
+The system SHALL show each track's cover art on its tile, looked up in the visitor's browser from Spotify's public oEmbed endpoint (`https://open.spotify.com/oembed`), for tiles in or near the viewport only and at most six lookups at a time. Until a cover loads, and whenever the lookup or the image fails, the tile SHALL show the lead artist's initials on a color derived from the artist's name, with no error message.
+
+#### Scenario: Cover loads
+- **WHEN** a visitor opens an edition and Spotify returns a cover for a track
+- **THEN** that track's tile shows the cover image
+
+#### Scenario: Cover unavailable
+- **WHEN** the cover lookup for a track fails
+- **THEN** its tile shows the artist's initials on a colored background
+- **AND** no error message is shown
+- **AND** activating the tile still opens the track in the player bar
 
 ## MODIFIED Requirements
 
@@ -186,12 +199,50 @@ The system SHALL show a spinner with the text "Loading playlists..." while the a
 - **AND** no wall is shown
 
 ### Requirement: Track listing
-The system SHALL show every track of the open edition with a two-digit position number starting at 01, the track name and the track's artist. The system SHALL NOT limit the number of tracks shown, and the panel SHALL show all tracks without being clipped.
+The system SHALL show every track of the open edition as a cover tile in a grid, in playlist order. Each tile SHALL be a button with the accessible name "Play <track name> by <artist>". Hovering a tile with a mouse, or moving keyboard focus to it, SHALL show a label with the track's two-digit position number starting at 01, its name and its artist. The grid SHALL be a single Tab stop, and the arrow keys, Home and End SHALL move focus between tiles. The system SHALL NOT limit the number of tracks shown, and the panel SHALL show all tiles without being clipped.
 
 #### Scenario: Long playlist shows every track
 - **WHEN** a visitor opens an edition with 50 tracks
-- **THEN** tracks numbered 01 through 50 are shown
-- **AND** the last track is fully visible when scrolled to
+- **THEN** 50 cover tiles are shown in playlist order
+- **AND** the last tile is fully visible when scrolled to, and the player bar does not cover it
+
+#### Scenario: Focused tile names its track
+- **WHEN** a visitor moves keyboard focus to the third tile of an edition
+- **THEN** a label shows "03", the track's name and its artist
+
+#### Scenario: Arrow keys move between tiles
+- **WHEN** a tile has focus and a visitor presses the right arrow key
+- **THEN** focus moves to the next tile
+- **AND** pressing Tab moves focus out of the grid
+
+### Requirement: Track preview
+The system SHALL show a player bar with the track grid, which stays at the bottom of the viewport while the grid is taller than the screen. Activating a tile by click, Enter or Space SHALL open a Spotify player embed for that track in the player bar, mark the tile as playing, and attempt to start playback once the embed loads. At most one embed SHALL exist at a time: activating another tile SHALL replace it. While a track is open the player bar SHALL show "Now playing", the track's position as "NN/total", its name and its artist, with a "Previous track" button, a "Next track" button, a link named "Open <track name> on Spotify" and a "Close player" button. "Previous track" SHALL be disabled on the first track and "Next track" on the last. The Spotify link SHALL open the track on Spotify in a new tab without closing the embed. "Close player" SHALL remove the embed and the playing mark.
+
+#### Scenario: Preview opens and closes
+- **WHEN** a visitor clicks the fifth tile of a 30-track edition
+- **THEN** the player bar shows "05/30", that track's name and artist, and a Spotify embed for it
+- **AND** the tile is marked as playing
+- **AND** activating "Close player" removes the embed and the playing mark
+
+#### Scenario: Another tile replaces the embed
+- **WHEN** a track is open in the player bar and a visitor activates a different tile
+- **THEN** the player bar shows the second track
+- **AND** exactly one Spotify embed exists in the panel
+
+#### Scenario: Next and previous track
+- **WHEN** the first track is open in the player bar
+- **THEN** "Previous track" is disabled
+- **AND** activating "Next track" shows the second track in the player bar
+
+#### Scenario: Spotify link does not toggle preview
+- **WHEN** a visitor clicks the "Open ... on Spotify" link in the player bar
+- **THEN** the track opens on Spotify in a new tab
+- **AND** the embed stays open
+
+#### Scenario: Spotify link from the keyboard
+- **WHEN** a visitor focuses the "Open ... on Spotify" link in the player bar and presses Enter
+- **THEN** the track opens on Spotify in a new tab
+- **AND** the embed stays open
 
 ### Requirement: Reduced motion and pointer effects
 The system SHALL respect the operating system's reduced-motion preference. When reduced motion is requested, the background SHALL be drawn once as a still image without animation, and CSS animations and transitions SHALL complete almost instantly. The background pointer parallax and the wall's tile ripple effect SHALL be active only on devices with a fine pointer and only when reduced motion is not requested.

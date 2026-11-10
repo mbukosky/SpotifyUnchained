@@ -75,7 +75,9 @@ App
    ├─ ScaleHeadline   counts from the filtered index
    ├─ WallControls    Lucky dip, Jump to a date, Ko-fi link
    ├─ Wall            rows, tiles, roving tabindex, ripple, lucky-dip highlight
-   └─ EditionPanel    header (title, save, prev/next, close, region buttons), TrackItem list, SavePlaylist
+   └─ EditionPanel    header (title, save, prev/next, close, region buttons)
+      ├─ CoverGrid    one cover tile per track, roving tabindex, hover label
+      └─ PlayerBar    now playing, prev/next track, Spotify link, close, embed, SavePlaylist
 ```
 
 Pure logic goes in `client/src/lib/wall.js` (ISO week, grouping, percentiles, nearest edition, headline numbers) so Vitest can cover it. The root Vitest config already includes `client/src/**/*.test.js`.
@@ -94,9 +96,25 @@ The OAuth callback lands on the site root with `code` and `state`. The archive r
 
 `Hero.jsx`, `PlaylistList.jsx`, `PlaylistCard.jsx`, `Pagination.jsx`, `usePlaylists.js` and their CSS are deleted, along with the unused `apiGet` helper if nothing else imports it. The `.pcard-dl` button styles move to the panel header because `PlaylistDownload` still uses them.
 
-### 10. No CSP change
+### 10. Tracks are a cover mosaic with one player bar
 
-The page loads nothing from a new domain. Track previews still come from `open.spotify.com`, which `frameSrc` already allows.
+The first build reused `TrackItem`, one 60-pixel row per track with the embed opening under the row. A 149-track edition was about 9,000 pixels tall and the save button sat at the very end. Three compact variants were prototyped (colored initial tiles, album covers, four-column text). The cover mosaic was chosen: 149 tracks take about 680 pixels on a desktop.
+
+- Tiles are 60 pixels square (44 on narrow screens) in a wrapping grid. Each is a button named "Play <name> by <artist>". The grid uses the same roving tabindex as the wall.
+- A label with position, name and artist follows mouse hover and keyboard focus. Touch has no hover, so on touch the name appears in the player bar once the tile is tapped.
+- One player bar sits under the grid with `position: sticky; bottom: 0`. It holds the single embed (the compact 80-pixel Spotify player), previous and next track, the Spotify link, close, and `SavePlaylist`. The grid's scroll container gets bottom padding or the bar sits after the grid in flow, so the bar never covers the last row once the visitor reaches the end.
+- Activating the playing tile again leaves it playing. Closing is the bar's "Close player" button.
+- `TrackItem.jsx` and its CSS are deleted.
+
+### 11. Covers come from Spotify oEmbed, in the browser
+
+The database stores no image addresses, and the Web API needs a token. `https://open.spotify.com/oembed?url=https://open.spotify.com/track/<id>` returns a `thumbnail_url` on `i.scdn.co` with no credentials and `Access-Control-Allow-Origin: *`. The client requests covers for tiles within about 400 pixels of the viewport, six at a time, and keeps results in a `Map` for the life of the page.
+
+Every tile starts as a generated fallback (initials on a hue hashed from the lead artist's name, offset from the region accent) and the image fades in over it, so a failed or slow lookup costs nothing but the picture.
+
+The CSP `connect-src` list gains `https://open.spotify.com`. `img-src` already allows `https://i.scdn.co` and `frame-src` already allows the embed.
+
+*Alternatives considered:* storing cover addresses at sync time (needs a schema change and a backfill write over irreplaceable production data, for 134,000 rows), and a server proxy with a cache (moves an unauthenticated third-party call onto our rate budget and address).
 
 ## Risks / Trade-offs
 
@@ -107,6 +125,11 @@ The page loads nothing from a new domain. Track previews still come from `open.s
 - [Visitors who liked seeing the newest tracks at once now need a click] → The latest tile pulses and is the wall's first Tab stop. If this proves a problem, opening the latest edition by default is a small follow-up.
 - [The archive Purpose text in `openspec/specs/archive-browsing/spec.md` and `playlist-export/spec.md` still mentions cards and pagination after archive] → Listed as a workflow follow-up, because a delta cannot change a Purpose.
 - [Requirement names in `playlist-export` still say "expanded-card"] → Left alone to keep the delta small. They now refer to the save button at the end of the panel's track list.
+
+- [The oEmbed endpoint publishes no rate limit and could change or throttle] → Lookups are lazy, capped at six in flight and cached per page. On any failure the tile keeps its fallback and still plays. A failed lookup may be tried again after a minute, on hover or when the edition is reopened: heavy testing drew a few minutes of 429 responses from Spotify.
+- [Cover lookups tell Spotify which tracks a visitor's screen showed] → The embed already does this for every played track, and the request carries no cookie of ours. Accepted.
+- [On touch a visitor cannot read a track's name without playing it] → Accepted for now: covers are recognizable and the bar names the track on tap. A text-list toggle is a possible follow-up.
+- [E2E runs block every host but the app] → Cover tests assert the fallback tile, which is what a blocked lookup produces. The loaded-cover scenario is checked by hand against the dev server.
 
 ## Migration Plan
 

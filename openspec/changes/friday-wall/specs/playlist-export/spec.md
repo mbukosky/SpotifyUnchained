@@ -3,11 +3,11 @@
 ## MODIFIED Requirements
 
 ### Requirement: Save button at the end of the expanded track list
-The system SHALL show a "Save to Spotify" button as the last element of the track list in an open edition panel, with the accessible name "Save playlist to Spotify".
+The system SHALL show a "Save to Spotify" button in the player bar that accompanies the track grid of an open edition panel, with the accessible name "Save playlist to Spotify". The button SHALL be present whether or not a track is open in the player bar.
 
 #### Scenario: Expanded card shows the save button
 - **WHEN** a user opens an archived edition in the edition panel
-- **THEN** the track list ends with a button labelled "Save to Spotify"
+- **THEN** the player bar shows a button labelled "Save to Spotify"
 - **AND** the button's accessible name is "Save playlist to Spotify"
 
 ### Requirement: Save from the card header

@@ -23,6 +23,9 @@ export const FEB_07 = 'Saturday, February 7, 2026';
 /** The open edition panel, as a CSS selector. */
 export const PANEL = '.edition-panel';
 
+/** The open edition's player bar, which holds the one embed and the save button. */
+export const PLAYER = `${PANEL} .player-bar`;
+
 /** Loads the page with an edition open, the way a shared link does. */
 export const openEdition = (app: { open: (path: string) => Promise<unknown> }, id: string) =>
   app.open(`/?edition=${id}`);

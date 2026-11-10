@@ -5,6 +5,7 @@ import {
   FEB_07,
   FEB_14,
   PANEL,
+  PLAYER,
   editionId,
   mockAuthorize,
   mockSpotifyApi,
@@ -22,12 +23,12 @@ const trackUris = (region: string, label: string, count: number) =>
     return `spotify:track:${id}`;
   });
 
-const SAVE_AT_END = 'Click the "Save to Spotify" button at the end of the open edition\'s track list';
+const SAVE_AT_END = 'Click the "Save to Spotify" button in the player bar under the open edition\'s tracks';
 const TO_SIGN_IN = 'You are signed out, so being sent to a Spotify authorize page is the expected result';
 const AT_SPOTIFY = /^https:\/\/accounts\.spotify\.com\/authorize\?/;
 
-/** The save button at the end of the open edition's track list. */
-const bottomSave = (browser: Browser) => browser.locator(`${PANEL} .save-btn`);
+/** The save button in the open edition's player bar. */
+const bottomSave = (browser: Browser) => browser.locator(`${PLAYER} .player-save .save-btn`);
 /** The save button in the edition panel's header. */
 const headerSave = (browser: Browser) => browser.locator(`${PANEL} .pcard-dl`);
 
@@ -53,7 +54,7 @@ const panelState = async (browser: Browser) => ({
 
 // openspec/specs/playlist-export/spec.md
 // Requirement: Save button at the end of the expanded track list. Scenario: Expanded card shows the save button.
-test('an open edition ends with the save button', async ({ agent, app, browser }) => {
+test('the player bar shows the save button', async ({ agent, app, browser }) => {
   await presetRegion(browser, 'DE');
   await app.open('/');
   await agent.act('Open the edition from February 14, 2026');
@@ -62,11 +63,13 @@ test('an open edition ends with the save button', async ({ agent, app, browser }
   await expect(save).toBeVisible();
   await expect(save).toHaveText('Save to Spotify');
   await expect(save).toHaveAccessibleName('Save playlist to Spotify');
-  const isLast = await browser.evaluate((selector: string) => {
-    const list = document.querySelector(`${selector} .ep-tracks`)!;
-    return !!list.lastElementChild!.querySelector('.save-btn');
-  }, PANEL);
-  expect(isLast).toBe(true);
+  await expect(browser.locator(`${PLAYER}.is-open`)).toHaveCount(0);
+
+  // The requirement also keeps it there while a track is open.
+  await browser.locator(`${PANEL} .cover-tile[data-index="0"]`).tap();
+  await expect(browser.locator(`${PLAYER}.is-open`)).toHaveCount(1);
+  await expect(save).toBeVisible();
+  await expect(save).toHaveAccessibleName('Save playlist to Spotify');
 });
 
 // openspec/specs/playlist-export/spec.md

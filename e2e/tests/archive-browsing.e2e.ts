@@ -6,6 +6,7 @@ import {
   FEB_07,
   FEB_14,
   PANEL,
+  PLAYER,
   editionId,
   editionParam,
   openEdition,
@@ -24,6 +25,10 @@ const tiles = (browser: Browser) => browser.locator('.wall-tile');
 const selectedTiles = (browser: Browser) => browser.locator('.wall-tile[aria-pressed="true"]');
 const panel = (browser: Browser) => browser.locator(PANEL);
 const panelRegion = (browser: Browser) => browser.locator(`${PANEL} .ep-region`);
+const coverTiles = (browser: Browser) => browser.locator(`${PANEL} .cover-tile`);
+/** The open edition's cover tile at a 0-based playlist position. */
+const coverTile = (browser: Browser, index: number) => browser.locator(`${PANEL} .cover-tile[data-index="${index}"]`);
+const player = (browser: Browser) => browser.locator(PLAYER);
 /** Year labels of the wall's rows, top to bottom. */
 const rowYears = (browser: Browser) =>
   browser.evaluate(() => [...document.querySelectorAll('.wall-row')].map((row) => row.getAttribute('aria-label')));
@@ -447,7 +452,7 @@ test('a failed edition request leaves the wall usable', async ({ agent, app, scr
   await expect(panel(browser).getByText('Failed to load this edition. Please try again.')).toBeVisible();
   await screen.getByRole('button', tileName(FEB_07, 3)).tap();
   await expect(panel(browser).getByRole('heading', FEB_07)).toBeVisible();
-  await expect(browser.locator(`${PANEL} .track-row`)).toHaveCount(3);
+  await expect(coverTiles(browser)).toHaveCount(3);
   await expect(panel(browser).getByText('Failed to load this edition. Please try again.')).toHaveCount(0);
 });
 
@@ -570,8 +575,15 @@ test('Lucky dip opens a track', async ({ agent, app, browser }) => {
   await agent.act('Click the Lucky dip button');
 
   await expect(panelRegion(browser)).toHaveText('DE');
-  await expect(browser.locator(`${PANEL} iframe[title^="Spotify embed: "]`)).toHaveCount(1);
-  await expect(browser.locator(`${PANEL} .track-row.playing-row`)).toHaveCount(1);
+  const embed = browser.locator(`${PLAYER} iframe.player-embed`);
+  await expect(embed).toHaveCount(1);
+  await expect(browser.locator(`${PANEL} iframe`)).toHaveCount(1);
+  await expect(embed).toHaveAttribute('src', /^https:\/\/open\.spotify\.com\/embed\/track\/e2eDE/);
+  // The embed's track is a tile of the open edition, marked as playing.
+  const playing = browser.locator(`${PANEL} .cover-tile.is-playing`);
+  await expect(playing).toHaveCount(1);
+  const id = await playing.getAttribute('data-track-id');
+  expect(await embed.getAttribute('src')).toContain(`/embed/track/${id}?`);
 });
 
 // openspec/specs/archive-browsing/spec.md
@@ -649,55 +661,157 @@ test('long playlist shows every track', async ({ agent, app, browser }) => {
   await app.open('/');
   await agent.act('Open the edition from February 14, 2026');
   await expect(panel(browser).getByRole('heading', FEB_14)).toBeVisible();
-  await expect(browser.locator(`${PANEL} .track-row`)).toHaveCount(50);
+  await expect(coverTiles(browser)).toHaveCount(50);
 
-  const numbers = await browser.locator(`${PANEL} .track-num`).allTextContents();
-  expect(numbers).toEqual(Array.from({ length: 50 }, (_, i) => String(i + 1).padStart(2, '0')));
+  const order = await browser.evaluate((selector: string) =>
+    [...document.querySelectorAll(`${selector} .cover-tile`)].map((el) => [el.getAttribute('data-index'), el.getAttribute('aria-label')]),
+    PANEL,
+  );
+  expect(order).toEqual(Array.from({ length: 50 }, (_, i) => [String(i), `Play Test Track ${i + 1} UK by Test Artist ${i + 1}`]));
 
-  const lastRow = panel(browser).getByRole('button', 'Play Test Track 50 UK');
-  await lastRow.scrollIntoView();
-  await expect(lastRow).toBeVisible();
-  // toBeVisible ignores overflow clipping, so check the row against every clipping box above it.
-  const clippedBy = () =>
+  const lastTile = panel(browser).getByRole('button', 'Play Test Track 50 UK by Test Artist 50');
+  await lastTile.scrollIntoView();
+  await expect(lastTile).toBeVisible();
+  // toBeVisible ignores overflow clipping, so check the tile against every clipping
+  // box above it, and against the sticky player bar.
+  const hidden = () =>
     browser.evaluate((selector: string) => {
-      const rows = document.querySelectorAll(`${selector} .track-row`);
-      const last = rows[rows.length - 1];
-      const row = last.getBoundingClientRect();
+      const all = document.querySelectorAll(`${selector} .cover-tile`);
+      const last = all[all.length - 1];
+      const tile = last.getBoundingClientRect();
       // -1 when nothing clips: evaluate can't return -Infinity.
       let worst = -1;
       for (let el = last.parentElement; el && el !== document.body; el = el.parentElement) {
         const style = getComputedStyle(el);
         if (style.overflowY === 'visible' && style.overflowX === 'visible') continue;
-        worst = Math.max(worst, row.bottom - el.getBoundingClientRect().bottom);
+        worst = Math.max(worst, tile.bottom - el.getBoundingClientRect().bottom);
       }
-      return worst;
+      worst = Math.max(worst, tile.bottom - window.innerHeight);
+      const bar = document.querySelector(`${selector} .player-bar`)!.getBoundingClientRect();
+      const covered = tile.bottom > bar.top && tile.top < bar.bottom && tile.right > bar.left && tile.left < bar.right;
+      return covered ? Math.max(worst, tile.bottom - bar.top) : worst;
     }, PANEL);
-  await expect.poll(clippedBy, { timeout: 3000 }).toBeLessThanOrEqual(0);
+  await expect.poll(hidden, { timeout: 3000 }).toBeLessThanOrEqual(0);
+});
+
+// openspec/specs/archive-browsing/spec.md
+// Requirement: Track listing. Scenario: Focused tile names its track.
+// Scripted: the label follows :focus-visible, which needs real keyboard input.
+test('a focused tile names its track', async ({ app, browser }) => {
+  await presetRegion(browser, 'US');
+  await openEdition(app, editionId('US'));
+  await expect(coverTiles(browser)).toHaveCount(30);
+  const tips = browser.locator(`${PANEL} .cover-tip`);
+  await expect(tips).toHaveCount(0);
+
+  await coverTile(browser, 0).focus();
+  await browser.keyboard.press('ArrowRight');
+  await browser.keyboard.press('ArrowRight');
+  await expect(coverTile(browser, 2)).toBeFocused();
+
+  await expect(tips).toHaveCount(1);
+  await expect(browser.locator(`${PANEL} .cover-tip-num`)).toHaveText('03');
+  await expect(browser.locator(`${PANEL} .cover-tip-name`)).toHaveText('Test Track 3 US');
+  await expect(browser.locator(`${PANEL} .cover-tip-artist`)).toHaveText('Test Artist 3');
+
+  // The requirement also has a mouse hover show the label.
+  await coverTile(browser, 6).hover();
+  await expect(browser.locator(`${PANEL} .cover-tip-num`)).toHaveText('07');
+  await expect(browser.locator(`${PANEL} .cover-tip-name`)).toHaveText('Test Track 7 US');
+});
+
+// openspec/specs/archive-browsing/spec.md
+// Requirement: Track listing. Scenario: Arrow keys move between tiles.
+test('arrow keys move between cover tiles', async ({ app, browser }) => {
+  await presetRegion(browser, 'US');
+  await openEdition(app, editionId('US'));
+  await expect(coverTiles(browser)).toHaveCount(30);
+  await expect(browser.locator(`${PANEL} .cover-tile[tabindex="0"]`)).toHaveCount(1);
+
+  await coverTile(browser, 0).focus();
+  await browser.keyboard.press('ArrowRight');
+  await expect(coverTile(browser, 1)).toBeFocused();
+  // The requirement also has End and Home reach the ends.
+  await browser.keyboard.press('End');
+  await expect(coverTile(browser, 29)).toBeFocused();
+  await browser.keyboard.press('Home');
+  await expect(coverTile(browser, 0)).toBeFocused();
+  await expect(browser.locator(`${PANEL} .cover-tile[tabindex="0"]`)).toHaveCount(1);
+
+  await browser.keyboard.press('Tab');
+  const inGrid = await browser.evaluate(() => !!document.activeElement?.closest('.cover-grid'));
+  expect(inGrid).toBe(false);
 });
 
 // openspec/specs/archive-browsing/spec.md
 // Requirement: Track preview. Scenario: Preview opens and closes.
 // Checks the embed element only. appHostOnly blocks its request to open.spotify.com.
 test('track preview opens and closes', async ({ agent, app, browser }) => {
-  await presetRegion(browser, 'DE');
-  await openEdition(app, editionId('DE'));
-  const row = browser.locator(`${PANEL} .track-row`).first();
-  const embed = browser.locator(`${PANEL} iframe[title="Spotify embed: Test Track 1 DE"]`);
-  await expect(row).toBeVisible();
+  await presetRegion(browser, 'US');
+  await openEdition(app, editionId('US'));
+  await expect(coverTiles(browser)).toHaveCount(30);
+  const bar = player(browser);
+  const embed = browser.locator(`${PLAYER} iframe.player-embed`);
+  await expect(browser.locator(`${PLAYER} .player-hint`)).toBeVisible();
 
-  await agent.act('Play the first track of the open edition');
+  await agent.act('Play the fifth track of the open edition');
 
-  await expect(embed).toBeAttached();
-  const src = await embed.getAttribute('src');
-  expect(src).toMatch(/^https:\/\/open\.spotify\.com\/embed\/track\/e2eDE02142026n1x+\?/);
-  const beneathRow = await browser.evaluate(
-    (selector: string) => !!document.querySelector(`${selector} .track-row`)!.nextElementSibling!.querySelector('iframe'),
-    PANEL,
-  );
-  expect(beneathRow).toBe(true);
+  await expect(embed).toHaveCount(1);
+  await expect(embed).toHaveAttribute('title', 'Spotify player: Test Track 5 US');
+  expect(await embed.getAttribute('src')).toMatch(/^https:\/\/open\.spotify\.com\/embed\/track\/e2eUS02142026n5x+\?/);
+  await expect(browser.locator(`${PLAYER}.is-open`)).toHaveCount(1);
+  await expect(browser.locator(`${PLAYER} .player-label`)).toHaveText(/^now playing · 05\/30$/i);
+  await expect(browser.locator(`${PLAYER} .player-name`)).toHaveText('Test Track 5 US');
+  await expect(browser.locator(`${PLAYER} .player-artist`)).toHaveText('Test Artist 5');
+  await expect(browser.locator(`${PANEL} .cover-tile.is-playing[data-index="4"]`)).toHaveCount(1);
+  await expect(coverTile(browser, 4)).toHaveAttribute('aria-current', 'true');
 
-  await row.tap();
+  await bar.getByRole('button', 'Close player').tap();
   await expect(embed).toHaveCount(0);
+  await expect(browser.locator(`${PANEL} .cover-tile.is-playing`)).toHaveCount(0);
+  await expect(browser.locator(`${PANEL} .cover-tile[aria-current]`)).toHaveCount(0);
+});
+
+// openspec/specs/archive-browsing/spec.md
+// Requirement: Track preview. Scenario: Another tile replaces the embed.
+test('another tile replaces the embed', async ({ agent, app, browser }) => {
+  await presetRegion(browser, 'US');
+  await openEdition(app, editionId('US'));
+  const bar = player(browser);
+  await coverTile(browser, 0).tap();
+  await expect(browser.locator(`${PLAYER} .player-name`)).toHaveText('Test Track 1 US');
+
+  await agent.act('Play the third track of the open edition');
+
+  await expect(browser.locator(`${PLAYER} .player-name`)).toHaveText('Test Track 3 US');
+  await expect(browser.locator(`${PANEL} iframe`)).toHaveCount(1);
+  await expect(browser.locator(`${PANEL} iframe`)).toHaveAttribute('title', 'Spotify player: Test Track 3 US');
+  await expect(browser.locator(`${PANEL} .cover-tile.is-playing`)).toHaveCount(1);
+  await expect(browser.locator(`${PANEL} .cover-tile.is-playing[data-index="2"]`)).toHaveCount(1);
+});
+
+// openspec/specs/archive-browsing/spec.md
+// Requirement: Track preview. Scenario: Next and previous track.
+test('next and previous track', async ({ agent, app, browser }) => {
+  await presetRegion(browser, 'US');
+  await openEdition(app, editionId('US'));
+  const bar = player(browser);
+  await coverTile(browser, 0).tap();
+  await expect(browser.locator(`${PLAYER} .player-name`)).toHaveText('Test Track 1 US');
+  await expect(bar.getByRole('button', 'Previous track')).toBeDisabled();
+  await expect(bar.getByRole('button', 'Next track')).toBeEnabled();
+
+  await agent.act('Skip to the next track in the player');
+
+  await expect(browser.locator(`${PLAYER} .player-name`)).toHaveText('Test Track 2 US');
+  await expect(browser.locator(`${PLAYER} .player-label`)).toHaveText(/^now playing · 02\/30$/i);
+  await expect(browser.locator(`${PANEL} .cover-tile.is-playing[data-index="1"]`)).toHaveCount(1);
+  await expect(bar.getByRole('button', 'Previous track')).toBeEnabled();
+
+  // The requirement also disables "Next track" on the last track.
+  await coverTile(browser, 29).tap();
+  await expect(browser.locator(`${PLAYER} .player-name`)).toHaveText('Test Track 30 US');
+  await expect(bar.getByRole('button', 'Next track')).toBeDisabled();
 });
 
 // openspec/specs/archive-browsing/spec.md
@@ -705,38 +819,39 @@ test('track preview opens and closes', async ({ agent, app, browser }) => {
 test('Spotify link does not toggle the preview', async ({ app, browser }) => {
   await presetRegion(browser, 'DE');
   await openEdition(app, editionId('DE'));
-  const link = browser.locator(PANEL).getByRole('link', 'Open Test Track 1 DE on Spotify');
+  const bar = player(browser);
+  await coverTile(browser, 0).tap();
+  const link = bar.getByRole('link', 'Open Test Track 1 DE on Spotify');
   const embeds = browser.locator(`${PANEL} iframe`);
+  await expect(embeds).toHaveCount(1);
 
   await expect(link).toHaveAttribute('target', '_blank');
   await expect(link).toHaveAttribute('href', /^https:\/\/open\.spotify\.com\/track\/e2eDE/);
 
-  // Doesn't open one. The new tab's request to Spotify is blocked by appHostOnly.
-  await link.tap();
-  await expect(embeds).toHaveCount(0);
-
-  // Doesn't close one either.
-  await browser.locator(`${PANEL} .track-row`).first().tap();
-  await expect(embeds).toHaveCount(1);
+  // The new tab's request to Spotify is blocked by appHostOnly.
   await link.tap();
   await expect(embeds).toHaveCount(1);
+  await expect(browser.locator(`${PLAYER} .player-name`)).toHaveText('Test Track 1 DE');
   await expect(browser).toHaveURL(`${app.baseUrl}/?edition=${editionId('DE')}`);
 });
 
 // openspec/specs/archive-browsing/spec.md
 // Requirement: Track preview. Scenario: Spotify link from the keyboard.
-// Enter on a link fires its click, which opens the new tab. A row handler that
+// Enter on a link fires its click, which opens the new tab. A handler that
 // cancelled the key would stop that click, so count clicks on the link.
-test('Enter on the Spotify link opens it without a preview', async ({ app, browser }) => {
+test('Enter on the Spotify link opens it and keeps the embed', async ({ app, browser }) => {
   await presetRegion(browser, 'DE');
   await openEdition(app, editionId('DE'));
-  const link = browser.locator(PANEL).getByRole('link', 'Open Test Track 1 DE on Spotify');
+  const bar = player(browser);
+  await coverTile(browser, 0).tap();
+  const link = bar.getByRole('link', 'Open Test Track 1 DE on Spotify');
   const embeds = browser.locator(`${PANEL} iframe`);
-  await expect(link).toBeVisible();
+  await expect(embeds).toHaveCount(1);
+  await expect(link).toHaveAttribute('target', '_blank');
   await browser.evaluate(() => {
     document.body.dataset.linkClicks = '0';
     document.addEventListener('click', (e) => {
-      if ((e.target as Element).closest('.track-open')) {
+      if ((e.target as Element).closest('.player-bar a[target="_blank"]')) {
         document.body.dataset.linkClicks = String(Number(document.body.dataset.linkClicks) + 1);
       }
     }, true);
@@ -744,20 +859,76 @@ test('Enter on the Spotify link opens it without a preview', async ({ app, brows
   });
   const linkClicks = () => browser.evaluate(() => document.body.dataset.linkClicks ?? null);
 
-  // Doesn't open one.
   await link.focus();
   await browser.keyboard.press('Enter');
   await expect.poll(linkClicks).toBe('1');
-  await expect(embeds).toHaveCount(0);
-
-  // Doesn't close one either.
-  await browser.locator(`${PANEL} .track-row`).first().tap();
   await expect(embeds).toHaveCount(1);
-  await link.focus();
-  await browser.keyboard.press('Enter');
-  await expect.poll(linkClicks).toBe('2');
-  await expect(embeds).toHaveCount(1);
+  await expect(browser.locator(`${PLAYER} .player-name`)).toHaveText('Test Track 1 DE');
   await expect(browser).toHaveURL(`${app.baseUrl}/?edition=${editionId('DE')}`);
+});
+
+// openspec/specs/archive-browsing/spec.md
+// Requirement: Track cover art. Scenario: Cover loads.
+// Stands in for Spotify's oEmbed endpoint for the first track only, answering with a
+// data: image (img-src allows data:), so nothing reaches Spotify.
+test('a cover that loads shows on its tile', async ({ app, browser }) => {
+  const PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+  const first = 'e2eDE02142026n1'.padEnd(22, 'x');
+  const lookups: string[] = [];
+  await browser.route(/^https:\/\/open\.spotify\.com\/oembed\?/, async (route) => {
+    const track = new URL(new URL(route.request.url).searchParams.get('url') ?? '').pathname.split('/').pop() ?? '';
+    lookups.push(track);
+    if (track !== first) {
+      await route.abort();
+      return;
+    }
+    await route.fulfill({
+      json: { thumbnail_url: PIXEL },
+      headers: { 'access-control-allow-origin': '*' },
+    });
+  });
+  await presetRegion(browser, 'DE');
+  await openEdition(app, editionId('DE'));
+  await expect(coverTiles(browser)).toHaveCount(3);
+
+  await expect(coverTile(browser, 0)).toHaveAttribute('data-cover', 'loaded');
+  await expect(browser.locator(`${PANEL} .cover-tile.has-cover[data-index="0"]`)).toHaveCount(1);
+  await expect(browser.locator(`${PANEL} .cover-tile[data-index="0"] img`)).toHaveAttribute('src', PIXEL);
+  // The image fades in, so wait for the end of its transition.
+  const shown = () =>
+    browser.evaluate((selector: string) => {
+      const img = document.querySelector(`${selector} .cover-tile[data-index="0"] img`) as HTMLImageElement;
+      return img.complete && img.naturalWidth > 0 && getComputedStyle(img).opacity;
+    }, PANEL);
+  await expect.poll(shown, { timeout: 3000 }).toBe('1');
+  await expect(coverTile(browser, 1)).toHaveAttribute('data-cover', 'fallback');
+  expect(lookups).toContain(first);
+});
+
+// openspec/specs/archive-browsing/spec.md
+// Requirement: Track cover art. Scenario: Cover unavailable.
+// appHostOnly blocks every oEmbed lookup, so every cover fails.
+test('a missing cover shows the artist initials', async ({ agent, app, browser }) => {
+  await presetRegion(browser, 'DE');
+  await openEdition(app, editionId('DE'));
+  await expect(coverTiles(browser)).toHaveCount(3);
+  const first = coverTile(browser, 0);
+
+  await expect(first).toHaveAttribute('data-cover', 'fallback');
+  await expect(browser.locator(`${PANEL} .cover-tile[data-index="0"] .cover-fallback`)).toHaveText('TA');
+  await expect(browser.locator(`${PANEL} .cover-tile[data-index="0"] img`)).toHaveCount(0);
+  const background = await browser.evaluate(
+    (selector: string) => getComputedStyle(document.querySelector(`${selector} .cover-tile[data-index="0"]`)!).backgroundImage,
+    PANEL,
+  );
+  expect(background).toMatch(/gradient/);
+  await expect(panel(browser).getByRole('alert')).toHaveCount(0);
+  await expect(panel(browser).getByText(/error|failed|unavailable/i)).toHaveCount(0);
+
+  await agent.act('Play the first track of the open edition');
+
+  await expect(browser.locator(`${PLAYER} iframe.player-embed`)).toHaveAttribute('title', 'Spotify player: Test Track 1 DE');
+  await expect(browser.locator(`${PANEL} .cover-tile.is-playing[data-index="0"]`)).toHaveCount(1);
 });
 
 // openspec/specs/archive-browsing/spec.md
