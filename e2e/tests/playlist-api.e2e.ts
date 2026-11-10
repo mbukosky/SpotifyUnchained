@@ -1,8 +1,9 @@
 import { expect } from 'e2e';
 import { test } from './fixtures.ts';
-import { asClient } from './helpers.ts';
+import { asClient, editionId } from './helpers.ts';
 
-// Spot checks against the seed: 64 playlists, of which UK has 2 and AU has 52.
+// Spot checks against the seed: 69 playlists, of which UK has 2 and AU has 53. The
+// edition index lists 68, because it drops one of the two US 01.23.2026 rows.
 // Query parsing and clamping in depth belong to server/controllers/playlist.test.js.
 
 // Their own client address, so these checks don't use up the browser tests' request budget.
@@ -20,7 +21,7 @@ const dates = (items: any[]) => items.map((item) => Date.parse(item.published_da
 test('list answers with count and items', async ({ app }) => {
   const { count, items } = await list(app.baseUrl);
 
-  expect(count).toBe(64);
+  expect(count).toBe(69);
   expect(items).toHaveLength(5);
   expect(Array.isArray(items[0].tracks)).toBe(true);
   expect(items[0].tracks[0].id).toEqual(expect.any(String));
@@ -31,7 +32,7 @@ test('list answers with count and items', async ({ app }) => {
 test('count ignores pagination', async ({ app }) => {
   const { count, items } = await list(app.baseUrl, '?size=1&page=2');
 
-  expect(count).toBe(64);
+  expect(count).toBe(69);
   expect(items).toHaveLength(1);
 });
 
@@ -63,16 +64,16 @@ test('page and size skip earlier results', async ({ app }) => {
 // openspec/specs/playlist-api/spec.md
 // Requirement: Sort order by publication date. Scenario: Default ascending.
 test('results default to oldest first', async ({ app }) => {
-  const found = dates((await list(app.baseUrl, '?size=64')).items);
+  const found = dates((await list(app.baseUrl, '?size=100')).items);
 
   expect(found).toEqual([...found].sort((a, b) => a - b));
-  expect(found).toHaveLength(64);
+  expect(found).toHaveLength(69);
 });
 
 // openspec/specs/playlist-api/spec.md
 // Requirement: Sort order by publication date. Scenario: Descending requested.
 test('sort=desc returns newest first', async ({ app }) => {
-  const found = dates((await list(app.baseUrl, '?size=64&sort=desc')).items);
+  const found = dates((await list(app.baseUrl, '?size=100&sort=desc')).items);
 
   expect(found).toEqual([...found].sort((a, b) => b - a));
 });
@@ -80,7 +81,7 @@ test('sort=desc returns newest first', async ({ app }) => {
 // openspec/specs/playlist-api/spec.md
 // Requirement: Sort order by publication date. Scenario: Unrecognised sort value.
 test('an unrecognised sort is treated as ascending', async ({ app }) => {
-  const found = dates((await list(app.baseUrl, '?size=64&sort=newest')).items);
+  const found = dates((await list(app.baseUrl, '?size=100&sort=newest')).items);
 
   expect(found).toEqual([...found].sort((a, b) => a - b));
 });
@@ -93,7 +94,7 @@ test('same-date playlists keep menu order in both directions', async ({ app }) =
     items.filter((item) => item.published_date.startsWith(day)).map((item) => item.region);
 
   const newest = await list(app.baseUrl, '?size=14&sort=desc');
-  const oldest = await list(app.baseUrl, '?size=64');
+  const oldest = await list(app.baseUrl, '?size=100');
 
   expect(regionsOn(newest.items, '2026-02-14')).toEqual(regions);
   expect(regionsOn(oldest.items, '2026-02-14')).toEqual(regions);
@@ -111,13 +112,13 @@ test('region filters items and count', async ({ app }) => {
 // openspec/specs/playlist-api/spec.md
 // Requirement: Region filter. Scenario: Unrecognised region ignored.
 test('an unrecognised region returns all regions', async ({ app }) => {
-  expect((await list(app.baseUrl, '?region=INVALID')).count).toBe(64);
+  expect((await list(app.baseUrl, '?region=INVALID')).count).toBe(69);
 });
 
 // openspec/specs/playlist-api/spec.md
 // Requirement: Region filter. Scenario: Region match is case-sensitive.
 test('region match is case-sensitive', async ({ app }) => {
-  expect((await list(app.baseUrl, '?region=uk')).count).toBe(64);
+  expect((await list(app.baseUrl, '?region=uk')).count).toBe(69);
 });
 
 // openspec/specs/playlist-api/spec.md
@@ -145,4 +146,136 @@ test('feed requests use up the list limit', async ({ app }) => {
   }
 
   expect((await fetch(`${app.baseUrl}/spotify`, { headers: ownHeaders })).status).toBe(429);
+});
+
+// Edition endpoints. Their own address too: they have a separate 300-request budget.
+const editionHeaders = asClient('203.0.113.33');
+const getJson = async (url: string, expected = 200) => {
+  const response = await fetch(url, { headers: editionHeaders });
+  expect(response.status).toBe(expected);
+  return response.json() as Promise<any>;
+};
+const editionIndex = async (baseUrl: string) => (await getJson(`${baseUrl}/spotify/editions`)).items as any[];
+
+// openspec/specs/playlist-api/spec.md
+// Requirement: Edition index. Scenario: Index lists editions without tracks.
+test('edition index lists editions without tracks', async ({ app }) => {
+  const body = await getJson(`${app.baseUrl}/spotify/editions`);
+
+  expect(Object.keys(body)).toEqual(['items']);
+  expect(body.items).toHaveLength(68);
+  for (const item of body.items) {
+    expect(Object.keys(item).sort()).toEqual(['date', 'id', 'region', 'title', 'trackCount']);
+  }
+  expect(body.items.find((item: any) => item.id === editionId('CA'))).toEqual({
+    id: editionId('CA'),
+    title: 'New.Music.Friday.CA.02.14.2026',
+    region: 'CA',
+    date: '2026-02-14',
+    trackCount: 250,
+  });
+});
+
+// openspec/specs/playlist-api/spec.md
+// Requirement: Edition index. Scenario: Index order.
+test('edition index runs by date, then region order', async ({ app }) => {
+  const items = await editionIndex(app.baseUrl);
+  const keys = items.map((item) => `${item.date} ${item.region}`);
+
+  expect(keys.indexOf('2026-02-07 US')).toBeLessThan(keys.indexOf('2026-02-14 US'));
+  expect(keys.indexOf('2026-02-14 US')).toBeLessThan(keys.indexOf('2026-02-14 UK'));
+  expect(keys.slice(-7)).toEqual(['US', 'UK', 'CA', 'BR', 'MX', 'DE', 'AU'].map((r) => `2026-02-14 ${r}`));
+  const dates = items.map((item) => item.date);
+  expect(dates).toEqual([...dates].sort());
+});
+
+// openspec/specs/playlist-api/spec.md
+// Requirement: Edition date. Scenario: Date from a dotted title.
+// The seed publishes this one six days late, as rows synced before 2026 were.
+test('edition date comes from a dotted title', async ({ app }) => {
+  const item = (await editionIndex(app.baseUrl)).find((e) => e.id === editionId('US', '07.10.2015'));
+
+  expect(item).toMatchObject({ title: 'New.Music.Friday.US.07.10.2015', date: '2015-07-10' });
+});
+
+// openspec/specs/playlist-api/spec.md
+// Requirement: Edition date. Scenario: Date from a leading ISO date.
+test('edition date comes from a leading ISO date', async ({ app }) => {
+  const item = (await editionIndex(app.baseUrl)).find((e) => e.id === editionId('US', '07.07.2015'));
+
+  expect(item).toMatchObject({ title: '2015-07-07 New Music Tuesday', date: '2015-07-07' });
+});
+
+// openspec/specs/playlist-api/spec.md
+// Requirement: Edition date. Scenario: Title without a date.
+// Published at midnight UTC on 2024-12-20, not the scenario's 2026-02-14: every seed
+// region already has an edition that day, which would out-rank this one.
+test('edition date falls back to the published date', async ({ app }) => {
+  const item = (await editionIndex(app.baseUrl)).find((e) => e.id === editionId('AU', '12.20.2024'));
+
+  expect(item).toMatchObject({ title: 'New Music Friday Holiday Special', date: '2024-12-20' });
+});
+
+// openspec/specs/playlist-api/spec.md
+// Requirement: One edition per region and date. Scenario: Duplicate week.
+// The seed's pair is dated 01.23.2026 rather than 02.06.2026, so the US wall has a gap.
+test('a duplicate week is listed once, the later published', async ({ app }) => {
+  const items = (await editionIndex(app.baseUrl)).filter((e) => e.region === 'US' && e.date === '2026-01-23');
+
+  expect(items.map((e) => e.id)).toEqual([editionId('US', '01.23.2026', '000000002')]);
+  expect(items[0].title).toBe('New.Music.Friday.US.01.23.2026');
+});
+
+// openspec/specs/playlist-api/spec.md
+// Requirement: Single edition. Scenario: Edition found.
+test('a single edition has its tracks in archive order', async ({ app }) => {
+  const edition = await getJson(`${app.baseUrl}/spotify/editions/${editionId('US')}`);
+
+  expect(edition).toMatchObject({
+    id: editionId('US'),
+    title: 'New.Music.Friday.US.02.14.2026',
+    region: 'US',
+    date: '2026-02-14',
+  });
+  expect(edition.tracks).toHaveLength(30);
+  expect(edition.tracks.map((t: any) => t.name)).toEqual(Array.from({ length: 30 }, (_, i) => `Test Track ${i + 1} US`));
+  expect(Object.keys(edition.tracks[0]).sort()).toEqual(['added_at', 'artist', 'id', 'name', 'open_url', 'uri']);
+});
+
+// openspec/specs/playlist-api/spec.md
+// Requirement: Single edition. Scenario: Unknown id.
+test('an unknown edition id is 404', async ({ app }) => {
+  expect(await getJson(`${app.baseUrl}/spotify/editions/e2e000000000000000000000`, 404)).toEqual({ error: 'Not found' });
+});
+
+// openspec/specs/playlist-api/spec.md
+// Requirement: Single edition. Scenario: Malformed id.
+test('a malformed edition id is 404', async ({ app }) => {
+  expect(await getJson(`${app.baseUrl}/spotify/editions/not-an-id`, 404)).toEqual({ error: 'Not found' });
+});
+
+// openspec/specs/playlist-api/spec.md
+// Requirement: Edition rate limit. Scenario: Edition limit exceeded.
+test('edition endpoints answer 429 on the 301st combined request', async ({ app }) => {
+  const ownHeaders = asClient('203.0.113.34');
+  for (let i = 0; i < 150; i++) {
+    expect((await fetch(`${app.baseUrl}/spotify/editions`, { headers: ownHeaders })).status).toBe(200);
+    expect((await fetch(`${app.baseUrl}/spotify/editions/${editionId('DE')}`, { headers: ownHeaders })).status).toBe(200);
+  }
+
+  const response = await fetch(`${app.baseUrl}/spotify/editions/${editionId('DE')}`, { headers: ownHeaders });
+
+  expect(response.status).toBe(429);
+  expect(await response.json()).toEqual({ error: 'Too many requests, please try again later.' });
+});
+
+// openspec/specs/playlist-api/spec.md
+// Requirement: Edition rate limit. Scenario: Edition requests do not spend the list limit.
+test('edition requests do not spend the list limit', async ({ app }) => {
+  const ownHeaders = asClient('203.0.113.35');
+  for (let i = 0; i < 100; i++) {
+    expect((await fetch(`${app.baseUrl}/spotify/editions`, { headers: ownHeaders })).status).toBe(200);
+  }
+
+  expect((await fetch(`${app.baseUrl}/spotify?size=1`, { headers: ownHeaders })).status).toBe(200);
 });

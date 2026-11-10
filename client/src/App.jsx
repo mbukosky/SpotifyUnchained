@@ -3,8 +3,7 @@ import { SpotifyAuthProvider } from './hooks/useSpotifyAuth';
 import MeshBackground from './components/MeshBackground';
 import Header from './components/Header';
 import SessionExpiredBanner from './components/SessionExpiredBanner';
-import Hero from './components/Hero';
-import PlaylistList from './components/PlaylistList';
+import Archive from './components/Archive';
 import Footer from './components/Footer';
 
 export default function App() {
@@ -16,9 +15,8 @@ export default function App() {
         <div className="page">
           <Header />
           <SessionExpiredBanner />
-          <Hero />
           <main className="archive">
-            <PlaylistList />
+            <Archive />
           </main>
           <Footer />
         </div>

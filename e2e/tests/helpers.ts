@@ -3,21 +3,34 @@ import type { JsonValue } from 'e2e';
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** The Toggle button on a playlist card; its accessible name holds the raw title. */
-export const toggleName = (region: string, label = '02.14.2026') =>
-  `Toggle New.Music.Friday.${region}.${label}`;
+const REGIONS = ['US', 'UK', 'CA', 'BR', 'MX', 'DE', 'AU'];
 
-/** A playlist card, as a CSS selector. */
-export const cardSelector = (region: string, label = '02.14.2026') =>
-  `article:has([aria-label="${toggleName(region, label)}"])`;
+/** The fixed `_id` seed.js gives a playlist: "e2e", region number, "00", the label's digits, a suffix. */
+export const editionId = (region: string, label = '02.14.2026', suffix = '000000000') =>
+  `e2e${String(REGIONS.indexOf(region) + 1).padStart(2, '0')}00${label.replace(/\./g, '')}${suffix}`;
 
-/** Titles of the listed cards, top to bottom, with the display spacing removed. */
-export async function listedTitles(browser: Browser) {
-  const titles = await browser.locator('.pcard-title').allTextContents();
-  return titles.map((title) => title.replace(/\s/g, ''));
-}
+/** A region tile's accessible name, e.g. "Saturday, February 14, 2026, 30 tracks". */
+export const tileName = (date: string, tracks: number) => `${date}, ${tracks} ${tracks === 1 ? 'track' : 'tracks'}`;
 
-/** Starts the page on a region, so a test needs one /spotify request rather than two. */
+/** An ALL tile's accessible name, e.g. "Week of Saturday, February 14, 2026, 7 regions". */
+export const weekTileName = (date: string, regions: number) =>
+  `Week of ${date}, ${regions} ${regions === 1 ? 'region' : 'regions'}`;
+
+/** The seed's newest week, as tiles and the panel title write it. */
+export const FEB_14 = 'Saturday, February 14, 2026';
+export const FEB_07 = 'Saturday, February 7, 2026';
+
+/** The open edition panel, as a CSS selector. */
+export const PANEL = '.edition-panel';
+
+/** Loads the page with an edition open, the way a shared link does. */
+export const openEdition = (app: { open: (path: string) => Promise<unknown> }, id: string) =>
+  app.open(`/?edition=${id}`);
+
+/** The `edition` query parameter of the page's current URL, or null. */
+export const editionParam = async (browser: Browser) => new URL(await browser.url()).searchParams.get('edition');
+
+/** Starts the page on a region, as if the visitor had picked it before. */
 export async function presetRegion(browser: Browser, region: string) {
   await browser.addInitScript((value: string) => {
     try {
@@ -28,11 +41,12 @@ export async function presetRegion(browser: Browser, region: string) {
   }, region);
 }
 
-/** Answers the archive request from the browser, for tests that don't care about it. */
+/** The edition index request, and only it: not a single edition's. */
+export const EDITION_INDEX = /127\.0\.0\.1:3100\/spotify\/editions(\?.*)?$/;
+
+/** Answers the edition index from the browser, for tests that don't care about it. */
 export async function stubEmptyArchive(browser: Browser) {
-  await browser.route(/127\.0\.0\.1:3100\/spotify\?/, (route) =>
-    route.fulfill({ json: { count: 0, items: [] } }),
-  );
+  await browser.route(EDITION_INDEX, (route) => route.fulfill({ json: { items: [] } }));
 }
 
 /** Puts a Spotify session in sessionStorage once, so it can later end or change. */

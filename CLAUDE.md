@@ -131,6 +131,10 @@ Backend tests use **Vitest** with test files co-located next to source files (`s
 - `GET /spotify` - List archived playlists
   - Query params: `page`, `size`, `sort` (asc/desc), `region` (US/UK/CA/BR/MX/DE/AU)
   - Returns paginated playlist data with track information
+- `GET /spotify/editions` - Every archived edition as `{ items: [{ id, title, region, date, trackCount }] }`, no tracks
+  - `date` is `YYYY-MM-DD` from the title (falls back to the UTC `published_date`); one item per region and date, sorted by date then region
+  - Rate limited separately (300 per 15 minutes)
+- `GET /spotify/editions/:id` - One edition with its full `tracks`; 404 `{ "error": "Not found" }` for an unknown or malformed id
 
 ### Spotify OAuth API
 - `POST /api/spotify/token` - Exchange authorization code for tokens (PKCE)

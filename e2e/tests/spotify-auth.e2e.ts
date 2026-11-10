@@ -34,7 +34,7 @@ const session = (browser: Browser) =>
   Promise.all(SESSION_KEYS.map((key) => sessionValue(browser, key)));
 
 test.beforeEach(async ({ browser }) => {
-  // None of these tests read the archive, so they don't spend the shared request budget.
+  // None of these tests read the archive, so they don't spend the edition request budget.
   await stubEmptyArchive(browser);
 });
 
