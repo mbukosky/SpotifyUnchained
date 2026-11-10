@@ -51,6 +51,9 @@ export default function Archive() {
   const openEdition = (openId && byId.get(openId)) || null;
 
   const open = useCallback((id, { reveal = true, focusHeading = true } = {}) => {
+    // Start the request before React renders the panel; the panel picks up
+    // the same promise from the page cache.
+    if (id) loadEdition(id).catch(() => {});
     setOpenId(id);
     setEditionParam(id);
     if (reveal) setFocus(f => ({ token: f.token + 1, heading: focusHeading }));
@@ -92,6 +95,12 @@ export default function Archive() {
     setLucky(null);
     open(tile.editions[0].id);
   }, [open]);
+
+  // A press, or a pointer resting on a tile, signals the visitor is about to
+  // open it: start fetching so the panel has its data sooner.
+  const intendTile = useCallback((tile) => {
+    loadEdition(tile.editions[0].id).catch(() => {});
+  }, []);
 
   const jump = (date) => {
     const target = nearestEdition(visible, date);
@@ -179,6 +188,7 @@ export default function Archive() {
             latestKey={latestKey}
             dipping={dipping}
             onOpen={openTile}
+            onIntent={intendTile}
           />
           <WallLegend isAll={isAll} />
           {openEdition && (

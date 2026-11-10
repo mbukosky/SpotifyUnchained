@@ -5,6 +5,8 @@ import { markPainted } from '../lib/perf';
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const RIPPLE_RADIUS = 3;
 const HOP_DELAYS = [70, 80, 95, 115, 140, 175, 220, 280];
+// How long the pointer rests on a tile before its edition is fetched.
+const INTENT_DWELL_MS = 150;
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const media = (q) => (typeof window !== 'undefined' && window.matchMedia ? window.matchMedia(q) : { matches: false });
 const reducedMotion = () => media('(prefers-reduced-motion: reduce)').matches;
@@ -16,7 +18,7 @@ const pointerEffects = () => media('(pointer: fine)').matches && !reducedMotion(
  * own: one delegated handler on the grid drives the ripple, hover card, focus
  * tracking and arrow keys, so ~640 tiles cost ~640 DOM nodes and no more.
  */
-function Wall({ wall, isAll, regionKey, selectedKey, latestKey, dipping, onOpen, ref }) {
+function Wall({ wall, isAll, regionKey, selectedKey, latestKey, dipping, onOpen, onIntent, ref }) {
   const { rows, columns } = wall;
   const scrollRef = useRef(null);
   const gridRef = useRef(null);
@@ -95,15 +97,31 @@ function Wall({ wall, isAll, regionKey, selectedKey, latestKey, dipping, onOpen,
 
   const hideTip = () => setTip(null);
 
+  const intentTimer = useRef(null);
+  const cancelIntent = () => clearTimeout(intentTimer.current);
+  const intend = (el) => {
+    const tile = tilesByKey.get(el.dataset.key);
+    if (tile) onIntent?.(tile);
+  };
+  useEffect(() => cancelIntent, []);
+
   const onPointerOver = (e) => {
-    if (dipping || !pointerEffects()) return;
     const el = e.target.closest?.('.wall-tile');
+    cancelIntent();
+    if (el && e.pointerType === 'mouse') intentTimer.current = setTimeout(() => intend(el), INTENT_DWELL_MS);
+    if (dipping || !pointerEffects()) return;
     if (!el) return;
     ripple(el);
     showTip(el);
   };
 
+  const onPointerDown = (e) => {
+    const el = e.target.closest?.('.wall-tile');
+    if (el && e.button === 0) intend(el);
+  };
+
   const onPointerLeave = () => {
+    cancelIntent();
     clearRipple();
     hideTip();
   };
@@ -211,6 +229,7 @@ function Wall({ wall, isAll, regionKey, selectedKey, latestKey, dipping, onOpen,
           onFocus={onFocus}
           onBlur={onBlur}
           onPointerOver={onPointerOver}
+          onPointerDown={onPointerDown}
           onPointerLeave={onPointerLeave}
         >
           <div className="wall-months" aria-hidden="true">
@@ -242,31 +261,62 @@ function Wall({ wall, isAll, regionKey, selectedKey, latestKey, dipping, onOpen,
   );
 }
 
+// Each row is memoised on plain values (the columns of its selected, latest
+// and Tab-stop tiles), so opening an edition or moving the Tab stop
+// re-renders only the one or two rows involved, not all ~640 buttons.
+const rowColumns = new WeakMap(); // row → Map(tile key → column)
+function columnOf(row, key) {
+  if (!key) return -1;
+  let cols = rowColumns.get(row);
+  if (!cols) {
+    cols = new Map();
+    row.slots.forEach((t, c) => t && cols.set(t.key, c));
+    rowColumns.set(row, cols);
+  }
+  return cols.has(key) ? cols.get(key) : -1;
+}
+
 const WallRows = memo(function WallRows({ rows, isAll, selectedKey, latestKey, tabStop }) {
-  return rows.map((row, r) => (
-    <div className="wall-row" key={row.year} role="group" aria-label={String(row.year)}>
+  return rows.map((row, r) => {
+    const colOf = key => columnOf(row, key);
+    return (
+      <WallRow
+        key={row.year}
+        row={row}
+        r={r}
+        isAll={isAll}
+        selectedCol={colOf(selectedKey)}
+        latestCol={colOf(latestKey)}
+        tabStopCol={colOf(tabStop)}
+      />
+    );
+  });
+});
+
+const WallRow = memo(function WallRow({ row, r, isAll, selectedCol, latestCol, tabStopCol }) {
+  return (
+    <div className="wall-row" role="group" aria-label={String(row.year)}>
       <span className="wall-year" aria-hidden="true">{row.year}</span>
       {row.slots.map((tile, c) => {
         if (!tile) return <span key={c} className="wall-empty" style={{ gridColumn: c + 2 }} aria-hidden="true" />;
-        const selected = tile.key === selectedKey;
-        const latest = tile.key === latestKey;
+        const selected = c === selectedCol;
         return (
           <button
             key={c}
             type="button"
-            className={`wall-tile step-${tile.step}${selected ? ' is-selected' : ''}${latest ? ' is-latest' : ''}`}
+            className={`wall-tile step-${tile.step}${selected ? ' is-selected' : ''}${c === latestCol ? ' is-latest' : ''}`}
             style={{ gridColumn: c + 2, '--d': `${Math.min(r, 12) * 55 + c * 6}ms` }}
             data-key={tile.key}
             data-r={r}
             data-c={c}
-            tabIndex={tile.key === tabStop ? 0 : -1}
+            tabIndex={c === tabStopCol ? 0 : -1}
             aria-label={tileLabel(tile, isAll)}
             aria-pressed={selected}
           />
         );
       })}
     </div>
-  ));
+  );
 });
 
 function WallTip({ tip, isAll }) {
@@ -281,7 +331,7 @@ function WallTip({ tip, isAll }) {
       ) : (
         <span className="wall-tip-count"><b>{tile.trackCount}</b> tracks</span>
       )}
-      {!isAll && /tuesday/i.test(tile.editions[0].title) && <span className="wall-tip-note">New Music Tuesday</span>}
+      {!isAll && tile.editions[0].tuesday && <span className="wall-tip-note">New Music Tuesday</span>}
     </div>
   );
 }

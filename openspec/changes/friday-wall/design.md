@@ -29,7 +29,7 @@ See `proposal.md` for the motivation. The facts that shape the approach:
 
 ### 1. Two new read-only endpoints under `/spotify/editions`
 
-`GET /spotify/editions` returns every edition as `{ id, title, region, date, trackCount }`. `GET /spotify/editions/:id` returns one edition with its tracks. They live under `/spotify` because the Vite proxy, the CORS scope and the e2e host rules already cover that prefix.
+`GET /spotify/editions` returns every edition as `{ id, region, date, trackCount }`, plus `tuesday: true` on Tuesday editions. `GET /spotify/editions/:id` returns one edition with its tracks as parallel columns. They live under `/spotify` because the Vite proxy, the CORS scope and the e2e host rules already cover that prefix.
 
 The index takes no `region` parameter. The client fetches it once and filters in memory, so changing region costs no request. About 1,300 rows at roughly 110 bytes each is 150 KB before compression and about 15 KB after.
 
@@ -43,13 +43,13 @@ The client treats `date` as a plain calendar date and builds `new Date(y, m - 1,
 
 *Alternative considered:* computing dates in the client from titles. Rejected because the detail endpoint, the tests and any later consumer would each need the same parsing.
 
-### 3. No server-side cache; a short browser cache
+### 3. A short browser cache, and a pre-compressed in-memory server cache
 
-The index query reads about 1,300 small projections and took under 100 ms in the prototype. It gets `Cache-Control: public, max-age=300`. A single edition never changes after its week, so it gets `max-age=3600`. An in-process cache would need invalidating when the Friday sync writes, for no measurable gain.
+The index query reads about 1,300 small projections and took under 100 ms in the prototype. It gets `Cache-Control: public, max-age=300`. A single edition never changes after its week, so it gets `max-age=3600`. Responses are also held pre-compressed in an in-process cache with a strong `ETag`, answered with 304 on a matching `If-None-Match`, and the cache is cleared when the Friday sync writes.
 
 ### 4. A separate rate limit for the edition endpoints
 
-`GET /spotify` and `GET /rss` share 100 requests per 15 minutes. Each tile a visitor opens is one edition request, and lucky dip is one more, so a curious visitor could spend that budget in a few minutes and then break the RSS feed for their address. The edition endpoints get their own limiter at 300 per 15 minutes. The client also keeps opened editions in a `Map` for the life of the page, so reopening costs nothing.
+`GET /spotify` and `GET /rss` share 100 requests per 15 minutes. Each tile a visitor opens is one edition request, and lucky dip is one more, so a curious visitor could spend that budget in a few minutes and then break the RSS feed for their address. The edition endpoints get their own limiter at 900 per 15 minutes, which leaves room for the client prefetching the neighbouring editions. The client also keeps opened editions in a `Map` for the life of the page, so reopening costs nothing.
 
 ### 5. Wall geometry: rows are calendar years, columns are Monday-to-Sunday weeks
 

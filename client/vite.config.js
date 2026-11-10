@@ -8,6 +8,8 @@ export default defineConfig(({ mode }) => {
     root: '.',
     build: {
       outDir: 'dist',
+      // Never inline fonts: a data URL is repeated in every @font-face that uses it.
+      assetsInlineLimit: (file) => (file.endsWith('.woff2') ? false : undefined),
     },
     server: {
       host: '127.0.0.1',

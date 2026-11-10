@@ -148,7 +148,7 @@ test('feed requests use up the list limit', async ({ app }) => {
   expect((await fetch(`${app.baseUrl}/spotify`, { headers: ownHeaders })).status).toBe(429);
 });
 
-// Edition endpoints. Their own address too: they have a separate 300-request budget.
+// Edition endpoints. Their own address too: they have a separate 900-request budget.
 const editionHeaders = asClient('203.0.113.33');
 const getJson = async (url: string, expected = 200) => {
   const response = await fetch(url, { headers: editionHeaders });
@@ -165,11 +165,12 @@ test('edition index lists editions without tracks', async ({ app }) => {
   expect(Object.keys(body)).toEqual(['items']);
   expect(body.items).toHaveLength(68);
   for (const item of body.items) {
-    expect(Object.keys(item).sort()).toEqual(['date', 'id', 'region', 'title', 'trackCount']);
+    expect(Object.keys(item).sort()).toEqual(
+      item.tuesday ? ['date', 'id', 'region', 'trackCount', 'tuesday'] : ['date', 'id', 'region', 'trackCount'],
+    );
   }
   expect(body.items.find((item: any) => item.id === editionId('CA'))).toEqual({
     id: editionId('CA'),
-    title: 'New.Music.Friday.CA.02.14.2026',
     region: 'CA',
     date: '2026-02-14',
     trackCount: 250,
@@ -195,7 +196,7 @@ test('edition index runs by date, then region order', async ({ app }) => {
 test('edition date comes from a dotted title', async ({ app }) => {
   const item = (await editionIndex(app.baseUrl)).find((e) => e.id === editionId('US', '07.10.2015'));
 
-  expect(item).toMatchObject({ title: 'New.Music.Friday.US.07.10.2015', date: '2015-07-10' });
+  expect(item).toMatchObject({ region: 'US', date: '2015-07-10' });
 });
 
 // openspec/specs/playlist-api/spec.md
@@ -203,7 +204,18 @@ test('edition date comes from a dotted title', async ({ app }) => {
 test('edition date comes from a leading ISO date', async ({ app }) => {
   const item = (await editionIndex(app.baseUrl)).find((e) => e.id === editionId('US', '07.07.2015'));
 
-  expect(item).toMatchObject({ title: '2015-07-07 New Music Tuesday', date: '2015-07-07' });
+  expect(item).toMatchObject({ region: 'US', date: '2015-07-07' });
+});
+
+// openspec/changes/friday-wall/specs/playlist-api/spec.md
+// Requirement: Edition index. Scenario: Tuesday flag.
+test('only the Tuesday edition carries the tuesday flag', async ({ app }) => {
+  const items = await editionIndex(app.baseUrl);
+  const flagged = items.filter((item) => 'tuesday' in item);
+
+  expect(flagged.map((item) => item.id)).toEqual([editionId('US', '07.07.2015')]);
+  expect(flagged[0].tuesday).toBe(true);
+  expect(items.find((item) => item.id === editionId('US', '07.10.2015'))).not.toHaveProperty('tuesday');
 });
 
 // openspec/specs/playlist-api/spec.md
@@ -213,7 +225,7 @@ test('edition date comes from a leading ISO date', async ({ app }) => {
 test('edition date falls back to the published date', async ({ app }) => {
   const item = (await editionIndex(app.baseUrl)).find((e) => e.id === editionId('AU', '12.20.2024'));
 
-  expect(item).toMatchObject({ title: 'New Music Friday Holiday Special', date: '2024-12-20' });
+  expect(item).toMatchObject({ region: 'AU', date: '2024-12-20' });
 });
 
 // openspec/specs/playlist-api/spec.md
@@ -223,7 +235,6 @@ test('a duplicate week is listed once, the later published', async ({ app }) => 
   const items = (await editionIndex(app.baseUrl)).filter((e) => e.region === 'US' && e.date === '2026-01-23');
 
   expect(items.map((e) => e.id)).toEqual([editionId('US', '01.23.2026', '000000002')]);
-  expect(items[0].title).toBe('New.Music.Friday.US.01.23.2026');
 });
 
 // openspec/specs/playlist-api/spec.md
@@ -237,9 +248,43 @@ test('a single edition has its tracks in archive order', async ({ app }) => {
     region: 'US',
     date: '2026-02-14',
   });
-  expect(edition.tracks).toHaveLength(30);
-  expect(edition.tracks.map((t: any) => t.name)).toEqual(Array.from({ length: 30 }, (_, i) => `Test Track ${i + 1} US`));
-  expect(Object.keys(edition.tracks[0]).sort()).toEqual(['added_at', 'artist', 'id', 'name', 'open_url', 'uri']);
+  // Every seed US track has the derivable uri and open_url, so only three columns are sent.
+  expect(Object.keys(edition.tracks).sort()).toEqual(['artist', 'id', 'name']);
+  expect(edition.tracks.id).toHaveLength(30);
+  expect(edition.tracks.artist).toHaveLength(30);
+  expect(edition.tracks.name).toEqual(Array.from({ length: 30 }, (_, i) => `Test Track ${i + 1} US`));
+});
+
+// openspec/changes/friday-wall/specs/playlist-api/spec.md
+// Requirement: Single edition. Scenario: Non-derivable fields sent as full columns.
+// BR has empty and malformed uris; AU 02.07 has one open_url that isn't derived from its id.
+test('uri and open_url columns are sent only when some track differs', async ({ app }) => {
+  const br = await getJson(`${app.baseUrl}/spotify/editions/${editionId('BR')}`);
+  expect(Object.keys(br.tracks).sort()).toEqual(['artist', 'id', 'name', 'uri']);
+  expect(br.tracks.uri).toHaveLength(5);
+  expect(br.tracks.uri[1]).toBe('');
+  expect(br.tracks.uri[4]).toBe('not-a-uri');
+
+  const au = await getJson(`${app.baseUrl}/spotify/editions/${editionId('AU', '02.07.2026')}`);
+  expect(Object.keys(au.tracks).sort()).toEqual(['artist', 'id', 'name', 'open_url']);
+  expect(au.tracks.open_url).toHaveLength(au.tracks.id.length);
+  expect(au.tracks.open_url).toContain('https://open.spotify.com/track/123');
+});
+
+// openspec/changes/friday-wall/specs/playlist-api/spec.md
+// Requirement: Compressed, revalidatable archive responses. Scenario: Conditional request matches.
+test('a matching If-None-Match gets a 304', async ({ app }) => {
+  for (const path of ['/spotify/editions', `/spotify/editions/${editionId('US')}`, '/spotify?size=1']) {
+    const first = await fetch(`${app.baseUrl}${path}`, { headers: editionHeaders });
+    const etag = first.headers.get('etag');
+    expect(first.status).toBe(200);
+    expect(etag).toMatch(/^"/);
+    expect(first.headers.get('vary')).toMatch(/accept-encoding/i);
+
+    const second = await fetch(`${app.baseUrl}${path}`, { headers: { ...editionHeaders, 'if-none-match': etag! } });
+    expect(second.status).toBe(304);
+    expect(await second.text()).toBe('');
+  }
 });
 
 // openspec/specs/playlist-api/spec.md
@@ -256,9 +301,9 @@ test('a malformed edition id is 404', async ({ app }) => {
 
 // openspec/specs/playlist-api/spec.md
 // Requirement: Edition rate limit. Scenario: Edition limit exceeded.
-test('edition endpoints answer 429 on the 301st combined request', async ({ app }) => {
+test('edition endpoints answer 429 on the 901st combined request', async ({ app }) => {
   const ownHeaders = asClient('203.0.113.34');
-  for (let i = 0; i < 150; i++) {
+  for (let i = 0; i < 450; i++) {
     expect((await fetch(`${app.baseUrl}/spotify/editions`, { headers: ownHeaders })).status).toBe(200);
     expect((await fetch(`${app.baseUrl}/spotify/editions/${editionId('DE')}`, { headers: ownHeaders })).status).toBe(200);
   }

@@ -29,9 +29,30 @@
 
   <link rel="alternate" type="application/rss+xml" title="Spotify Unchained RSS" href="/rss">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;800&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- Start the archive requests now instead of after the app bundle has run.
+       client/src/hooks/useEditions.js picks them up from window.__suEarly. -->
+  <script>
+    (function () {
+      try {
+        var get = function (url) {
+          return fetch(url).then(function (res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+          });
+        };
+        var index = { request: get('/spotify/editions') };
+        var early = window.__suEarly = { index: index };
+        index.request.then(function (data) {
+          try { performance.mark('su:index-loaded', { detail: (data.items || []).length }); } catch (e) { /* diagnostics only */ }
+        }, function () { /* the app reports the failure */ });
+        var id = new URLSearchParams(location.search).get('edition');
+        if (id && /^[0-9a-f]{24}$/i.test(id)) {
+          early.edition = { id: id, request: get('/spotify/editions/' + id) };
+          early.edition.request.catch(function () { /* the app reports the failure */ });
+        }
+      } catch (e) { /* the app fetches for itself */ }
+    })();
+  </script>
 
   <!-- Structured Data -->
   <script type="application/ld+json">

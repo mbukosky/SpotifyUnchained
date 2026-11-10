@@ -16,6 +16,7 @@ vi.mock('../models/playlist.js', () => {
 
 import { list } from './playlist.js';
 import Playlist from '../models/playlist.js';
+import { invalidateArchive } from '../lib/archiveCache.js';
 
 const { mockAggregate, mockCountDocuments } = Playlist._mocks;
 
@@ -26,11 +27,17 @@ function stage(name) {
   return found ? found[name] : undefined;
 }
 
+// list() sends a pre-encoded body; this response records what was sent and
+// exposes it as `res.json` calls, so assertions read like plain res.json ones.
 function mockReqRes(query = {}) {
-  const req = { query };
+  const req = { query, headers: {}, method: 'GET' };
+  const headers = {};
   const res = {
     json: vi.fn(),
     status: vi.fn().mockReturnThis(),
+    setHeader: vi.fn((k, v) => { headers[k.toLowerCase()] = v; }),
+    end: vi.fn(body => { if (body) res.json(JSON.parse(Buffer.from(body).toString())); }),
+    headers,
   };
   return { req, res };
 }
@@ -38,6 +45,7 @@ function mockReqRes(query = {}) {
 describe('playlist controller - list', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    invalidateArchive();
     mockAggregate.mockResolvedValue([]);
   });
 
@@ -139,6 +147,23 @@ describe('playlist controller - list', () => {
     const result = res.json.mock.calls[0][0];
     expect(result).toHaveProperty('count', 2);
     expect(result).toHaveProperty('items', items);
+  });
+
+  it('sends the same JSON res.json would, and serves a repeat query from memory', async () => {
+    const items = [{ _id: 'x', title: 'a', published_date: new Date('2026-02-14T00:00:00Z') }];
+    mockCountDocuments.mockResolvedValue(1);
+    mockAggregate.mockResolvedValue(items);
+
+    const first = mockReqRes({ page: '1', size: '5' });
+    await list(first.req, first.res);
+    const body = first.res.end.mock.calls[0][0];
+    expect(Buffer.from(body).toString()).toBe(JSON.stringify({ count: 1, items }));
+    expect(first.res.headers['content-type']).toBe('application/json; charset=utf-8');
+
+    const again = mockReqRes({ page: '1', size: '5' });
+    await list(again.req, again.res);
+    expect(mockAggregate).toHaveBeenCalledTimes(1);
+    expect(again.res.json).toHaveBeenCalledWith(JSON.parse(JSON.stringify({ count: 1, items })));
   });
 
   it('returns 500 on database error', async () => {

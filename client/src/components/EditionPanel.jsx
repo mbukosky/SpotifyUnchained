@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import CoverGrid from './CoverGrid';
 import PlayerBar from './PlayerBar';
 import PlaylistDownload from './PlaylistDownload';
-import { loadEdition } from '../hooks/useEditions';
+import { loadEdition, prefetchEditions } from '../hooks/useEditions';
 import { REGION_COLORS } from '../lib/regions';
 import { formatLongDate } from '../lib/wall';
 import { mark, markPainted } from '../lib/perf';
@@ -57,6 +57,13 @@ export default function EditionPanel({
   const data = ready ? load.data : null;
   const failed = ready && load.error;
 
+  // Once this edition is in, fetch its neighbours while the browser is idle,
+  // so Previous and Next answer from the page cache.
+  useEffect(() => {
+    if (!data) return undefined;
+    return prefetchEditions([previous?.id, next?.id]);
+  }, [data, previous?.id, next?.id]);
+
   // Bring the heading into view and give it focus when opened from outside.
   useEffect(() => {
     if (!focusToken) return;
@@ -108,7 +115,7 @@ export default function EditionPanel({
   const play = (i) => {
     if (tracks[i]) setActiveTrack({ id: tracks[i].id, index: i });
   };
-  const tuesday = /tuesday/i.test(edition.title);
+  const tuesday = Boolean(edition.tuesday);
 
   return (
     <section

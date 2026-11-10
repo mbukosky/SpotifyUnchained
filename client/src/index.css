@@ -481,6 +481,11 @@ body {
   color: var(--text-faint);
 }
 
+/* The wall that replaces the spinner is taller than the screen, so hold that
+   space while loading: the footer stays below the fold and does not jump
+   when the wall arrives, and the scrollbar is there from the first frame. */
+.loading-state { min-height: 100vh; }
+
 .empty-state strong {
   display: block;
   font-family: var(--font-display);
@@ -761,6 +766,7 @@ body {
   animation: wall-pop 0.6s var(--ease-spring) forwards;
   animation-delay: var(--d);
 }
+
 
 /* Widen the hit area so the small tiles are easy to hit. */
 .wall-tile::after {

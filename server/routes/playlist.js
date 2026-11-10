@@ -15,10 +15,12 @@ const playlistLimiter = rateLimit({
 });
 
 // Each opened tile is one edition request, so these get their own budget and
-// can't exhaust the limit shared by /spotify and /rss.
+// can't exhaust the limit shared by /spotify and /rss. The client also fetches
+// the previous and next editions of the one open, so an open can cost up to
+// three requests: the budget is three times the 300 opens it is meant to allow.
 const editionLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  max: 900,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later.' },

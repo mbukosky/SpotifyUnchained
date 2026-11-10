@@ -131,10 +131,12 @@ Backend tests use **Vitest** with test files co-located next to source files (`s
 - `GET /spotify` - List archived playlists
   - Query params: `page`, `size`, `sort` (asc/desc), `region` (US/UK/CA/BR/MX/DE/AU)
   - Returns paginated playlist data with track information
-- `GET /spotify/editions` - Every archived edition as `{ items: [{ id, title, region, date, trackCount }] }`, no tracks
+- `GET /spotify/editions` - Every archived edition as `{ items: [{ id, region, date, trackCount, tuesday? }] }`, no tracks or titles
   - `date` is `YYYY-MM-DD` from the title (falls back to the UTC `published_date`); one item per region and date, sorted by date then region
-  - Rate limited separately (300 per 15 minutes)
-- `GET /spotify/editions/:id` - One edition with its full `tracks`; 404 `{ "error": "Not found" }` for an unknown or malformed id
+  - `tuesday: true` only on New Music Tuesday editions
+  - Rate limited separately (900 per 15 minutes, shared with the edition endpoint; the client prefetches the open edition's neighbours)
+- `GET /spotify/editions/:id` - One edition `{ id, title, region, date, tracks }` with `tracks` as columns `{ id: [], name: [], artist: [] }`; `uri`/`open_url` columns only when some stored value differs from `spotify:track:<id>` / `https://open.spotify.com/track/<id>`; 404 `{ "error": "Not found" }` for an unknown or malformed id
+- The index, editions and `GET /spotify` are served from an in-memory cache, pre-compressed (Brotli 11, gzip 9) with a strong ETag; a sync write clears it (`server/lib/archiveCache.js`)
 
 ### Spotify OAuth API
 - `POST /api/spotify/token` - Exchange authorization code for tokens (PKCE)

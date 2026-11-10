@@ -26,14 +26,26 @@ function dayNumber(s) {
   return Date.UTC(y, m - 1, d) / DAY_MS;
 }
 
+// One formatter per format, and each date formatted once: the wall labels
+// ~640 tiles on every render of a region, and creating a formatter per call
+// (which toLocaleDateString does) dominated that cost.
+const longFormat = new Intl.DateTimeFormat('en-US', LONG_DATE);
+const monthFormat = new Intl.DateTimeFormat('en-US', MONTH_DATE);
+const longDates = new Map();
+
 /** "Saturday, February 14, 2026" */
 export function formatLongDate(s) {
-  return parseDate(s).toLocaleDateString('en-US', LONG_DATE);
+  let text = longDates.get(s);
+  if (text === undefined) {
+    text = longFormat.format(parseDate(s));
+    longDates.set(s, text);
+  }
+  return text;
 }
 
 /** "February 14, 2026" */
 export function formatMonthDate(s) {
-  return parseDate(s).toLocaleDateString('en-US', MONTH_DATE);
+  return monthFormat.format(parseDate(s));
 }
 
 /** ISO 8601 week of a date: weeks start on Monday, week 1 holds the first Thursday. */

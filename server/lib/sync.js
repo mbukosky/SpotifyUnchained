@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import config from '../config.js';
 import Playlist from '../models/playlist.js';
 import { PLAYLIST_IDS } from './regions.js';
+import { invalidateArchive } from './archiveCache.js';
 
 function getRecentFriday() {
   const now = new Date();
@@ -93,6 +94,8 @@ async function syncPlaylist(region, token) {
     { title, region, published_date: publishedDate, tracks },
     { upsert: true, new: true }
   );
+  // The index, the list API and this week's edition are cached in memory.
+  invalidateArchive();
 
   console.log(`Synced ${title} with ${tracks.length} tracks`);
 }
