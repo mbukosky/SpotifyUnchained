@@ -32,7 +32,7 @@ None.
 - `archive-browsing`: the wall, the edition panel, deep links, jump to a date and lucky dip replace the paginated list and the playlist cards. Region filtering, the page states, track listing, track preview and the motion rules change to match. Track cover art is new.
 - `playlist-api`: adds the edition index and single-edition endpoints, with their own rate limit and error responses.
 - `playlist-export`: the two save buttons move from the playlist card to the edition panel, one in its header and one in the player bar. What they send to Spotify does not change.
-- `service-runtime`: the CSP `connect-src` list gains `https://open.spotify.com` for the cover lookups.
+- `service-runtime`: the CSP `connect-src` list gains `https://open.spotify.com` for the cover lookups, and `img-src` gains `https://*.spotifycdn.com` for the cover images.
 
 ## Impact
 
@@ -40,5 +40,5 @@ None.
 - **Server:** new routes and a controller beside `server/controllers/playlist.js`. No schema change.
 - **Tests:** new Vitest tests for the endpoints. `e2e/tests/archive-browsing.e2e.ts`, `playlist-export.e2e.ts`, `playlist-api.e2e.ts`, `helpers.ts` and `e2e/seed/seed.js` change, because most browser tests reach tracks through a card today.
 - **Docs:** `CLAUDE.md` lists the new endpoints.
-- **Dependencies:** none added. The browser calls one new endpoint, Spotify's public oEmbed (`https://open.spotify.com/oembed`), for cover images, so the CSP `connect-src` list gains that origin. The images come from `https://i.scdn.co`, which `img-src` already allows.
+- **Dependencies:** none added. The browser calls one new endpoint, Spotify's public oEmbed (`https://open.spotify.com/oembed`), for cover images, so the CSP `connect-src` list gains that origin. The images come from Spotify's image CDN, so `img-src` gains `https://*.spotifycdn.com` beside the existing `https://i.scdn.co`.
 - **Visitors:** a saved region choice still applies. Old bookmarks carry no page number, so none break.

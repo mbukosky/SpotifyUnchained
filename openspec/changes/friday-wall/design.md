@@ -108,11 +108,11 @@ The first build reused `TrackItem`, one 60-pixel row per track with the embed op
 
 ### 11. Covers come from Spotify oEmbed, in the browser
 
-The database stores no image addresses, and the Web API needs a token. `https://open.spotify.com/oembed?url=https://open.spotify.com/track/<id>` returns a `thumbnail_url` on `i.scdn.co` with no credentials and `Access-Control-Allow-Origin: *`. The client requests covers for tiles within about 400 pixels of the viewport, six at a time, and keeps results in a `Map` for the life of the page.
+The database stores no image addresses, and the Web API needs a token. `https://open.spotify.com/oembed?url=https://open.spotify.com/track/<id>` returns a `thumbnail_url` on Spotify's image CDN with no credentials and `Access-Control-Allow-Origin: *`. The client requests covers for tiles within about 400 pixels of the viewport, six at a time, and keeps results in a `Map` for the life of the page.
 
 Every tile starts as a generated fallback (initials on a hue hashed from the lead artist's name, offset from the region accent) and the image fades in over it, so a failed or slow lookup costs nothing but the picture.
 
-The CSP `connect-src` list gains `https://open.spotify.com`. `img-src` already allows `https://i.scdn.co` and `frame-src` already allows the embed.
+The CSP `connect-src` list gains `https://open.spotify.com`. `img-src` gains `https://*.spotifycdn.com`: the performance baseline run found that oEmbed returns most thumbnails on `image-cdn-ak.spotifycdn.com` and `image-cdn-fa.spotifycdn.com`, not on `i.scdn.co`, and a production build blocked them. The wildcard covers further CDN shards. The Vite dev server sends no CSP and the e2e cover test stubs the image, which is how the first build missed it. `frame-src` already allows the embed.
 
 *Alternatives considered:* storing cover addresses at sync time (needs a schema change and a backfill write over irreplaceable production data, for 134,000 rows), and a server proxy with a cache (moves an unauthenticated third-party call onto our rate budget and address).
 

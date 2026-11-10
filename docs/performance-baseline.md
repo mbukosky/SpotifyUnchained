@@ -1,7 +1,8 @@
 # Performance baseline: Friday Wall
 
 Measured 2026-11-10 on branch `feature/friday-wall` at commit `4ee33af`, plus the
-uncommitted `su:` performance marks described below. Machine-readable headline
+`su:` performance marks described below (committed afterwards in `a26650a`). The
+cover timings in section 4.4 are from a rerun with the CSP `img-src` fix applied. Machine-readable headline
 numbers are in `docs/performance-baseline.json`; the scripts are in `scripts/perf/`.
 
 ## 1. Purpose and scope
@@ -306,31 +307,31 @@ and does not count against the limiter.
 
 ### 4.4 Cover art (real Spotify oEmbed, unthrottled)
 
-The cover scenario could not produce the intended timings, because on this
-build most covers are blocked by our own Content Security Policy:
+These numbers come from a rerun after a CSP fix, not from the main run at
+`4ee33af`. The first cover run found that Spotify returns most `thumbnail_url`
+values on `image-cdn-fa.spotifycdn.com` and `image-cdn-ak.spotifycdn.com`,
+while `img-src` allowed only `https://i.scdn.co` among Spotify hosts. Chrome
+blocked 29 of 31, 100 of 100 and 149 of 149 cover images, so nothing settled.
+`img-src` now also allows `https://*.spotifycdn.com`, and the scenario was run
+again on a fresh production build with that change (5 runs: 31 tracks ×3,
+100 ×1, 149 ×1; 8 s between runs). Times are from the tile click.
 
-- Every oEmbed lookup succeeded (342 of 342 returned 200, with `access-control-allow-origin: *`).
-- Spotify now returns most `thumbnail_url` values on `https://image-cdn-fa.spotifycdn.com/...` and `https://image-cdn-ak.spotifycdn.com/...`. `img-src` in `server/app.js` allows only `https://i.scdn.co` among Spotify hosts, so Chrome refuses those images ("violates the following Content Security Policy directive") and the tile keeps its fallback. The CSP is the same in every environment, so production is presumably affected too; this was not checked against production.
-- In a diagnostic run on the 31-track edition, 2 of 31 thumbnails were on `i.scdn.co` and loaded; 29 were blocked. On the 100- and 149-track editions, 0 covers loaded.
+| Edition | Run | Tiles painted | First cover | All tiles in viewport show a cover | Tiles in viewport | Lookups issued by then | Covers loaded by then |
+|---------|-----|---------------|-------------|------------------------------------|-------------------|------------------------|-----------------------|
+| 31 | 1 | 111 ms | 311 ms | 1,929 ms | 31 | 31 | 31 |
+| 31 | 2 | 306 ms | 505 ms | 1,300 ms | 31 | 31 | 31 |
+| 31 | 3 | 100 ms | 275 ms | 1,228 ms | 31 | 31 | 31 |
+| 100 | 1 | 104 ms | 300 ms | 4,053 ms | 96 | 100 | 100 |
+| 149 | 1 | 78 ms | 390 ms | 4,406 ms | 96 | 119 | 112 |
 
-What was measured (5 runs: 31 tracks ×3, 100 ×1, 149 ×1; 8 s between runs):
+- The first cover appears about 200–310 ms after the tiles are painted.
+- Settle time grows with the number of tiles on screen: about 1.2–1.9 s for 31 and 4.1–4.4 s for 96. That is roughly 40–60 ms per cover with six lookups in flight, so the lookup queue, not rendering, sets the pace.
+- With 61 px tiles at 1440x900, every tile of all three editions lies within the 400 px IntersectionObserver margin, so every track is looked up on open and scrolling to the end adds no lookups (also confirmed with oEmbed aborted: 31, 100 and 149 attempts on open). On the 149-track edition the 96 on-screen tiles settled while 30 off-screen lookups were still queued.
+- The sample is small on purpose, to keep real lookups in the low hundreds. One run per large edition gives a single value, not a distribution.
 
-| Edition | Runs | Tiles in viewport | Lookups issued | Covers loaded | First cover after click |
-|---------|------|-------------------|----------------|---------------|------------------------|
-| 31 | 3 | 31 | 31 each | 2 each | 638, 283, 666 ms |
-| 100 | 1 | 96 | 100 | 0 | none |
-| 149 | 1 | 96 | 149 | 0 | none |
-
-"All visible tiles show a cover" was never reached (30 s timeout in every run),
-so there is no settle time to report. With 61 px tiles at 1440x900, every tile
-of all three editions lies within the 400 px IntersectionObserver margin, so
-every track is looked up on open and scrolling to the end adds no lookups
-(also confirmed with oEmbed aborted: 31, 100 and 149 attempts on open).
-The sample was cut from the planned 3 runs × 3 editions to keep real lookups
-in the low hundreds, since each open of the 149-track edition is 149 lookups.
-
-Spotify: no 429 and no failed lookup in 376 oEmbed requests over the whole
-job (342 in the scenario, 31 in the diagnostic run, 3 single checks).
+Spotify: every oEmbed response seen in this rerun was a 200 and there was no
+429. Over the whole job that is about 720 lookups (376 in the first pass,
+about 340 in the rerun) with no refusal.
 
 ### 4.5 Rate limiting (our own limiter)
 
@@ -347,13 +348,13 @@ job (342 in the scenario, 31 in the diagnostic run, 3 single checks).
 - The dev servers and an e2e Mongo container were running on the machine during all runs.
 - Headless Chrome at 1440x900 with a fine pointer. Phones, touch, and other browsers are not covered.
 - Samples: 7 Lighthouse runs per preset; 30 runs per interaction cell (p95 is the 29th value of 30, so a single slow run moves it); 5 cover runs only.
-- The cover timings this baseline was meant to set are missing (section 4.4).
+- The cover timings (section 4.4) come from a rerun after the CSP fix: 5 runs, with one run each for the 100- and 149-track editions.
 - The local database has no AU editions and no 30-track edition.
 - Node 26 ran the server; production specifies Node 22.
 
 ## 6. Most promising improvements, ranked by evidence
 
-1. **Allow Spotify's current image hosts, or covers do not show.** 29 of 31, 100 of 100 and 149 of 149 cover images were blocked by `img-src` in the runs above, while every oEmbed lookup succeeded. Until this is fixed, cover timing cannot be measured and visitors get initials instead of art. (A CSP change; outside this measurement job.)
+1. **Cover settle time.** On-screen covers take 4.1–4.4 s to fill in for 96 tiles, against about 0.1 s for the tiles themselves, and every track is looked up on open because the whole grid sits inside the 400 px lazy-load margin (section 4.4). Candidates the numbers point at: a tighter margin so off-screen tiles wait, and more than six lookups in flight. (The first pass of this baseline found the covers blocked outright by `img-src`; that was fixed before the rerun.)
 2. **Start the deep-link edition request alongside the index.** On deep links the edition request waits for the index and the wall: data arrives about 190 ms after the wall on fast4g (964 vs 774 ms for 31 tracks) and about 216 ms after it at 4x CPU, and the request alone takes 180–190 ms on fast4g. Running the two requests in parallel can save up to about one request's time on deep links (p50 tiles painted now 1,017–1,027 ms on fast4g).
 3. **Layout shift on first load.** CLS is 0.323 on desktop (`main.archive`) and 0.113 on mobile (the footer), both above the 0.1 "good" line; it is the main reason the desktop score is 84 while every timing metric is fast. The shifted elements are the ones below the loading spinner, which suggests the content arriving after the index loads moves them; reserving its space is the obvious candidate.
 4. **Opening an edition re-renders the whole wall.** Click to panel painted scales with the size of the wall, not the edition: at 4x CPU it is 193 and 150 ms on the US wall (636 tiles) against 104 ms on the BR wall (136 tiles), with click-to-tiles TBT of 101 and 55 ms (US) against 35 ms (BR). The same pattern shows in region switches (ALL → US 235 ms and 117 ms TBT; US → BR 61 ms and 0). Unthrottled, the panel takes 45–72 ms to paint while the edition request itself takes 8–12 ms, and the request only starts after that first render.
@@ -389,4 +390,5 @@ sizes that fit one rate-limit window when the limiter cannot be reset.
 Raw results for this baseline, in `scripts/perf/results/` (gitignored):
 `lighthouse/summary-1794312884862.json` and its 14 reports,
 `api-1794313170819.json`, `flows-baseline.json`,
-`flows-covers-ratelimit.json`, and the two rate-limit screenshots.
+`flows-covers-ratelimit.json`, `covers-after-csp.json` (the section 4.4 rerun),
+and the two rate-limit screenshots.

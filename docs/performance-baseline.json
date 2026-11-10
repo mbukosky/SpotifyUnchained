@@ -817,45 +817,56 @@
     }
   },
   "covers": {
+    "note": "Rerun after the CSP img-src fix (https://*.spotifycdn.com); the first pass at 4ee33af had most covers blocked. Times in ms from the tile click.",
     "runs": 5,
-    "lookups": 342,
-    "oembedStatuses": {
-      "200": 342
-    },
     "spotify429": 0,
-    "firstCoverMsSmall31": [
-      638,
-      283,
-      666
-    ],
-    "coversLoaded": [
-      [
-        "small-31",
-        2,
-        31
-      ],
-      [
-        "small-31",
-        2,
-        31
-      ],
-      [
-        "small-31",
-        2,
-        31
-      ],
-      [
-        "medium-100",
-        0,
-        96
-      ],
-      [
-        "large-149",
-        0,
-        96
-      ]
-    ],
-    "visibleSettled": "not reached in any run: most thumbnails are on image-cdn-*.spotifycdn.com, which the CSP img-src blocks"
+    "perRun": [
+      {
+        "edition": "small-31",
+        "tilesPainted": 111,
+        "firstCover": 311,
+        "visibleSettled": 1929,
+        "visibleTiles": 31,
+        "lookupsIssuedBySettle": 31,
+        "coversLoadedBySettle": 31
+      },
+      {
+        "edition": "small-31",
+        "tilesPainted": 306,
+        "firstCover": 505,
+        "visibleSettled": 1300,
+        "visibleTiles": 31,
+        "lookupsIssuedBySettle": 31,
+        "coversLoadedBySettle": 31
+      },
+      {
+        "edition": "small-31",
+        "tilesPainted": 100,
+        "firstCover": 275,
+        "visibleSettled": 1228,
+        "visibleTiles": 31,
+        "lookupsIssuedBySettle": 31,
+        "coversLoadedBySettle": 31
+      },
+      {
+        "edition": "medium-100",
+        "tilesPainted": 104,
+        "firstCover": 300,
+        "visibleSettled": 4053,
+        "visibleTiles": 96,
+        "lookupsIssuedBySettle": 100,
+        "coversLoadedBySettle": 100
+      },
+      {
+        "edition": "large-149",
+        "tilesPainted": 78,
+        "firstCover": 390,
+        "visibleSettled": 4406,
+        "visibleTiles": 96,
+        "lookupsIssuedBySettle": 119,
+        "coversLoadedBySettle": 112
+      }
+    ]
   },
   "ratelimit": {
     "limit": "300 per 15 min per client address, shared by /spotify/editions and /spotify/editions/:id",

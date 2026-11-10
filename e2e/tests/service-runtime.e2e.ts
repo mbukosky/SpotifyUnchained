@@ -62,6 +62,7 @@ test('API responses carry the content security policy', async ({ app }) => {
     'data:',
     'https://www.google-analytics.com',
     'https://i.scdn.co',
+    'https://*.spotifycdn.com',
     'https://cdn.ko-fi.com',
     'https://storage.ko-fi.com',
   ]);
