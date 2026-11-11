@@ -2,15 +2,34 @@
 // MONGO_INITDB_DATABASE. Track data is invented.
 // mongo:5.0 runs init scripts in the legacy shell, so this stays plain ES5.
 //
-// 64 playlists: two weeks across all seven regions (14), plus 50 older AU weeks
-// so the RSS 50-item cap and region pagination have something to bite on.
-//   ALL 64 | AU 52 | US, UK, CA, BR, MX, DE 2 each
+// 69 playlists: two weeks across all seven regions (14), 50 older AU weeks so the
+// RSS 50-item cap has something to bite on, and five rows for the edition rules.
+//   ALL 69 | AU 53 | US 6 | UK, CA, BR, MX, DE 2 each
+// The edition index drops one US duplicate, so it lists 68.
 //
 // Tests depend on these 02.14.2026 playlists:
-//   US 30 tracks (card content)      UK 50 tracks (long list)
-//   CA 250 tracks (save batching)    BR valid and malformed URIs
-//   MX no valid URIs                 DE, AU 3 tracks
+//   US 30 tracks (tile name)          UK 50 tracks (long list)
+//   CA 250 tracks (save batching)     BR valid and malformed URIs
+//   MX no valid URIs                  DE, AU 3 tracks
 // and AU 02.07.2026 carries two extra tracks for the RSS field and escaping checks.
+// 02.14.2026 is a Saturday, so its tiles read "Saturday, February 14, 2026, ...".
+//
+// The edition rows:
+//   US "2015-07-07 New Music Tuesday", 2 tracks, and US 07.10.2015, 4 tracks:
+//     one week, so one tile. Both published six days late, as old rows were.
+//   US 01.23.2026 twice, 4 tracks each, one title without the region: the
+//     index keeps the later published one. It leaves 01.30 empty on the US wall.
+//   AU "New Music Friday Holiday Special", 1 track, published 2024-12-20:
+//     a title with no date, and AU's 2024 row.
+//
+// Covers: every track has a cover URL of Spotify's real shape (i.scdn.co, 300 px
+// id prefix, 24 hex digits from region, week and position; not real images) except
+// the last track of each edition. So US 02.14.2026 has 29 covers of 30, DE 02.14.2026
+// has initials on its third tile, and the one-track editions (the AU weeks and the
+// Holiday Special) have no cover at all and so no cover column. The AU 02.07.2026
+// extras follow the same rule: the field track has a cover, the escaping track none.
+//
+// Every row has a fixed _id from editionId() below; tests/helpers.ts mirrors it.
 var REGIONS = ['US', 'UK', 'CA', 'BR', 'MX', 'DE', 'AU'];
 var FRIDAYS = [
   { label: '02.14.2026', date: new Date('2026-02-14T00:00:00Z') },
@@ -23,10 +42,28 @@ function pad2(n) {
   return (n < 10 ? '0' : '') + n;
 }
 
-function makeTrack(region, label, date, n) {
+// 24 hex digits: "e2e", region number, "00", the label's digits, then a suffix.
+function editionId(region, label, suffix) {
+  return ObjectId('e2e' + pad2(REGIONS.indexOf(region) + 1) + '00' + label.replace(/\./g, '') + (suffix || '000000000'));
+}
+
+function pad(text, width) {
+  var out = String(text);
+  while (out.length < width) out = '0' + out;
+  return out;
+}
+
+// A well-formed but invented Spotify image URL: the 300 px album-art prefix, then
+// 24 hex digits made of the region number, the label's digits and the position.
+function coverUrl(region, label, n) {
+  var tail = pad(REGIONS.indexOf(region) + 1, 2) + label.replace(/\./g, '') + pad(n.toString(16), 4);
+  return 'https://i.scdn.co/image/ab67616d00001e02' + tail + '5eed5eed5eed5eed'.slice(0, 24 - tail.length);
+}
+
+function makeTrack(region, label, date, n, withCover) {
   // Spotify IDs are 22 alphanumerics; the app skips anything else when saving.
   var id = ('e2e' + region + label.replace(/\./g, '') + 'n' + n + 'xxxxxxxxxxxxxxxxxxxxxx').slice(0, 22);
-  return {
+  var track = {
     id: id,
     name: 'Test Track ' + n + ' ' + region,
     artist: 'Test Artist ' + n,
@@ -34,11 +71,13 @@ function makeTrack(region, label, date, n) {
     open_url: 'https://open.spotify.com/track/' + id,
     uri: 'spotify:track:' + id,
   };
+  if (withCover) track.cover = coverUrl(region, label, n);
+  return track;
 }
 
 function makeTracks(region, label, date, count) {
   var tracks = [];
-  for (var n = 1; n <= count; n++) tracks.push(makeTrack(region, label, date, n));
+  for (var n = 1; n <= count; n++) tracks.push(makeTrack(region, label, date, n, n < count));
   return tracks;
 }
 
@@ -61,7 +100,7 @@ FRIDAYS.forEach(function (friday) {
       tracks[2].uri = 'not-a-uri';
     }
     if (key === 'AU.02.07.2026') {
-      var fieldTrack = makeTrack(region, friday.label, friday.date, 4);
+      var fieldTrack = makeTrack(region, friday.label, friday.date, 4, true);
       fieldTrack.name = 'Test Track';
       fieldTrack.artist = 'Test Artist';
       fieldTrack.open_url = 'https://open.spotify.com/track/123';
@@ -74,6 +113,7 @@ FRIDAYS.forEach(function (friday) {
     }
 
     docs.push({
+      _id: editionId(region, friday.label),
       title: 'New.Music.Friday.' + region + '.' + friday.label,
       region: region,
       published_date: friday.date,
@@ -86,11 +126,26 @@ for (var week = 1; week <= 50; week++) {
   var date = new Date(FRIDAYS[1].date.getTime() - week * WEEK_MS);
   var label = pad2(date.getUTCMonth() + 1) + '.' + pad2(date.getUTCDate()) + '.' + date.getUTCFullYear();
   docs.push({
+    _id: editionId('AU', label),
     title: 'New.Music.Friday.AU.' + label,
     region: 'AU',
     published_date: date,
     tracks: makeTracks('AU', label, date, 1),
   });
 }
+
+function editionRow(id, title, region, label, published, count) {
+  var date = new Date(published);
+  return { _id: id, title: title, region: region, published_date: date, tracks: makeTracks(region, label, date, count) };
+}
+
+docs.push(
+  editionRow(editionId('US', '07.07.2015'), '2015-07-07 New Music Tuesday', 'US', '07.07.2015', '2015-07-13T00:00:00Z', 2),
+  editionRow(editionId('US', '07.10.2015'), 'New.Music.Friday.US.07.10.2015', 'US', '07.10.2015', '2015-07-16T00:00:00Z', 4),
+  // The later one goes in first, so the winner isn't simply the last row read.
+  editionRow(editionId('US', '01.23.2026', '000000002'), 'New.Music.Friday.US.01.23.2026', 'US', '01.23.2026', '2026-01-23T06:00:00Z', 4),
+  editionRow(editionId('US', '01.23.2026', '000000001'), 'New.Music.Friday.01.23.2026', 'US', '01.23.2026', '2026-01-23T00:00:00Z', 4),
+  editionRow(editionId('AU', '12.20.2024'), 'New Music Friday Holiday Special', 'AU', '12.20.2024', '2024-12-20T00:00:00Z', 1)
+);
 
 db.playlists.insertMany(docs);

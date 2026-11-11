@@ -8,6 +8,7 @@ const trackSchema = new mongoose.Schema({
   artist: String,
   open_url: String,
   uri: String,
+  cover: String,
   added_at: Date,
 });
 

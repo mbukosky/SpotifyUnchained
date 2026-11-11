@@ -55,13 +55,14 @@ test('API responses carry the content security policy', async ({ app }) => {
     'https://www.googletagmanager.com',
     'https://www.google-analytics.com',
   ]);
-  expect(csp['style-src']).toEqual(["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com']);
-  expect(csp['font-src']).toEqual(["'self'", 'https://fonts.gstatic.com']);
+  expect(csp['style-src']).toEqual(["'self'", "'unsafe-inline'"]);
+  expect(csp['font-src']).toEqual(["'self'"]);
   expect(csp['img-src']).toEqual([
     "'self'",
     'data:',
     'https://www.google-analytics.com',
     'https://i.scdn.co',
+    'https://*.spotifycdn.com',
     'https://cdn.ko-fi.com',
     'https://storage.ko-fi.com',
   ]);

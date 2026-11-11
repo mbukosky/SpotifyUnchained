@@ -13,7 +13,9 @@ const tag = (xml: string, name: string) => xml.match(new RegExp(`<${name}>([\\s\
 const titlesOf = (xml: string) => itemsOf(xml).map((item) => tag(item, 'title')!);
 /** Everything before the first item: the channel's own fields. */
 const channelOf = (xml: string) => xml.split('<item>')[0];
-const regionsOf = (xml: string) => new Set(titlesOf(xml).map((title) => title.split('.')[3]));
+// By the code in the title: the seed's US 01.23.2026 duplicate has none, as in production.
+const regionsOf = (xml: string) =>
+  new Set(titlesOf(xml).flatMap((title) => title.match(/\.(US|UK|CA|BR|MX|DE|AU)\./)?.[1] ?? []));
 
 // openspec/specs/rss-feed/spec.md
 // Requirement: Feed response format and caching. Scenario: Successful feed request.
@@ -77,7 +79,7 @@ test('unfiltered feed names all regions in the channel', async ({ app }) => {
 // openspec/specs/rss-feed/spec.md
 // Requirement: Item selection and ordering. Scenario: More than 50 archived playlists.
 test('feed caps at the 50 most recent playlists', async ({ app }) => {
-  // AU has 52 archived weeks, so the two oldest must drop off.
+  // AU has 53 archived weeks, so the three oldest must drop off.
   const xml = await (await get(`${app.baseUrl}/rss?region=AU`)).text();
   const dates = itemsOf(xml).map((item) => Date.parse(tag(item, 'pubDate')!));
 

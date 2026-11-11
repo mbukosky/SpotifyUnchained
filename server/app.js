@@ -9,6 +9,7 @@ import config from './config.js';
 import playlistRoutes from './routes/playlist.js';
 import spotifyRoutes from './routes/spotify.js';
 import healthRoutes from './routes/health.js';
+import { precompressedStatic, cacheControlFor } from './lib/staticAssets.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,9 +37,9 @@ app.use(helmet({
         "https://www.googletagmanager.com",
         "https://www.google-analytics.com",
       ],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https://www.google-analytics.com", "https://i.scdn.co", "https://cdn.ko-fi.com", "https://storage.ko-fi.com"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      fontSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https://www.google-analytics.com", "https://i.scdn.co", "https://*.spotifycdn.com", "https://cdn.ko-fi.com", "https://storage.ko-fi.com"],
       frameSrc: ["https://open.spotify.com"],
       connectSrc: [
         "'self'",
@@ -52,11 +53,26 @@ app.use(helmet({
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 
-// Serve static files before CORS (same-origin requests don't need CORS)
+// Serve static files before CORS (same-origin requests don't need CORS). The
+// API paths skip the static handlers, which would otherwise look each request
+// up on disk first.
+const clientDist = path.join(__dirname, '../client/dist');
+const isApiPath = p => p.startsWith('/spotify') || p.startsWith('/api/') || p === '/rss' || p === '/health';
+let staticFiles = null;
 if (config.nodeEnv === 'production') {
-  const clientDist = path.join(__dirname, '../client/dist');
-  app.use(express.static(clientDist));
+  staticFiles = precompressedStatic(clientDist);
+  const serveStatic = express.static(clientDist, {
+    setHeaders(res, filePath) {
+      const urlPath = `/${path.relative(clientDist, filePath).split(path.sep).join('/')}`;
+      res.setHeader('Cache-Control', cacheControlFor(urlPath));
+    },
+  });
+  app.use((req, res, next) => (isApiPath(req.path) ? next() : staticFiles.middleware(req, res, next)));
+  app.use((req, res, next) => (isApiPath(req.path) ? next() : serveStatic(req, res, next)));
 }
+
+/** Resolves once the built client is compressed in memory (immediately outside production). */
+export const staticReady = staticFiles ? staticFiles.ready : Promise.resolve();
 
 // CORS — restrict to allowed origins
 export const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:3000')
@@ -109,7 +125,6 @@ app.use(healthRoutes);
 
 // SPA fallback — serve index.html for unmatched routes
 if (config.nodeEnv === 'production') {
-  const clientDist = path.join(__dirname, '../client/dist');
   app.get('*', (req, res, next) => {
     // Anything that looks like a file (/foo.js, /wp-admin/setup.php) missed the
     // static handler, so it genuinely does not exist — don't answer it with the
@@ -118,7 +133,7 @@ if (config.nodeEnv === 'production') {
       next();
       return;
     }
-    res.sendFile(path.join(clientDist, 'index.html'));
+    staticFiles.sendShell(req, res, () => res.sendFile(path.join(clientDist, 'index.html')));
   });
 }
 

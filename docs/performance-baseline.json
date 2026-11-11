@@ -1,0 +1,898 @@
+{
+  "meta": {
+    "date": "2026-11-10",
+    "commit": "4ee33af757682481ebb1ebdca5760f1f65fba234 plus uncommitted su: performance marks (client/src/lib/perf.js)",
+    "branch": "feature/friday-wall",
+    "machine": "Mac16,10, Apple M4, 10 cores, 16 GB RAM, macOS 26.6.2 (25G83)",
+    "browser": "Google Chrome 157.0.8103.39, headless (Playwright 1.64.1 channel chrome; Lighthouse 13.6.0)",
+    "runtime": "Node v26.13.0 (server and scripts), Bun 1.3.8, autocannon 9.0.0, MongoDB 5.0 (Docker)",
+    "server": "http://127.0.0.1:3100, NODE_ENV=production, SKIP_SPOTIFY_SYNC=true, client built with vite build",
+    "dataset": {
+      "editions": 1312,
+      "regions": {
+        "US": 637,
+        "UK": 136,
+        "CA": 136,
+        "BR": 136,
+        "MX": 136,
+        "DE": 131
+      },
+      "largestEdition": {
+        "id": "6992256ecd64e387a22e1abb",
+        "region": "UK",
+        "date": "2025-08-22",
+        "tracks": 243
+      },
+      "indexBytesRaw": 163009
+    },
+    "network": "localhost only; Google Fonts loaded from the internet; Google Analytics and Spotify oEmbed/embed blocked except in the covers scenario",
+    "conditions": {
+      "unthrottled": "no throttling",
+      "fast4g": "CDP Network.emulateNetworkConditions latency 165 ms, down 1,012,500 B/s, up 168,750 B/s",
+      "fast4g-cpu4": "fast4g plus Emulation.setCPUThrottlingRate 4",
+      "lighthouseDesktop": "--preset=desktop --throttling-method=provided",
+      "lighthouseMobile": "default: simulated, RTT 150 ms, 1.6 Mbps, 4x CPU"
+    },
+    "viewport": "1440x900 for flows",
+    "samples": {
+      "lighthouse": "7 per preset",
+      "api": "60 sequential + 200 autocannon per edition endpoint, 30 + 60 for /spotify",
+      "flows": "30 fresh contexts per scenario, edition and condition",
+      "covers": "5 runs (31-track x3, 100 x1, 149 x1)"
+    }
+  },
+  "sources": {
+    "flows": "scripts/perf/results/flows-baseline.json",
+    "api": "scripts/perf/results/api-1794313170819.json",
+    "lighthouse": "scripts/perf/results/lighthouse/summary-1794312884862.json"
+  },
+  "metrics": {
+    "lighthouse.desktop.fcp.median": {
+      "value": 181.935,
+      "unit": "ms"
+    },
+    "lighthouse.desktop.lcp.median": {
+      "value": 181.935,
+      "unit": "ms"
+    },
+    "lighthouse.desktop.tbt.median": {
+      "value": 4.118,
+      "unit": "ms"
+    },
+    "lighthouse.desktop.si.median": {
+      "value": 912,
+      "unit": "ms"
+    },
+    "lighthouse.desktop.cls.median": {
+      "value": 0.323,
+      "unit": ""
+    },
+    "lighthouse.desktop.totalTransfer.median": {
+      "value": 197877,
+      "unit": "B"
+    },
+    "lighthouse.mobile.fcp.median": {
+      "value": 1417.705,
+      "unit": "ms"
+    },
+    "lighthouse.mobile.lcp.median": {
+      "value": 1417.705,
+      "unit": "ms"
+    },
+    "lighthouse.mobile.tbt.median": {
+      "value": 64.5,
+      "unit": "ms"
+    },
+    "lighthouse.mobile.si.median": {
+      "value": 1417.705,
+      "unit": "ms"
+    },
+    "lighthouse.mobile.cls.median": {
+      "value": 0.113,
+      "unit": ""
+    },
+    "lighthouse.mobile.totalTransfer.median": {
+      "value": 197878,
+      "unit": "B"
+    },
+    "api.editions-index.p50": {
+      "value": 14.28,
+      "unit": "ms"
+    },
+    "api.editions-index.p95": {
+      "value": 18.01,
+      "unit": "ms"
+    },
+    "api.editions-index.p99": {
+      "value": 18.32,
+      "unit": "ms"
+    },
+    "api.editions-index.bytesCompressed": {
+      "value": 18412,
+      "unit": "B"
+    },
+    "api.editions-index.bytesRaw": {
+      "value": 163009,
+      "unit": "B"
+    },
+    "api.edition-31.p50": {
+      "value": 1.64,
+      "unit": "ms"
+    },
+    "api.edition-31.p95": {
+      "value": 3.56,
+      "unit": "ms"
+    },
+    "api.edition-31.p99": {
+      "value": 8.06,
+      "unit": "ms"
+    },
+    "api.edition-31.bytesCompressed": {
+      "value": 1720,
+      "unit": "B"
+    },
+    "api.edition-31.bytesRaw": {
+      "value": 7262,
+      "unit": "B"
+    },
+    "api.edition-100.p50": {
+      "value": 2.57,
+      "unit": "ms"
+    },
+    "api.edition-100.p95": {
+      "value": 4.44,
+      "unit": "ms"
+    },
+    "api.edition-100.p99": {
+      "value": 5.35,
+      "unit": "ms"
+    },
+    "api.edition-100.bytesCompressed": {
+      "value": 5093,
+      "unit": "B"
+    },
+    "api.edition-100.bytesRaw": {
+      "value": 23093,
+      "unit": "B"
+    },
+    "api.edition-149.p50": {
+      "value": 2.8,
+      "unit": "ms"
+    },
+    "api.edition-149.p95": {
+      "value": 6.11,
+      "unit": "ms"
+    },
+    "api.edition-149.p99": {
+      "value": 11.54,
+      "unit": "ms"
+    },
+    "api.edition-149.bytesCompressed": {
+      "value": 7465,
+      "unit": "B"
+    },
+    "api.edition-149.bytesRaw": {
+      "value": 34682,
+      "unit": "B"
+    },
+    "api.edition-243.p50": {
+      "value": 2.99,
+      "unit": "ms"
+    },
+    "api.edition-243.p95": {
+      "value": 6.61,
+      "unit": "ms"
+    },
+    "api.edition-243.p99": {
+      "value": 9.05,
+      "unit": "ms"
+    },
+    "api.edition-243.bytesCompressed": {
+      "value": 11537,
+      "unit": "B"
+    },
+    "api.edition-243.bytesRaw": {
+      "value": 55505,
+      "unit": "B"
+    },
+    "api.list-page1-size5.p50": {
+      "value": 5.61,
+      "unit": "ms"
+    },
+    "api.list-page1-size5.p95": {
+      "value": 9,
+      "unit": "ms"
+    },
+    "api.list-page1-size5.p99": {
+      "value": 9.84,
+      "unit": "ms"
+    },
+    "api.list-page1-size5.bytesCompressed": {
+      "value": 11286,
+      "unit": "B"
+    },
+    "api.list-page1-size5.bytesRaw": {
+      "value": 69037,
+      "unit": "B"
+    },
+    "flows.unthrottled.wall.wallDrawn.p50": {
+      "value": 244.6,
+      "unit": "ms"
+    },
+    "flows.unthrottled.wall.longTasks.tbt.p50": {
+      "value": 3,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.small-31.panelPainted.p50": {
+      "value": 72.4,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.small-31.fetchDone.p50": {
+      "value": 72.5,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.small-31.tilesPainted.p50": {
+      "value": 99.2,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.small-31.longTasks.tbt.p50": {
+      "value": 0,
+      "unit": "ms"
+    },
+    "flows.unthrottled.deeplink.small-31.tilesPainted.p50": {
+      "value": 350.9,
+      "unit": "ms"
+    },
+    "flows.unthrottled.step.small-31.previous.tilesPainted.p50": {
+      "value": 69.6,
+      "unit": "ms"
+    },
+    "flows.unthrottled.step.small-31.next.tilesPainted.p50": {
+      "value": 24.4,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.medium-100.panelPainted.p50": {
+      "value": 63.7,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.medium-100.fetchDone.p50": {
+      "value": 64,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.medium-100.tilesPainted.p50": {
+      "value": 88.4,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.medium-100.longTasks.tbt.p50": {
+      "value": 0,
+      "unit": "ms"
+    },
+    "flows.unthrottled.deeplink.medium-100.tilesPainted.p50": {
+      "value": 360.8,
+      "unit": "ms"
+    },
+    "flows.unthrottled.step.medium-100.previous.tilesPainted.p50": {
+      "value": 73.1,
+      "unit": "ms"
+    },
+    "flows.unthrottled.step.medium-100.next.tilesPainted.p50": {
+      "value": 31.7,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.large-149.panelPainted.p50": {
+      "value": 44.6,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.large-149.fetchDone.p50": {
+      "value": 44.9,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.large-149.tilesPainted.p50": {
+      "value": 72.1,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.large-149.longTasks.tbt.p50": {
+      "value": 0,
+      "unit": "ms"
+    },
+    "flows.unthrottled.deeplink.large-149.tilesPainted.p50": {
+      "value": 364.5,
+      "unit": "ms"
+    },
+    "flows.unthrottled.step.large-149.previous.tilesPainted.p50": {
+      "value": 75.3,
+      "unit": "ms"
+    },
+    "flows.unthrottled.step.large-149.next.tilesPainted.p50": {
+      "value": 35.5,
+      "unit": "ms"
+    },
+    "flows.unthrottled.region.US.wallDrawn.p50": {
+      "value": 73.8,
+      "unit": "ms"
+    },
+    "flows.unthrottled.region.BR.wallDrawn.p50": {
+      "value": 17.2,
+      "unit": "ms"
+    },
+    "flows.unthrottled.wall.wallDrawn.p95": {
+      "value": 1238.9,
+      "unit": "ms"
+    },
+    "flows.unthrottled.wall.longTasks.tbt.p95": {
+      "value": 36,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.small-31.panelPainted.p95": {
+      "value": 102.1,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.small-31.fetchDone.p95": {
+      "value": 102.3,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.small-31.tilesPainted.p95": {
+      "value": 136.4,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.small-31.longTasks.tbt.p95": {
+      "value": 3,
+      "unit": "ms"
+    },
+    "flows.unthrottled.deeplink.small-31.tilesPainted.p95": {
+      "value": 384.7,
+      "unit": "ms"
+    },
+    "flows.unthrottled.step.small-31.previous.tilesPainted.p95": {
+      "value": 87,
+      "unit": "ms"
+    },
+    "flows.unthrottled.step.small-31.next.tilesPainted.p95": {
+      "value": 39.4,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.medium-100.panelPainted.p95": {
+      "value": 80.2,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.medium-100.fetchDone.p95": {
+      "value": 80.7,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.medium-100.tilesPainted.p95": {
+      "value": 115.3,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.medium-100.longTasks.tbt.p95": {
+      "value": 0,
+      "unit": "ms"
+    },
+    "flows.unthrottled.deeplink.medium-100.tilesPainted.p95": {
+      "value": 382.2,
+      "unit": "ms"
+    },
+    "flows.unthrottled.step.medium-100.previous.tilesPainted.p95": {
+      "value": 90.8,
+      "unit": "ms"
+    },
+    "flows.unthrottled.step.medium-100.next.tilesPainted.p95": {
+      "value": 35,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.large-149.panelPainted.p95": {
+      "value": 57.8,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.large-149.fetchDone.p95": {
+      "value": 58.1,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.large-149.tilesPainted.p95": {
+      "value": 87.1,
+      "unit": "ms"
+    },
+    "flows.unthrottled.open.large-149.longTasks.tbt.p95": {
+      "value": 0,
+      "unit": "ms"
+    },
+    "flows.unthrottled.deeplink.large-149.tilesPainted.p95": {
+      "value": 416.1,
+      "unit": "ms"
+    },
+    "flows.unthrottled.step.large-149.previous.tilesPainted.p95": {
+      "value": 94.2,
+      "unit": "ms"
+    },
+    "flows.unthrottled.step.large-149.next.tilesPainted.p95": {
+      "value": 37.9,
+      "unit": "ms"
+    },
+    "flows.unthrottled.region.US.wallDrawn.p95": {
+      "value": 89.6,
+      "unit": "ms"
+    },
+    "flows.unthrottled.region.BR.wallDrawn.p95": {
+      "value": 19.1,
+      "unit": "ms"
+    },
+    "flows.fast4g.wall.wallDrawn.p50": {
+      "value": 734.5,
+      "unit": "ms"
+    },
+    "flows.fast4g.wall.longTasks.tbt.p50": {
+      "value": 4,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.small-31.panelPainted.p50": {
+      "value": 65.2,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.small-31.fetchDone.p50": {
+      "value": 218.3,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.small-31.tilesPainted.p50": {
+      "value": 234.9,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.small-31.longTasks.tbt.p50": {
+      "value": 0,
+      "unit": "ms"
+    },
+    "flows.fast4g.deeplink.small-31.tilesPainted.p50": {
+      "value": 1017.4,
+      "unit": "ms"
+    },
+    "flows.fast4g.step.small-31.previous.tilesPainted.p50": {
+      "value": 218.3,
+      "unit": "ms"
+    },
+    "flows.fast4g.step.small-31.next.tilesPainted.p50": {
+      "value": 25.2,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.medium-100.panelPainted.p50": {
+      "value": 54.5,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.medium-100.fetchDone.p50": {
+      "value": 207.2,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.medium-100.tilesPainted.p50": {
+      "value": 225.7,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.medium-100.longTasks.tbt.p50": {
+      "value": 0,
+      "unit": "ms"
+    },
+    "flows.fast4g.deeplink.medium-100.tilesPainted.p50": {
+      "value": 1027.3,
+      "unit": "ms"
+    },
+    "flows.fast4g.step.medium-100.previous.tilesPainted.p50": {
+      "value": 222,
+      "unit": "ms"
+    },
+    "flows.fast4g.step.medium-100.next.tilesPainted.p50": {
+      "value": 30.7,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.large-149.panelPainted.p50": {
+      "value": 43.3,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.large-149.fetchDone.p50": {
+      "value": 200.5,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.large-149.tilesPainted.p50": {
+      "value": 228.3,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.large-149.longTasks.tbt.p50": {
+      "value": 0,
+      "unit": "ms"
+    },
+    "flows.fast4g.deeplink.large-149.tilesPainted.p50": {
+      "value": 1024.5,
+      "unit": "ms"
+    },
+    "flows.fast4g.step.large-149.previous.tilesPainted.p50": {
+      "value": 226.1,
+      "unit": "ms"
+    },
+    "flows.fast4g.step.large-149.next.tilesPainted.p50": {
+      "value": 34.8,
+      "unit": "ms"
+    },
+    "flows.fast4g.region.US.wallDrawn.p50": {
+      "value": 74.8,
+      "unit": "ms"
+    },
+    "flows.fast4g.region.BR.wallDrawn.p50": {
+      "value": 17.3,
+      "unit": "ms"
+    },
+    "flows.fast4g.wall.wallDrawn.p95": {
+      "value": 753.9,
+      "unit": "ms"
+    },
+    "flows.fast4g.wall.longTasks.tbt.p95": {
+      "value": 8,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.small-31.panelPainted.p95": {
+      "value": 77.3,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.small-31.fetchDone.p95": {
+      "value": 223.7,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.small-31.tilesPainted.p95": {
+      "value": 238,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.small-31.longTasks.tbt.p95": {
+      "value": 0,
+      "unit": "ms"
+    },
+    "flows.fast4g.deeplink.small-31.tilesPainted.p95": {
+      "value": 1035.6,
+      "unit": "ms"
+    },
+    "flows.fast4g.step.small-31.previous.tilesPainted.p95": {
+      "value": 220.6,
+      "unit": "ms"
+    },
+    "flows.fast4g.step.small-31.next.tilesPainted.p95": {
+      "value": 32.3,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.medium-100.panelPainted.p95": {
+      "value": 60,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.medium-100.fetchDone.p95": {
+      "value": 213,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.medium-100.tilesPainted.p95": {
+      "value": 237.9,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.medium-100.longTasks.tbt.p95": {
+      "value": 0,
+      "unit": "ms"
+    },
+    "flows.fast4g.deeplink.medium-100.tilesPainted.p95": {
+      "value": 1406.6,
+      "unit": "ms"
+    },
+    "flows.fast4g.step.medium-100.previous.tilesPainted.p95": {
+      "value": 236.5,
+      "unit": "ms"
+    },
+    "flows.fast4g.step.medium-100.next.tilesPainted.p95": {
+      "value": 35.7,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.large-149.panelPainted.p95": {
+      "value": 55.4,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.large-149.fetchDone.p95": {
+      "value": 203.3,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.large-149.tilesPainted.p95": {
+      "value": 233,
+      "unit": "ms"
+    },
+    "flows.fast4g.open.large-149.longTasks.tbt.p95": {
+      "value": 0,
+      "unit": "ms"
+    },
+    "flows.fast4g.deeplink.large-149.tilesPainted.p95": {
+      "value": 1042.5,
+      "unit": "ms"
+    },
+    "flows.fast4g.step.large-149.previous.tilesPainted.p95": {
+      "value": 230.9,
+      "unit": "ms"
+    },
+    "flows.fast4g.step.large-149.next.tilesPainted.p95": {
+      "value": 38.9,
+      "unit": "ms"
+    },
+    "flows.fast4g.region.US.wallDrawn.p95": {
+      "value": 81.7,
+      "unit": "ms"
+    },
+    "flows.fast4g.region.BR.wallDrawn.p95": {
+      "value": 18.6,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.wall.wallDrawn.p50": {
+      "value": 1047.1,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.wall.longTasks.tbt.p50": {
+      "value": 154,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.small-31.panelPainted.p50": {
+      "value": 193.4,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.small-31.fetchDone.p50": {
+      "value": 338.4,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.small-31.tilesPainted.p50": {
+      "value": 386,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.small-31.longTasks.tbt.p50": {
+      "value": 101,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.deeplink.small-31.tilesPainted.p50": {
+      "value": 1519.5,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.step.small-31.previous.tilesPainted.p50": {
+      "value": 301.9,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.step.small-31.next.tilesPainted.p50": {
+      "value": 100.9,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.medium-100.panelPainted.p50": {
+      "value": 149.8,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.medium-100.fetchDone.p50": {
+      "value": 286.5,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.medium-100.tilesPainted.p50": {
+      "value": 378.1,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.medium-100.longTasks.tbt.p50": {
+      "value": 55,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.deeplink.medium-100.tilesPainted.p50": {
+      "value": 1561.2,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.step.medium-100.previous.tilesPainted.p50": {
+      "value": 310.6,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.step.medium-100.next.tilesPainted.p50": {
+      "value": 109.7,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.large-149.panelPainted.p50": {
+      "value": 104,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.large-149.fetchDone.p50": {
+      "value": 245.7,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.large-149.tilesPainted.p50": {
+      "value": 396.9,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.large-149.longTasks.tbt.p50": {
+      "value": 35,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.deeplink.large-149.tilesPainted.p50": {
+      "value": 1594.6,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.step.large-149.previous.tilesPainted.p50": {
+      "value": 328.6,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.step.large-149.next.tilesPainted.p50": {
+      "value": 125.2,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.region.US.wallDrawn.p50": {
+      "value": 234.5,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.region.BR.wallDrawn.p50": {
+      "value": 60.6,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.wall.wallDrawn.p95": {
+      "value": 1082.2,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.wall.longTasks.tbt.p95": {
+      "value": 172,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.small-31.panelPainted.p95": {
+      "value": 202.5,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.small-31.fetchDone.p95": {
+      "value": 346.8,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.small-31.tilesPainted.p95": {
+      "value": 401.1,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.small-31.longTasks.tbt.p95": {
+      "value": 111,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.deeplink.small-31.tilesPainted.p95": {
+      "value": 2287.4,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.step.small-31.previous.tilesPainted.p95": {
+      "value": 330.1,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.step.small-31.next.tilesPainted.p95": {
+      "value": 114.5,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.medium-100.panelPainted.p95": {
+      "value": 354.4,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.medium-100.fetchDone.p95": {
+      "value": 454.8,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.medium-100.tilesPainted.p95": {
+      "value": 548.8,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.medium-100.longTasks.tbt.p95": {
+      "value": 247,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.deeplink.medium-100.tilesPainted.p95": {
+      "value": 2103,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.step.medium-100.previous.tilesPainted.p95": {
+      "value": 357.6,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.step.medium-100.next.tilesPainted.p95": {
+      "value": 124.4,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.large-149.panelPainted.p95": {
+      "value": 128,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.large-149.fetchDone.p95": {
+      "value": 264.2,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.large-149.tilesPainted.p95": {
+      "value": 422.7,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.open.large-149.longTasks.tbt.p95": {
+      "value": 47,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.deeplink.large-149.tilesPainted.p95": {
+      "value": 1744.7,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.step.large-149.previous.tilesPainted.p95": {
+      "value": 346.3,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.step.large-149.next.tilesPainted.p95": {
+      "value": 139.1,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.region.US.wallDrawn.p95": {
+      "value": 257.8,
+      "unit": "ms"
+    },
+    "flows.fast4g-cpu4.region.BR.wallDrawn.p95": {
+      "value": 68.5,
+      "unit": "ms"
+    }
+  },
+  "covers": {
+    "note": "Rerun after the CSP img-src fix (https://*.spotifycdn.com); the first pass at 4ee33af had most covers blocked. Times in ms from the tile click.",
+    "runs": 5,
+    "spotify429": 0,
+    "perRun": [
+      {
+        "edition": "small-31",
+        "tilesPainted": 111,
+        "firstCover": 311,
+        "visibleSettled": 1929,
+        "visibleTiles": 31,
+        "lookupsIssuedBySettle": 31,
+        "coversLoadedBySettle": 31
+      },
+      {
+        "edition": "small-31",
+        "tilesPainted": 306,
+        "firstCover": 505,
+        "visibleSettled": 1300,
+        "visibleTiles": 31,
+        "lookupsIssuedBySettle": 31,
+        "coversLoadedBySettle": 31
+      },
+      {
+        "edition": "small-31",
+        "tilesPainted": 100,
+        "firstCover": 275,
+        "visibleSettled": 1228,
+        "visibleTiles": 31,
+        "lookupsIssuedBySettle": 31,
+        "coversLoadedBySettle": 31
+      },
+      {
+        "edition": "medium-100",
+        "tilesPainted": 104,
+        "firstCover": 300,
+        "visibleSettled": 4053,
+        "visibleTiles": 96,
+        "lookupsIssuedBySettle": 100,
+        "coversLoadedBySettle": 100
+      },
+      {
+        "edition": "large-149",
+        "tilesPainted": 78,
+        "firstCover": 390,
+        "visibleSettled": 4406,
+        "visibleTiles": 96,
+        "lookupsIssuedBySettle": 119,
+        "coversLoadedBySettle": 112
+      }
+    ]
+  },
+  "ratelimit": {
+    "limit": "300 per 15 min per client address, shared by /spotify/editions and /spotify/editions/:id",
+    "headers": [
+      {
+        "path": "/spotify/editions",
+        "status": 200,
+        "remaining": "0",
+        "reset": "899"
+      },
+      {
+        "path": "/spotify/editions/6992257ccd64e387a22e1bb1",
+        "status": 429,
+        "remaining": "0",
+        "reset": "898",
+        "retryAfter": "898"
+      },
+      {
+        "path": "/spotify/editions",
+        "status": 429,
+        "remaining": "0",
+        "reset": "897",
+        "retryAfter": "897"
+      }
+    ],
+    "panelText": "Failed to load this edition. Please try again.",
+    "wallTextAfterReload": "Failed to load playlists. Please try again."
+  }
+}
