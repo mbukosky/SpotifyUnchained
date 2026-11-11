@@ -96,6 +96,40 @@ describe('fetchPlaylistTracks', () => {
       added_at: new Date('2026-02-13T00:00:00Z'),
       open_url: 'https://open.spotify.com/track/track1',
       uri: 'spotify:track:track1',
+      cover: '',
+    });
+  });
+
+  describe('cover', () => {
+    const fetchWithAlbum = album => fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        items: [{ track: { id: 't1', name: 'Song', artists: [{ name: 'A' }], external_urls: {}, uri: '', ...(album && { album }) } }],
+        next: null,
+      }),
+    });
+
+    it('stores the 300 px album image', async () => {
+      fetchWithAlbum({ images: [
+        { url: 'https://i.scdn.co/image/big', width: 640, height: 640 },
+        { url: 'https://i.scdn.co/image/mid', width: 300, height: 300 },
+        { url: 'https://i.scdn.co/image/small', width: 64, height: 64 },
+      ] });
+      const [track] = await fetchPlaylistTracks('p', 't');
+      expect(track.cover).toBe('https://i.scdn.co/image/mid');
+    });
+
+    it('falls back to the widest image when none is 300 px', async () => {
+      fetchWithAlbum({ images: [{ url: 'https://i.scdn.co/image/big', width: 640, height: 640 }] });
+      const [track] = await fetchPlaylistTracks('p', 't');
+      expect(track.cover).toBe('https://i.scdn.co/image/big');
+    });
+
+    it('stores an empty string without album images', async () => {
+      fetchWithAlbum(undefined);
+      fetchWithAlbum({ images: [] });
+      expect((await fetchPlaylistTracks('p', 't'))[0].cover).toBe('');
+      expect((await fetchPlaylistTracks('p', 't'))[0].cover).toBe('');
     });
   });
 

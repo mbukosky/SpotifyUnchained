@@ -867,33 +867,54 @@ test('Enter on the Spotify link opens it and keeps the embed', async ({ app, bro
   await expect(browser).toHaveURL(`${app.baseUrl}/?edition=${editionId('DE')}`);
 });
 
-// openspec/specs/archive-browsing/spec.md
-// Requirement: Track cover art. Scenario: Cover loads.
-// Stands in for Spotify's oEmbed endpoint for the first track only, answering with a
-// data: image (img-src allows data:), so nothing reaches Spotify.
-test('a cover that loads shows on its tile', async ({ app, browser }) => {
-  const PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
-  const first = 'e2eDE02142026n1'.padEnd(22, 'x');
-  const lookups: string[] = [];
-  await browser.route(/^https:\/\/open\.spotify\.com\/oembed\?/, async (route) => {
-    const track = new URL(new URL(route.request.url).searchParams.get('url') ?? '').pathname.split('/').pop() ?? '';
-    lookups.push(track);
-    if (track !== first) {
-      await route.abort();
+// A 1x1 PNG, standing in for every Spotify cover image.
+const PIXEL_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+/** Answers Spotify's image host with a tiny PNG, and with a 404 for URLs that match `broken`. */
+async function mockCovers(browser: Browser, broken?: RegExp) {
+  const requested: string[] = [];
+  const failed: string[] = [];
+  await browser.route('https://i.scdn.co/**', async (route) => {
+    const url = route.request.url;
+    requested.push(url);
+    if (broken?.test(url)) {
+      failed.push(url);
+      await route.fulfill({ status: 404, contentType: 'text/plain', body: 'Not found' });
       return;
     }
-    await route.fulfill({
-      json: { thumbnail_url: PIXEL },
-      headers: { 'access-control-allow-origin': '*' },
-    });
+    await route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL_PNG });
   });
+  return { requested, failed };
+}
+
+/** Answers every request to Spotify's embed page with the error page it sends a limited visitor. */
+async function mockRefusedEmbed(browser: Browser) {
+  await browser.route(/^https:\/\/open\.spotify\.com\/embed\//, async (route) => {
+    await route.fulfill({ status: 429, contentType: 'text/html', body: '<h1>429</h1>Too Many Requests' });
+  });
+}
+
+// openspec/changes/store-cover-art/specs/archive-browsing/spec.md
+// Requirement: Track cover art. Scenario: Cover loads.
+// The seed gives DE 02.14.2026 covers on its first two tracks and none on the third.
+// Spotify's image host is answered here with a PNG, since appHostOnly blocks it.
+test('a cover that loads shows on its tile', async ({ app, browser }) => {
+  const { requested } = await mockCovers(browser);
   await presetRegion(browser, 'DE');
   await openEdition(app, editionId('DE'));
   await expect(coverTiles(browser)).toHaveCount(3);
 
-  await expect(coverTile(browser, 0)).toHaveAttribute('data-cover', 'loaded');
-  await expect(browser.locator(`${PANEL} .cover-tile.has-cover[data-index="0"]`)).toHaveCount(1);
-  await expect(browser.locator(`${PANEL} .cover-tile[data-index="0"] img`)).toHaveAttribute('src', PIXEL);
+  for (const index of [0, 1]) {
+    await expect(coverTile(browser, index)).toHaveAttribute('data-cover', 'loaded');
+    await expect(browser.locator(`${PANEL} .cover-tile.has-cover[data-index="${index}"]`)).toHaveCount(1);
+    // The 64 px variant on a 1x screen, else the stored 300 px image.
+    expect(
+      await browser.locator(`${PANEL} .cover-tile[data-index="${index}"] img`).getAttribute('src'),
+    ).toMatch(/^https:\/\/i\.scdn\.co\/image\/ab67616d0000(4851|1e02)[0-9a-f]{24}$/);
+  }
   // The image fades in, so wait for the end of its transition.
   const shown = () =>
     browser.evaluate((selector: string) => {
@@ -901,69 +922,101 @@ test('a cover that loads shows on its tile', async ({ app, browser }) => {
       return img.complete && img.naturalWidth > 0 && getComputedStyle(img).opacity;
     }, PANEL);
   await expect.poll(shown, { timeout: 3000 }).toBe('1');
-  await expect(coverTile(browser, 1)).toHaveAttribute('data-cover', 'fallback');
-  expect(lookups).toContain(first);
+  expect(requested.length).toBeGreaterThanOrEqual(2);
 });
 
-// openspec/specs/archive-browsing/spec.md
+// openspec/changes/store-cover-art/specs/archive-browsing/spec.md
+// Requirement: Track cover art. Scenario: No lookups from the browser.
+// CA 02.14.2026 has 250 tracks, all with covers but the last. Any URL with /oembed is recorded and refused, on any host.
+test('opening and scrolling an edition sends no oEmbed request', async ({ app, browser }) => {
+  await mockCovers(browser);
+  const lookups: string[] = [];
+  await browser.route(/\/oembed/, async (route) => {
+    lookups.push(route.request.url);
+    await route.abort();
+  });
+  await presetRegion(browser, 'CA');
+  await openEdition(app, editionId('CA'));
+  await expect(coverTiles(browser)).toHaveCount(250);
+  await expect(coverTile(browser, 0)).toHaveAttribute('data-cover', 'loaded');
+
+  for (const index of [60, 120, 180, 248]) {
+    await browser.evaluate(
+      (selector: string) => document.querySelector(selector)?.scrollIntoView({ block: 'center' }),
+      `${PANEL} .cover-tile[data-index="${index}"]`,
+    );
+    await expect(coverTile(browser, index)).toHaveAttribute('data-cover', 'loaded');
+  }
+
+  expect(lookups).toEqual([]);
+  // Nothing about covers is kept in the browser either.
+  const keys = await browser.evaluate(() => [...Object.keys(localStorage), ...Object.keys(sessionStorage)]);
+  expect(keys.filter((key) => /cover/i.test(key))).toEqual([]);
+});
+
+// openspec/changes/store-cover-art/specs/archive-browsing/spec.md
 // Requirement: Track cover art. Scenario: Cover unavailable.
-// appHostOnly blocks every oEmbed lookup, so every cover fails.
-test('a missing cover shows the artist initials', async ({ agent, app, browser }) => {
+// In DE 02.14.2026 track 3 has no cover, and the image of track 2 answers 404.
+test('a missing or failing cover shows the artist initials', async ({ agent, app, browser }) => {
+  const { failed } = await mockCovers(browser, /06021420260002/);
   await presetRegion(browser, 'DE');
   await openEdition(app, editionId('DE'));
   await expect(coverTiles(browser)).toHaveCount(3);
-  const first = coverTile(browser, 0);
+  await expect(coverTile(browser, 0)).toHaveAttribute('data-cover', 'loaded');
+  await expect.poll(() => failed.length).toBeGreaterThan(0);
 
-  await expect(first).toHaveAttribute('data-cover', 'fallback');
-  await expect(browser.locator(`${PANEL} .cover-tile[data-index="0"] .cover-fallback`)).toHaveText('TA');
-  await expect(browser.locator(`${PANEL} .cover-tile[data-index="0"] img`)).toHaveCount(0);
+  for (const index of [1, 2]) {
+    await expect(coverTile(browser, index)).toHaveAttribute('data-cover', 'fallback');
+    await expect(browser.locator(`${PANEL} .cover-tile.has-cover[data-index="${index}"]`)).toHaveCount(0);
+    await expect(browser.locator(`${PANEL} .cover-tile[data-index="${index}"] .cover-fallback`)).toHaveText('TA');
+  }
+  await expect(browser.locator(`${PANEL} .cover-tile[data-index="2"] img`)).toHaveCount(0);
   const background = await browser.evaluate(
-    (selector: string) => getComputedStyle(document.querySelector(`${selector} .cover-tile[data-index="0"]`)!).backgroundImage,
+    (selector: string) => getComputedStyle(document.querySelector(`${selector} .cover-tile[data-index="2"]`)!).backgroundImage,
     PANEL,
   );
   expect(background).toMatch(/gradient/);
   await expect(panel(browser).getByRole('alert')).toHaveCount(0);
   await expect(panel(browser).getByText(/error|failed|unavailable/i)).toHaveCount(0);
 
-  await agent.act('Play the first track of the open edition');
+  await agent.act('Play the third track of the open edition');
 
-  await expect(browser.locator(`${PLAYER} iframe.player-embed`)).toHaveAttribute('title', 'Spotify player: Test Track 1 DE');
-  await expect(browser.locator(`${PANEL} .cover-tile.is-playing[data-index="0"]`)).toHaveCount(1);
+  await expect(browser.locator(`${PLAYER} iframe.player-embed`)).toHaveAttribute('title', 'Spotify player: Test Track 3 DE');
+  await expect(browser.locator(`${PANEL} .cover-tile.is-playing[data-index="2"]`)).toHaveCount(1);
 });
 
-// openspec/specs/archive-browsing/spec.md
+// openspec/changes/store-cover-art/specs/archive-browsing/spec.md
 // Requirement: Track preview. Scenario: Spotify is limiting requests.
-// Stands in for Spotify's oEmbed endpoint, answering every lookup with 429.
+// The embed page answers 429 to every request. The six-second deadline and the
+// 30-second hold are real timers, so this is scripted, and "Try now" releases the hold.
 test('a rate-limited player shows a notice until the visitor retries', async ({ app, browser }) => {
-  let refused = 0;
-  await browser.route(/^https:\/\/open\.spotify\.com\/oembed\?/, async (route) => {
-    refused += 1;
-    await route.fulfill({ status: 429, body: 'Too Many Requests', headers: { 'access-control-allow-origin': '*' } });
-  });
+  await mockRefusedEmbed(browser);
+  await mockCovers(browser);
   await presetRegion(browser, 'DE');
   await openEdition(app, editionId('DE'));
   await expect(coverTiles(browser)).toHaveCount(3);
-  await expect.poll(() => refused).toBeGreaterThan(0);
 
   await coverTile(browser, 0).click();
+  await expect(browser.locator(`${PLAYER} .player-limited`)).toContainText('The Spotify player did not load', { timeout: 10000 });
 
-  await expect(browser.locator(`${PLAYER} .player-name`)).toHaveText('Test Track 1 DE');
+  await coverTile(browser, 1).click();
+
+  await expect(browser.locator(`${PLAYER} .player-name`)).toHaveText('Test Track 2 DE');
   await expect(browser.locator(`${PLAYER} .player-limited`)).toContainText('Spotify is limiting requests');
   await expect(browser.locator(`${PLAYER} iframe.player-embed`)).toHaveCount(0);
 
   await browser.locator(`${PLAYER} .player-retry`).click();
 
-  await expect(browser.locator(`${PLAYER} iframe.player-embed`)).toHaveAttribute('title', 'Spotify player: Test Track 1 DE');
+  await expect(browser.locator(`${PLAYER} iframe.player-embed`)).toHaveAttribute('title', 'Spotify player: Test Track 2 DE');
   await expect(browser.locator(`${PLAYER} .player-limited`)).toHaveCount(0);
 });
 
-// openspec/specs/archive-browsing/spec.md
+// openspec/changes/store-cover-art/specs/archive-browsing/spec.md
 // Requirement: Track preview. Scenario: Spotify refuses the embed.
 // Stands in for Spotify's embed page with an error page, which never reports ready.
 test('an embed Spotify refuses is covered by a notice', async ({ app, browser }) => {
-  await browser.route(/^https:\/\/open\.spotify\.com\/embed\//, async (route) => {
-    await route.fulfill({ status: 429, contentType: 'text/html', body: '<h1>429</h1>Too Many Requests' });
-  });
+  await mockRefusedEmbed(browser);
+  await mockCovers(browser);
   await presetRegion(browser, 'DE');
   await openEdition(app, editionId('DE'));
   await expect(coverTiles(browser)).toHaveCount(3);

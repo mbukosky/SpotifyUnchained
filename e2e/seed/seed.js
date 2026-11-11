@@ -22,6 +22,13 @@
 //   AU "New Music Friday Holiday Special", 1 track, published 2024-12-20:
 //     a title with no date, and AU's 2024 row.
 //
+// Covers: every track has a cover URL of Spotify's real shape (i.scdn.co, 300 px
+// id prefix, 24 hex digits from region, week and position; not real images) except
+// the last track of each edition. So US 02.14.2026 has 29 covers of 30, DE 02.14.2026
+// has initials on its third tile, and the one-track editions (the AU weeks and the
+// Holiday Special) have no cover at all and so no cover column. The AU 02.07.2026
+// extras follow the same rule: the field track has a cover, the escaping track none.
+//
 // Every row has a fixed _id from editionId() below; tests/helpers.ts mirrors it.
 var REGIONS = ['US', 'UK', 'CA', 'BR', 'MX', 'DE', 'AU'];
 var FRIDAYS = [
@@ -40,10 +47,23 @@ function editionId(region, label, suffix) {
   return ObjectId('e2e' + pad2(REGIONS.indexOf(region) + 1) + '00' + label.replace(/\./g, '') + (suffix || '000000000'));
 }
 
-function makeTrack(region, label, date, n) {
+function pad(text, width) {
+  var out = String(text);
+  while (out.length < width) out = '0' + out;
+  return out;
+}
+
+// A well-formed but invented Spotify image URL: the 300 px album-art prefix, then
+// 24 hex digits made of the region number, the label's digits and the position.
+function coverUrl(region, label, n) {
+  var tail = pad(REGIONS.indexOf(region) + 1, 2) + label.replace(/\./g, '') + pad(n.toString(16), 4);
+  return 'https://i.scdn.co/image/ab67616d00001e02' + tail + '5eed5eed5eed5eed'.slice(0, 24 - tail.length);
+}
+
+function makeTrack(region, label, date, n, withCover) {
   // Spotify IDs are 22 alphanumerics; the app skips anything else when saving.
   var id = ('e2e' + region + label.replace(/\./g, '') + 'n' + n + 'xxxxxxxxxxxxxxxxxxxxxx').slice(0, 22);
-  return {
+  var track = {
     id: id,
     name: 'Test Track ' + n + ' ' + region,
     artist: 'Test Artist ' + n,
@@ -51,11 +71,13 @@ function makeTrack(region, label, date, n) {
     open_url: 'https://open.spotify.com/track/' + id,
     uri: 'spotify:track:' + id,
   };
+  if (withCover) track.cover = coverUrl(region, label, n);
+  return track;
 }
 
 function makeTracks(region, label, date, count) {
   var tracks = [];
-  for (var n = 1; n <= count; n++) tracks.push(makeTrack(region, label, date, n));
+  for (var n = 1; n <= count; n++) tracks.push(makeTrack(region, label, date, n, n < count));
   return tracks;
 }
 
@@ -78,7 +100,7 @@ FRIDAYS.forEach(function (friday) {
       tracks[2].uri = 'not-a-uri';
     }
     if (key === 'AU.02.07.2026') {
-      var fieldTrack = makeTrack(region, friday.label, friday.date, 4);
+      var fieldTrack = makeTrack(region, friday.label, friday.date, 4, true);
       fieldTrack.name = 'Test Track';
       fieldTrack.artist = 'Test Artist';
       fieldTrack.open_url = 'https://open.spotify.com/track/123';

@@ -27,7 +27,7 @@ export async function buildList({ size, page, sortDir, region }) {
       { $sort: { published_date: sortDir, _regionRank: 1 } },
       { $skip: skip },
       { $limit: size },
-      { $project: { _regionRank: 0 } },
+      { $project: { _regionRank: 0, 'tracks.cover': 0 } },
     ]),
   ]);
 

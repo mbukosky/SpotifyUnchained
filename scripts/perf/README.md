@@ -13,7 +13,7 @@ Raw output lands in `scripts/perf/results/` (gitignored).
 | `lighthouse.mjs` | First load of `/`: N desktop runs with no throttling and N default mobile runs (simulated slow 4G, 4x CPU). |
 | `api.mjs` | Latency (sequential sample + autocannon) and payload sizes for the edition endpoints and `/spotify?page=1&size=5`. |
 | `compare.mjs` | Writes the headline numbers to `docs/performance-baseline.json`, or compares the newest results with it. |
-| `flows.mjs` | Browser interaction timings from the app's `su:` performance marks, per network/CPU condition. Also the opt-in `covers` (real Spotify) and `ratelimit` scenarios. |
+| `flows.mjs` | Browser interaction timings from the app's `su:` performance marks, per network/CPU condition. Also the opt-in `covers` (real cover images) and `ratelimit` scenarios. Every other scenario answers cover images locally with a one-pixel PNG. |
 
 ## Rerun the baseline locally
 
@@ -34,9 +34,10 @@ PERF_RESTART="scripts/perf/server.sh restart" node scripts/perf/api.mjs
 #    the server before each phase (~55 min)
 PERF_RESTART="scripts/perf/server.sh restart" node scripts/perf/flows.mjs --runs 30
 
-# 6. Optional, run sparingly: real Spotify cover lookups (default plan 31-track x3,
-#    100 x1, 149 x1 = about 340 oEmbed lookups, unthrottled, 8 s pauses, stops on
-#    the first 429) and our own 429 path (spends the local limiter with autocannon)
+# 6. Optional: real cover images from Spotify's CDN (default plan 31-track x3,
+#    100 x1, 149 x1, unthrottled, 8 s pauses; needs covers stored in the database,
+#    see scripts/backfill-covers.js) and our own 429 path (spends the local
+#    limiter with autocannon)
 PERF_RESTART="scripts/perf/server.sh restart" node scripts/perf/flows.mjs --scenarios covers,ratelimit --conditions none
 
 scripts/perf/server.sh stop

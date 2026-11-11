@@ -374,3 +374,62 @@ Worse than attempt 2 by more than 5% and 3 ms (29 cells, from diffing `compare-a
 3. **Shared server-side cover cache** (needs the user's decision; design.md section 11 rejected it once): the server, or the sync job (playlist items carry `album.images`), records `id → image id` once, so every visitor's first open needs no lookups. That gives the repeat-visit numbers (~0.2 s for 96 covers) to first visits. It is the only lever left that removes Spotify's tail.
 4. **Unthrottled open-149 tiles (56.9, needs 54) and panel (39, needs 33.5)**: the tiles frame is now ~13 ms; the remaining style cost is per-tile inline styles defeating Chrome's matched-properties cache. One option: draw the fallback gradient on a child (`.cover-fallback`) and keep the button free of inline style apart from `--tile-c`. The panel number is the known ~20 ms native first frame.
 5. Do not spend more on region switch or desktop LCP/SI without the background/entrance design decision.
+
+## After the hill climb: stored cover art (`store-cover-art`)
+
+Measured 2026-11-10 on the same machine, quiet this time (load average 3–4,
+against 36–40 for attempt 3): Lighthouse 7 runs, `api.mjs`, `flows.mjs --runs 30`
+and one default-plan cover run, all with `PERF_RESTART`, against the local
+database after `scripts/backfill-covers.js`. Full table:
+`scripts/perf/results/compare-store-cover-art.txt` (flows
+`flows-1794355028107.json` was the run before the image-deferral fix below; the
+newest `flows-*.json` is the final one), covers `covers-stored.json`.
+`bun run test` 172/172, `bun run test:e2e` 153 passed, 1 skipped.
+
+This is recommendation 3 of attempt 3: the sync stores each track's album image
+URL, the edition response carries it, and the browser makes no oEmbed lookups.
+
+**KPIs at −25% or better: 142/192** (attempt 3: 140).
+
+| Covers, first visit (real images) | Attempt 3 | Stored covers |
+|---|---|---|
+| 31 tracks, on-screen tiles settled (median of 3) | 1,004 ms | 385 ms |
+| 100 tracks | 3,131 ms | 311 ms |
+| 149 tracks | did not settle (61 lookups failed) | 656 ms |
+| Requests to Spotify to find covers | one per tile | 0 |
+| Image bytes, 149 tracks at 1x | — | 0.49 MB |
+
+| Interaction (p50 unless noted) | Baseline | Attempt 3 | Now |
+|---|---|---|---|
+| cpu4 open-149 tiles | 396.9 | 321.1 | 293.6 |
+| cpu4 open-149 tiles p95 | 422.7 | 337.0 | 301.7 |
+| cpu4 next-edition 149 tiles | 125.2 | 68.3 | 57.3 |
+| cpu4 deep link 149 p95 | 1,744.7 | 982.4 | 872.9 |
+| unthrottled region BR p95 | 19.1 | 30.4 | 18.5 |
+| desktop LCP (Lighthouse) | 181.9 | 187.5 | 156.3 |
+
+**What got worse, and why**
+
+- **Edition response size, +39–42% compressed** (31 tracks 1,191 → 1,682 B; 100
+  tracks 3,541 → 4,937 B; 149 tracks 5,160 → 7,204 B; 243 tracks 7,832 →
+  11,144 B). The cover URLs are 24 random hex characters per track and do not
+  compress. Four `bytesCompressed` cells fall back under the 25% target because
+  of this. It buys the removal of one oEmbed request per tile.
+- `api.edition-243.p99` 1.3 → 9.2 ms (p50 0.29, p95 1.54): one slow request in
+  the API run. `fast4g.deeplink.small-31` p95 546 → 870 ms with p50 unchanged
+  (541): also a single run. Neither was re-measured.
+
+**Found while measuring**
+
+- The first run of this change was slower than attempt 3 under 4x CPU: next
+  edition (149 tracks) 68 → 125 ms p50, open-149 321 → 364. Creating every
+  tile's `<img>` in the same render as the tiles was the cost; with oEmbed the
+  images used to arrive later, outside the measured window. `CoverGrid` now
+  renders the tiles first and adds the images in a task after that frame
+  (`painted === tracks`). The numbers above are with that fix.
+- The 29 "worse than attempt 2" cells of attempt 3 were noise from the busy
+  machine, as suspected: on a quiet machine 49 cells are more than 10% better
+  than attempt 3 and 104 are within 10%.
+- Measurement change: the standard flows now answer cover-image requests with a
+  one-pixel PNG instead of letting them reach Spotify. Aborting them would send
+  every tile down its image-error path, which no visitor sees.

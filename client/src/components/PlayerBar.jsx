@@ -1,13 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import SavePlaylist from './SavePlaylist';
 import Equalizer from './Equalizer';
-import { reportSpotifyLimited, requestCover, useCover, useSpotifyLimited } from '../lib/covers';
+import { coverUrl } from '../lib/covers';
 import { artistColor, clean, position } from '../lib/tracks';
 
 const finePointer = () => window.matchMedia?.('(hover: hover) and (pointer: fine)').matches;
 
 const SPOTIFY = 'https://open.spotify.com';
 const EMBED_READY_MS = 6000;
+const HOLD_MS = 30_000;
+
+// When an embed last missed its ready deadline, or -Infinity once one has
+// reported ready since. Module-level so it outlives the Frame of the refused
+// track: the next track opened reads it.
+let refusedAt = -Infinity;
+const holdLeft = () => refusedAt + HOLD_MS - Date.now();
 
 // The compact Spotify player. It asks the embed to start once it loads;
 // browsers may still block autoplay until the visitor presses play. A working
@@ -57,24 +64,30 @@ function Embed({ track, onAlive }) {
   );
 }
 
-// The embed, with a notice in its place when Spotify is refusing requests.
-// Cover lookups and the embed share Spotify's limit per visitor, so:
-// - a track opened while lookups are being refused (429) does not load the
-//   embed at all until lookups succeed again;
-// - an embed that loads but never reports ready is covered by the notice,
-//   and cover lookups are paused to let the limit pass.
-// "Try now" loads the embed again. An embed that works is never taken away.
+// The embed, with a notice in its place when Spotify is refusing it. Spotify
+// limits embeds per visitor, so:
+// - an embed that loads but never reports ready is covered by the notice;
+// - a track opened within 30 seconds of that does not load its embed until
+//   the 30 seconds are up, so a burst of track changes does not keep the
+//   limit hit. Each refusal starts the 30 seconds again; there is no backoff,
+//   as one embed every 30 seconds is already gentle.
+// "Try now" loads the embed at once. An embed that works is never taken away.
 function Frame({ track }) {
-  const limited = useSpotifyLimited();
-  const [held, setHeld] = useState(limited);
+  const [held, setHeld] = useState(() => holdLeft() > 0);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  if (held && !limited) setHeld(false);
+  useEffect(() => {
+    if (!held) return undefined;
+    const timer = setTimeout(() => setHeld(false), Math.max(0, holdLeft()));
+    return () => clearTimeout(timer);
+  }, [held]);
   const onAlive = useCallback((ok) => {
     setFailed(!ok);
-    if (!ok) reportSpotifyLimited();
+    refusedAt = ok ? -Infinity : Date.now();
   }, []);
   const retry = () => {
+    // The visitor chose to try: the next track opened should try too.
+    refusedAt = -Infinity;
     setHeld(false);
     setFailed(false);
     setAttempt(n => n + 1);
@@ -106,11 +119,7 @@ export default function PlayerBar({ edition, index, accent, onSelect, onClose })
   const ref = useRef(null);
   const tracks = edition.tracks;
   const track = index >= 0 ? tracks[index] : null;
-  const cover = useCover(track?.id);
-
-  useEffect(() => {
-    if (track) requestCover(track.id, true);
-  }, [track]);
+  const cover = coverUrl(track?.cover);
 
   // Publish the bar's height so tiles scrolled into view clear it. The
   // property is inherited by every tile, so changing it restyles them all:
@@ -144,7 +153,7 @@ export default function PlayerBar({ edition, index, accent, onSelect, onClose })
         <>
           <div className="player-now" style={{ '--tile-c': color.color }}>
             <span className="player-art" style={{ background: color.gradient }} aria-hidden="true">
-              {cover && <img src={cover} alt="" />}
+              {cover && <img key={cover} src={cover} alt="" onError={(e) => { e.currentTarget.hidden = true; }} />}
               <Equalizer />
             </span>
             <span className="player-text" aria-live="polite">

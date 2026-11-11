@@ -1,5 +1,5 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { preloadImage, requestCover, smallCover, useCover, useLazyCovers, useSmallCovers } from '../lib/covers';
+import { coverUrl, preloadImage, smallCover, useSmallCovers } from '../lib/covers';
 import { mark, markPainted } from '../lib/perf';
 import { artistColor, clean, initials, moveIndex, position, tileLabel } from '../lib/tracks';
 import Equalizer from './Equalizer';
@@ -10,8 +10,8 @@ const TIP_GAP = 8;
 const grows = () => window.matchMedia?.('(hover: hover) and (pointer: fine)').matches;
 const TILE_SCALE = 1.7;
 
-const CoverTile = memo(function CoverTile({ track, index, gradient, color, playing, tabStop, small }) {
-  const url = useCover(track.id);
+const CoverTile = memo(function CoverTile({ track, index, gradient, color, playing, tabStop, small, images }) {
+  const url = images ? coverUrl(track.cover) : null;
   const [loaded, setLoaded] = useState(false);
   // The 64 px variant until the tile is enlarged (hover or keyboard focus) or
   // the variant fails; then the 300 px original, swapped in once decoded.
@@ -74,9 +74,21 @@ export default function CoverGrid({ tracks, accent, activeIndex, onPlay }) {
   }
 
   const colors = useMemo(() => tracks.map(t => artistColor(t.artist, accent)), [tracks, accent]);
-  useLazyCovers(gridRef, tracks);
   const small = useSmallCovers(gridRef, tracks);
   useEffect(() => markPainted('tracks-rendered', tracks.length), [tracks]);
+
+  // The tiles paint first, on their fallback colors; their images are added
+  // once that frame is out. Creating up to 250 <img> elements in the same
+  // render costs a slow phone tens of milliseconds before anything shows.
+  const [painted, setPainted] = useState(null); // the track list whose tiles have painted
+  useEffect(() => {
+    let timer;
+    const frame = requestAnimationFrame(() => { timer = setTimeout(() => setPainted(tracks), 0); });
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+    };
+  }, [tracks]);
 
   const tileAt = (target) => {
     const el = target?.closest?.('.cover-tile');
@@ -108,9 +120,7 @@ export default function CoverGrid({ tracks, accent, activeIndex, onPlay }) {
 
   const onPointerOver = (e) => {
     const el = tileAt(e.target);
-    if (!el) return;
-    requestCover(el.dataset.trackId, true);
-    if (e.pointerType === 'mouse') setTip(Number(el.dataset.index));
+    if (el && e.pointerType === 'mouse') setTip(Number(el.dataset.index));
   };
 
   // Leaving with the mouse hides the label, unless a tile has keyboard focus.
@@ -178,6 +188,7 @@ export default function CoverGrid({ tracks, accent, activeIndex, onPlay }) {
           playing={i === activeIndex}
           tabStop={i === focusIdx}
           small={small}
+          images={painted === tracks}
         />
       ))}
       {t && (

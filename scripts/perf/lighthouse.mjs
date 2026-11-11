@@ -4,8 +4,8 @@
 //
 //   node scripts/perf/lighthouse.mjs [--runs 5] [--base URL] [--presets desktop,mobile]
 //
-// Google Analytics and Spotify oEmbed/embed are blocked so test loads never
-// reach the real analytics property; Google Fonts load from the network.
+// Google Analytics, Spotify's embed and cover images are blocked so test loads
+// never reach the real analytics property or Spotify; Google Fonts load from the network.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
@@ -20,7 +20,7 @@ const { values: args } = parseArgs({
 const URL_ = `${args.base.replace(/\/$/, '')}/`;
 const DIR = new URL('./results/lighthouse/', import.meta.url).pathname;
 mkdirSync(DIR, { recursive: true });
-const BLOCK = ['*googletagmanager.com*', '*google-analytics.com*', '*open.spotify.com/oembed*', '*open.spotify.com/embed*'];
+const BLOCK = ['*googletagmanager.com*', '*google-analytics.com*', '*i.scdn.co/*', '*open.spotify.com/embed*'];
 const stamp = Date.now();
 
 const median = xs => { const s = [...xs].sort((a, b) => a - b); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };

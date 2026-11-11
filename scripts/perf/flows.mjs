@@ -5,8 +5,8 @@
 //   node scripts/perf/flows.mjs [--runs 20] [--conditions unthrottled,fast4g,fast4g-cpu4]
 //                               [--scenarios wall,open,deeplink,region,step] [--base URL]
 //
-// The `covers` (real Spotify oEmbed lookups) and `ratelimit` (exhausts the
-// local limiter) scenarios only run when named explicitly; every other scenario aborts oEmbed, the embed and Google
+// The `covers` (real cover images from Spotify's CDN) and `ratelimit` (exhausts the
+// local limiter) scenarios only run when named explicitly; every other scenario answers cover images locally and aborts the embed and Google
 // Analytics. PERF_RESTART (a shell command) runs before each phase so a local
 // server's rate limiter starts fresh; leave it unset against production.
 import { execFileSync, execSync } from 'node:child_process';
@@ -42,6 +42,11 @@ const CONDITIONS = {
   'fast4g-cpu4': { latency: 165, downloadThroughput: 1_012_500, uploadThroughput: 168_750, cpu: 4 },
 };
 const BLOCK = /open\.spotify\.com\/(oembed|embed)|googletagmanager\.com|google-analytics\.com/;
+// Cover images are answered locally with a one-pixel PNG, so runs do not
+// depend on Spotify's CDN. Aborting them instead would send every tile down
+// its image-error path (a re-render and a second request), which no visitor sees.
+const COVER_IMAGES = /\/\/(i\.scdn\.co|[a-z0-9-]+\.spotifycdn\.com)\/image\//;
+const PIXEL = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
 const BLOCK_GA = /googletagmanager\.com|google-analytics\.com/;
 const VIEWPORT = { width: 1440, height: 900 };
 
@@ -70,6 +75,7 @@ async function newPage(browser, cond, { region, blockCovers = true } = {}) {
   const ctx = await browser.newContext({ viewport: VIEWPORT });
   const page = await ctx.newPage();
   await page.route(blockCovers ? BLOCK : BLOCK_GA, r => r.abort());
+  if (blockCovers) await page.route(COVER_IMAGES, r => r.fulfill({ status: 200, contentType: 'image/png', body: PIXEL }));
   await page.addInitScript(INIT);
   if (region) await page.addInitScript(r => localStorage.setItem('selectedRegion', r), region);
   if (cond) {
@@ -215,8 +221,10 @@ const SCENARIOS = {
   },
 };
 
-// Real oEmbed lookups: small sample, unthrottled, pauses between runs, stop on
-// 429. Each run closes its page as soon as the tiles in the viewport show covers.
+// Real cover images: small sample, unthrottled, pauses between runs. The cover
+// URLs come with the edition, so the only Spotify requests are the images; any
+// oEmbed request is counted because there should be none. Each run closes its
+// page as soon as the tiles in the viewport show covers.
 async function covers(browser) {
   const runs = [];
   const plan = args['cover-plan'].split(',').map(x => x.split(':')).map(([l, n]) => [EDITIONS.find(e => e.label === l), Number(n)]);
@@ -224,10 +232,12 @@ async function covers(browser) {
     for (let i = 0; i < n; i++) {
       const { ctx, page } = await newPage(browser, null, { region: ed.region, blockCovers: false });
       const lookups = [];
-      page.on('request', r => { if (r.url().includes('/oembed')) lookups.push({ id: decodeURIComponent(r.url()).split('/track/')[1], t: Date.now() }); });
+      page.on('request', r => { if (r.url().includes('/oembed')) lookups.push(r.url()); });
+      const isImage = r => /\/\/(i\.scdn\.co|[a-z0-9-]+\.spotifycdn\.com)\/image\//.test(r.url());
       const statuses = [];
-      page.on('response', r => { if (r.url().includes('/oembed')) statuses.push(r.status()); });
-      page.on('requestfailed', r => { if (r.url().includes('/oembed')) statuses.push('failed'); });
+      let imageBytes = 0;
+      page.on('response', r => { if (isImage(r)) { statuses.push(r.status()); imageBytes += Number(r.headers()['content-length'] || 0); } });
+      page.on('requestfailed', r => { if (isImage(r)) statuses.push('failed'); });
       try {
         await loadWall(page, `${BASE}/`);
         const t0 = await openTile(page, ed);
@@ -245,11 +255,10 @@ async function covers(browser) {
         }, geo.visible, { timeout: 30_000, polling: 250 }).then(h => h.jsonValue()).catch(() => null);
         const run = { run: i + 1, edition: ed.label, tilesPainted: painted - t0, firstCover: firstCover && firstCover - t0,
           visibleTiles: geo.visible.length, visibleSettled: settled && settled - t0, tilesInObserverMargin: geo.inMargin,
-          lookupsIssuedBySettle: lookups.length, statuses: tally(statuses), coversLoaded: await page.evaluate(() => performance.getEntriesByName('su:cover-loaded').length) };
-        // The context closes here, so lookups still queued are never sent.
+          lookupsIssuedBySettle: lookups.length, imageStatuses: tally(statuses), imageBytes, coversLoaded: await page.evaluate(() => performance.getEntriesByName('su:cover-loaded').length) };
         runs.push(run);
         console.log(JSON.stringify(run));
-        if (statuses.includes(429)) { console.log('Spotify returned 429: stopping the cover scenario'); return { runs, stopped: '429' }; }
+        if (statuses.includes(429)) { console.log('Spotify returned 429 for an image: stopping the cover scenario'); return { runs, stopped: '429' }; }
       } finally { await ctx.close(); }
       await new Promise(r => setTimeout(r, 8000));
     }

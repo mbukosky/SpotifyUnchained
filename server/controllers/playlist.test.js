@@ -49,6 +49,14 @@ describe('playlist controller - list', () => {
     mockAggregate.mockResolvedValue([]);
   });
 
+  it('projects the track covers out of the list', async () => {
+    mockCountDocuments.mockResolvedValue(0);
+    const { req, res } = mockReqRes();
+    await list(req, res);
+
+    expect(stage('$project')).toMatchObject({ 'tracks.cover': 0 });
+  });
+
   it('uses default pagination: page=1, size=5, sort=asc', async () => {
     const items = [{ title: 'test' }];
     mockCountDocuments.mockResolvedValue(1);

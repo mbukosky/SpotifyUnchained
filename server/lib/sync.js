@@ -3,6 +3,7 @@ import config from '../config.js';
 import Playlist from '../models/playlist.js';
 import { PLAYLIST_IDS } from './regions.js';
 import { invalidateArchive } from './archiveCache.js';
+import { chooseCover } from './cover.js';
 
 function getRecentFriday() {
   const now = new Date();
@@ -60,6 +61,7 @@ async function fetchPlaylistTracks(playlistId, token) {
         added_at: item.added_at ? new Date(item.added_at) : new Date(),
         open_url: item.track.external_urls?.spotify || '',
         uri: item.track.uri || '',
+        cover: chooseCover(item.track),
       });
     }
 
@@ -112,7 +114,7 @@ async function sync() {
   }
 }
 
-export { getRecentFriday, fetchPlaylistTracks, syncPlaylist, sync };
+export { chooseCover, getRecentFriday, fetchPlaylistTracks, syncPlaylist, sync };
 
 export function startSync() {
   if (config.skipSync) {

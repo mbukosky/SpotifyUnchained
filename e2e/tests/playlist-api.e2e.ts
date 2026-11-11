@@ -248,8 +248,8 @@ test('a single edition has its tracks in archive order', async ({ app }) => {
     region: 'US',
     date: '2026-02-14',
   });
-  // Every seed US track has the derivable uri and open_url, so only three columns are sent.
-  expect(Object.keys(edition.tracks).sort()).toEqual(['artist', 'id', 'name']);
+  // Every seed US track has the derivable uri and open_url, so only the cover column joins the three.
+  expect(Object.keys(edition.tracks).sort()).toEqual(['artist', 'cover', 'id', 'name']);
   expect(edition.tracks.id).toHaveLength(30);
   expect(edition.tracks.artist).toHaveLength(30);
   expect(edition.tracks.name).toEqual(Array.from({ length: 30 }, (_, i) => `Test Track ${i + 1} US`));
@@ -260,15 +260,62 @@ test('a single edition has its tracks in archive order', async ({ app }) => {
 // BR has empty and malformed uris; AU 02.07 has one open_url that isn't derived from its id.
 test('uri and open_url columns are sent only when some track differs', async ({ app }) => {
   const br = await getJson(`${app.baseUrl}/spotify/editions/${editionId('BR')}`);
-  expect(Object.keys(br.tracks).sort()).toEqual(['artist', 'id', 'name', 'uri']);
+  expect(Object.keys(br.tracks).sort()).toEqual(['artist', 'cover', 'id', 'name', 'uri']);
   expect(br.tracks.uri).toHaveLength(5);
   expect(br.tracks.uri[1]).toBe('');
   expect(br.tracks.uri[4]).toBe('not-a-uri');
 
   const au = await getJson(`${app.baseUrl}/spotify/editions/${editionId('AU', '02.07.2026')}`);
-  expect(Object.keys(au.tracks).sort()).toEqual(['artist', 'id', 'name', 'open_url']);
+  expect(Object.keys(au.tracks).sort()).toEqual(['artist', 'cover', 'id', 'name', 'open_url']);
   expect(au.tracks.open_url).toHaveLength(au.tracks.id.length);
   expect(au.tracks.open_url).toContain('https://open.spotify.com/track/123');
+});
+
+// openspec/changes/store-cover-art/specs/playlist-api/spec.md
+// Requirement: Single edition. Scenario: Derivable fields omitted.
+// Checked on the Holiday Special (no cover) and on US, where covers are present.
+test('derivable uri and open_url columns are left out', async ({ app }) => {
+  const holiday = await getJson(`${app.baseUrl}/spotify/editions/${editionId('AU', '12.20.2024')}`);
+  expect(holiday.tracks).not.toHaveProperty('uri');
+  expect(holiday.tracks).not.toHaveProperty('open_url');
+
+  const us = await getJson(`${app.baseUrl}/spotify/editions/${editionId('US')}`);
+  expect(us.tracks).not.toHaveProperty('uri');
+  expect(us.tracks).not.toHaveProperty('open_url');
+});
+
+// openspec/changes/store-cover-art/specs/playlist-api/spec.md
+// Requirement: Single edition. Scenario: Covers sent as a full column.
+// US 02.14.2026 has 30 tracks and a cover on 29: the last has none.
+test('the cover column is full length with null for a track without one', async ({ app }) => {
+  const { tracks } = await getJson(`${app.baseUrl}/spotify/editions/${editionId('US')}`);
+
+  expect(tracks.cover).toHaveLength(30);
+  const shape = /^https:\/\/i\.scdn\.co\/image\/ab67616d00001e02[0-9a-f]{24}$/;
+  for (const url of tracks.cover.slice(0, 29)) expect(url).toMatch(shape);
+  expect(tracks.cover[29]).toBeNull();
+});
+
+// openspec/changes/store-cover-art/specs/playlist-api/spec.md
+// Requirement: Single edition. Scenario: No covers stored.
+// The Holiday Special has one track, and the seed leaves every edition's last track without a cover.
+test('an edition with no stored covers has no cover column', async ({ app }) => {
+  const { tracks } = await getJson(`${app.baseUrl}/spotify/editions/${editionId('AU', '12.20.2024')}`);
+
+  expect(tracks.id).toHaveLength(1);
+  expect(Object.keys(tracks).sort()).toEqual(['artist', 'id', 'name']);
+});
+
+// openspec/changes/store-cover-art/specs/playlist-api/spec.md
+// Requirement: List response shape. Scenario: Covers left out of the list.
+test('the list leaves covers out of its tracks', async ({ app }) => {
+  const { items } = await list(app.baseUrl, '?region=US&sort=desc&size=2');
+
+  expect(items).toHaveLength(2);
+  expect(items.flatMap((item) => item.tracks).length).toBeGreaterThan(30);
+  for (const item of items) {
+    for (const track of item.tracks) expect(track).not.toHaveProperty('cover');
+  }
 });
 
 // openspec/changes/friday-wall/specs/playlist-api/spec.md

@@ -70,11 +70,13 @@ export function trackColumns(tracks = []) {
   };
   if (tracks.some(t => t.uri !== trackUri(t.id))) columns.uri = tracks.map(t => t.uri ?? null);
   if (tracks.some(t => t.open_url !== trackUrl(t.id))) columns.open_url = tracks.map(t => t.open_url ?? null);
+  // Sent only once some track has one, so editions not yet backfilled keep their smaller response.
+  if (tracks.some(t => t.cover)) columns.cover = tracks.map(t => t.cover || null);
   return columns;
 }
 
 async function buildEdition(id) {
-  const playlist = await Playlist.findById(id, { title: 1, region: 1, published_date: 1, 'tracks.id': 1, 'tracks.name': 1, 'tracks.artist': 1, 'tracks.uri': 1, 'tracks.open_url': 1 }).lean();
+  const playlist = await Playlist.findById(id, { title: 1, region: 1, published_date: 1, 'tracks.id': 1, 'tracks.name': 1, 'tracks.artist': 1, 'tracks.uri': 1, 'tracks.open_url': 1, 'tracks.cover': 1 }).lean();
   if (!playlist) return null;
   return encodeJson({
     id: String(playlist._id),

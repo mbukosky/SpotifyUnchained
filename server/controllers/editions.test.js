@@ -233,6 +233,21 @@ describe('trackColumns', () => {
   });
 });
 
+describe('trackColumns - cover', () => {
+  const derived = id => ({ id, name: 'x', artist: 'y', uri: `spotify:track:${id}`, open_url: `https://open.spotify.com/track/${id}` });
+
+  it('sends a full cover column with null for a track without one', () => {
+    const [a, b] = TRACK_IDS;
+    const cols = trackColumns([{ ...derived(a), cover: 'https://i.scdn.co/image/a' }, { ...derived(b), cover: '' }]);
+    expect(cols.cover).toEqual(['https://i.scdn.co/image/a', null]);
+  });
+
+  it('leaves out the cover column when no track has a cover', () => {
+    const [a, b] = TRACK_IDS;
+    expect(trackColumns([derived(a), { ...derived(b), cover: '' }]).cover).toBeUndefined();
+  });
+});
+
 describe('edition rate limit (routes)', () => {
   it('allows 900 combined edition requests, rejects the next with 429, and does not spend the list limit', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});

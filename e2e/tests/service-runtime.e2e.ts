@@ -71,7 +71,6 @@ test('API responses carry the content security policy', async ({ app }) => {
     "'self'",
     'https://accounts.spotify.com',
     'https://api.spotify.com',
-    'https://open.spotify.com',
     'https://www.google-analytics.com',
   ]);
 });

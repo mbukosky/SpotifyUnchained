@@ -26,6 +26,17 @@ beforeAll(async () => {
 
 afterAll(() => new Promise(resolve => server.close(resolve)));
 
+describe('Content-Security-Policy', () => {
+  it('lists the Spotify hosts the page needs and no more', async () => {
+    const res = await fetch(`${base}/health`);
+    const csp = Object.fromEntries(res.headers.get('content-security-policy').split(';')
+      .map(d => d.trim().split(/\s+/)).map(([name, ...sources]) => [name, sources]));
+    expect(csp['connect-src']).toEqual(["'self'", 'https://accounts.spotify.com', 'https://api.spotify.com', 'https://www.google-analytics.com']);
+    expect(csp['frame-src']).toEqual(['https://open.spotify.com']);
+    expect(csp['img-src']).toContain('https://i.scdn.co');
+  });
+});
+
 describe('CORS', () => {
   it('allows a configured origin on API routes', async () => {
     const res = await preflight('/api/spotify/token', 'http://localhost:3000');

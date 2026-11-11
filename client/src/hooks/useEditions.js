@@ -67,8 +67,9 @@ export function useEditions() {
 
 /**
  * The API sends an edition's tracks as columns (`{ id: [], name: [], artist: [] }`)
- * and leaves out `uri` and `open_url` when they follow from the track id.
- * Rebuild the track objects every consumer expects.
+ * and leaves out `uri` and `open_url` when they follow from the track id, and
+ * `cover` when no track has one. Rebuild the track objects every consumer
+ * expects; a track without a cover gets `cover: null`.
  */
 export function expandTracks(columns) {
   if (Array.isArray(columns)) return columns;
@@ -79,6 +80,7 @@ export function expandTracks(columns) {
     artist: columns.artist?.[i] ?? '',
     uri: columns.uri ? columns.uri[i] : `spotify:track:${id}`,
     open_url: columns.open_url ? columns.open_url[i] : `https://open.spotify.com/track/${id}`,
+    cover: columns.cover?.[i] ?? null,
   }));
 }
 
