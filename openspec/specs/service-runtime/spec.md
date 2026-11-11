@@ -4,6 +4,7 @@
 This capability covers how the SpotifyUnchained server starts, what configuration it requires, and how it protects itself and reports health. It defines the security headers and CSP, CORS scope, rate limits, body size limit, production client serving and SPA fallback, and the shape of error and health responses.
 
 ## Requirements
+
 ### Requirement: Required configuration fails fast
 The system SHALL refuse to start when any of `DB_URI`, `SPOTIFY_CLIENT_ID` or `SPOTIFY_CLIENT_SECRET` is unset or empty, and SHALL name every missing variable in the startup error.
 
@@ -65,9 +66,9 @@ The system SHALL send a Content-Security-Policy header on every response, includ
 - **WHEN** a client requests any API route or static asset
 - **THEN** the Content-Security-Policy header carries `default-src 'self'`
 - **AND** `script-src` allows `'self'`, `'unsafe-inline'`, `https://www.googletagmanager.com` and `https://www.google-analytics.com`
-- **AND** `style-src` allows `'self'`, `'unsafe-inline'` and `https://fonts.googleapis.com`
-- **AND** `font-src` allows `'self'` and `https://fonts.gstatic.com`
-- **AND** `img-src` allows `'self'`, `data:`, `https://www.google-analytics.com`, `https://i.scdn.co`, `https://cdn.ko-fi.com` and `https://storage.ko-fi.com`
+- **AND** `style-src` allows `'self'` and `'unsafe-inline'` only
+- **AND** `font-src` allows `'self'` only
+- **AND** `img-src` allows `'self'`, `data:`, `https://www.google-analytics.com`, `https://i.scdn.co`, `https://*.spotifycdn.com`, `https://cdn.ko-fi.com` and `https://storage.ko-fi.com`
 - **AND** `frame-src` allows `https://open.spotify.com`
 - **AND** `connect-src` allows `'self'`, `https://accounts.spotify.com`, `https://api.spotify.com` and `https://www.google-analytics.com`
 
@@ -182,3 +183,14 @@ The system SHALL answer any unhandled error with body `{"error":"Internal server
 #### Scenario: Stack trace visibility
 - **WHEN** an error is handled in production
 - **THEN** the stack trace is not written to the log
+
+### Requirement: Static asset caching
+The system SHALL send `Cache-Control: public, max-age=31536000, immutable` with hashed files served from `/assets/`, and `Cache-Control: public, max-age=0` with every other static file.
+
+#### Scenario: Hashed asset
+- **WHEN** a client requests a built file under `/assets/`
+- **THEN** the response carries `Cache-Control: public, max-age=31536000, immutable`
+
+#### Scenario: Other static file
+- **WHEN** a client requests `/` from the built client
+- **THEN** the response carries `Cache-Control: public, max-age=0`
