@@ -26,8 +26,8 @@ export default function ScaleHeadline({ numbers, region }) {
       </h2>
       <p className="scale-sub">
         {isAll
-          ? 'Every region, one tile per week. Brighter weeks were archived in more regions.'
-          : `New Music Friday ${REGION_NAMES[region] || region}, one tile per week. Brighter tiles hold more tracks.`}
+          ? "Spotify's New Music Friday refreshes every week, and last week's discoveries vanish. We keep every edition, in every region, so the music you almost loved is never lost."
+          : `Spotify's New Music Friday ${REGION_NAMES[region] || region} refreshes every week, and last week's discoveries vanish. We keep every edition, so the music you almost loved is never lost.`}
       </p>
     </div>
   );

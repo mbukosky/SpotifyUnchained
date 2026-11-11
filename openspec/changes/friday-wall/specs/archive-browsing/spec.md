@@ -115,11 +115,16 @@ The system SHALL, when the page is loaded with an `edition` parameter whose edit
 - **AND** the saved region choice is still US
 
 ### Requirement: Jump to a date
-The system SHALL show a date field labelled "Jump to a date". When a visitor chooses a date, the system SHALL open the edition of the selected region whose date is nearest that date, choosing the later edition when two are equally near.
+The system SHALL show a date field labelled "Jump to a date". When a visitor chooses a date, the system SHALL open the edition of the selected region whose date is nearest that date, choosing the later edition when two are equally near. While the field does not have focus it SHALL show the date of the open edition, however that edition was opened, and SHALL be empty when no edition is open.
 
 #### Scenario: Nearest edition opens
 - **WHEN** a visitor viewing a region with editions on 7 and 14 February 2026 chooses 12 February 2026
 - **THEN** the panel shows the edition of 14 February 2026
+
+#### Scenario: Field follows the open edition
+- **WHEN** a visitor opens the edition of 14 February 2026 from its wall tile or a link
+- **THEN** the "Jump to a date" field shows 14 February 2026
+- **AND** stepping to the previous edition changes the field to that edition's date
 
 ### Requirement: Lucky dip
 The system SHALL show a "Lucky dip" button that opens an edition chosen at random from the selected region (from every region when ALL is selected), opens one track chosen at random from it in the player bar, and scrolls that track's tile into view. When reduced motion is not requested, the system SHALL animate a highlight across several tiles before opening the edition. When reduced motion is requested, it SHALL open the edition without that animation.
@@ -216,7 +221,7 @@ The system SHALL show every track of the open edition as a cover tile in a grid,
 - **AND** pressing Tab moves focus out of the grid
 
 ### Requirement: Track preview
-The system SHALL show a player bar with the track grid, which stays at the bottom of the viewport while the grid is taller than the screen. Activating a tile by click, Enter or Space SHALL open a Spotify player embed for that track in the player bar, mark the tile as playing, and attempt to start playback once the embed loads. While Spotify is answering cover lookups with 429, a newly opened track SHALL show a notice with a "Try now" button in place of the embed, replaced by the embed when lookups succeed again or the visitor activates "Try now"; an embed that is already open SHALL stay. When an embed loads but does not report ready within six seconds (Spotify refused it), the same notice SHALL cover it, with "Try now" loading it again, and cover lookups SHALL pause as for a 429. At most one embed SHALL exist at a time: activating another tile SHALL replace it. While a track is open the player bar SHALL show "Now playing", the track's position as "NN/total", its name and its artist, with a "Previous track" button, a "Next track" button, a link named "Open <track name> on Spotify" and a "Close player" button. "Previous track" SHALL be disabled on the first track and "Next track" on the last. The Spotify link SHALL open the track on Spotify in a new tab without closing the embed. "Close player" SHALL remove the embed and the playing mark.
+The system SHALL show a player bar with the track grid, which sits below the last row of tiles and scrolls with the grid. Activating a tile by click, Enter or Space SHALL open a Spotify player embed for that track in the player bar, mark the tile as playing, and attempt to start playback once the embed loads. While Spotify is answering cover lookups with 429, a newly opened track SHALL show a notice with a "Try now" button in place of the embed, replaced by the embed when lookups succeed again or the visitor activates "Try now"; an embed that is already open SHALL stay. When an embed loads but does not report ready within six seconds (Spotify refused it), the same notice SHALL cover it, with "Try now" loading it again, and cover lookups SHALL pause as for a 429. At most one embed SHALL exist at a time: activating another tile SHALL replace it. While a track is open the player bar SHALL show "Now playing", the track's position as "NN/total", its name and its artist, with a "Previous track" button, a "Next track" button, a link named "Open <track name> on Spotify" and a "Close player" button. "Previous track" SHALL be disabled on the first track and "Next track" on the last. The Spotify link SHALL open the track on Spotify in a new tab without closing the embed. "Close player" SHALL remove the embed and the playing mark.
 
 #### Scenario: Preview opens and closes
 - **WHEN** a visitor clicks the fifth tile of a 30-track edition

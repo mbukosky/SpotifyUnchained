@@ -1,9 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const DATE_VALUE = /^(\d{4})-\d{2}-\d{2}$/;
 
-export default function WallControls({ first, last, dipping, onLuckyDip, onJump }) {
-  const [value, setValue] = useState('');
+export default function WallControls({ first, last, selected = '', dipping, onLuckyDip, onJump }) {
+  const [value, setValue] = useState(selected);
+  const focused = useRef(false);
+
+  // The field shows the open edition's date, however it was opened. While the
+  // visitor is typing in it the field is left alone: a jump lands on the
+  // nearest edition, and rewriting the date under the cursor would change the
+  // parts not typed yet. It catches up when focus leaves.
+  useEffect(() => {
+    if (!focused.current) setValue(selected);
+  }, [selected]);
 
   const onChange = (e) => {
     const v = e.target.value;
@@ -31,7 +40,18 @@ export default function WallControls({ first, last, dipping, onLuckyDip, onJump 
       </button>
       <label className="jump">
         <span className="jump-label">Jump to a date</span>
-        <input type="date" value={value} min={first} max={last} onChange={onChange} />
+        <input
+          type="date"
+          value={value}
+          min={first}
+          max={last}
+          onChange={onChange}
+          onFocus={() => { focused.current = true; }}
+          onBlur={() => {
+            focused.current = false;
+            setValue(selected);
+          }}
+        />
       </label>
     </div>
   );

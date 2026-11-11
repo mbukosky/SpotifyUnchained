@@ -136,7 +136,7 @@ export default function CoverGrid({ tracks, accent, activeIndex, onPlay }) {
     setFocusIdx(i);
     if (el.matches(':focus-visible')) {
       setTip(i);
-      // Keep the focused tile clear of the sticky header and player bar.
+      // Keep the focused tile clear of the sticky header.
       el.scrollIntoView({ block: 'nearest' });
     }
   };

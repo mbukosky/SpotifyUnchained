@@ -110,45 +110,19 @@ function Frame({ track }) {
 }
 
 /**
- * The bar under the cover grid. It sticks to the bottom of the viewport while
- * the grid is taller than the screen, and sits after the grid in flow, so it
- * never covers the last row once the visitor reaches the end. It holds the
- * single embed and the save button.
+ * The bar below the cover grid's last row. It holds the single embed and the
+ * save button, and scrolls with the grid.
  */
 export default function PlayerBar({ edition, index, accent, onSelect, onClose }) {
-  const ref = useRef(null);
   const tracks = edition.tracks;
   const track = index >= 0 ? tracks[index] : null;
   const cover = coverUrl(track?.cover);
-
-  // Publish the bar's height so tiles scrolled into view clear it. The
-  // property is inherited by every tile, so changing it restyles them all:
-  // write it only when it changes, and after the frame that shows the tiles
-  // (the observer reports during that frame) rather than inside it.
-  useEffect(() => {
-    const bar = ref.current;
-    const host = bar?.parentElement;
-    if (!bar || !host || typeof ResizeObserver === 'undefined') return undefined;
-    let timer;
-    const ro = new ResizeObserver(() => {
-      // Layout is clean while the observer reports, so read the height here.
-      const h = `${bar.offsetHeight}px`;
-      clearTimeout(timer);
-      if (host.style.getPropertyValue('--player-h') === h) return;
-      timer = setTimeout(() => host.style.setProperty('--player-h', h), 0);
-    });
-    ro.observe(bar);
-    return () => {
-      ro.disconnect();
-      clearTimeout(timer);
-    };
-  }, []);
 
   const color = track ? artistColor(track.artist, accent) : null;
   const name = track ? clean(track.name) : '';
 
   return (
-    <div ref={ref} className={`player-bar${track ? ' is-open' : ''}`} role="region" aria-label="Player">
+    <div className={`player-bar${track ? ' is-open' : ''}`} role="region" aria-label="Player">
       {track ? (
         <>
           <div className="player-now" style={{ '--tile-c': color.color }}>

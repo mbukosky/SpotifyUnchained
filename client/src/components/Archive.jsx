@@ -201,6 +201,7 @@ export default function Archive() {
           <WallControls
             first={visible[0].date}
             last={visible[visible.length - 1].date}
+            selected={openEdition?.date ?? ''}
             dipping={dipping}
             onLuckyDip={luckyDip}
             onJump={jump}

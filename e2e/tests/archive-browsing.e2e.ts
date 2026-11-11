@@ -566,6 +566,25 @@ test('jumping to a date opens the nearest edition', async ({ app, screen, browse
 });
 
 // openspec/specs/archive-browsing/spec.md
+// Requirement: Jump to a date. Scenario: Field follows the open edition.
+// Scripted: the field's value is not in the page's text.
+test('the date field shows the open edition', async ({ app, screen, browser }) => {
+  await presetRegion(browser, 'DE');
+  await openEdition(app, editionId('DE'));
+  const fieldValue = () => browser.evaluate(() => document.querySelector<HTMLInputElement>('.jump input')!.value);
+
+  await expect(panel(browser).getByRole('heading', FEB_14)).toBeVisible();
+  await expect.poll(fieldValue).toBe('2026-02-14');
+
+  await screen.getByRole('button', 'Previous edition').tap();
+  await expect(panel(browser).getByRole('heading', FEB_07)).toBeVisible();
+  await expect.poll(fieldValue).toBe('2026-02-07');
+
+  await screen.getByRole('button', 'Close edition').tap();
+  await expect.poll(fieldValue).toBe('');
+});
+
+// openspec/specs/archive-browsing/spec.md
 // Requirement: Lucky dip. Scenario: Lucky dip opens a track.
 test('Lucky dip opens a track', async ({ agent, app, browser }) => {
   await presetRegion(browser, 'DE');
@@ -673,7 +692,7 @@ test('long playlist shows every track', async ({ agent, app, browser }) => {
   await lastTile.scrollIntoView();
   await expect(lastTile).toBeVisible();
   // toBeVisible ignores overflow clipping, so check the tile against every clipping
-  // box above it, and against the sticky player bar.
+  // box above it, and against the player bar.
   const hidden = () =>
     browser.evaluate((selector: string) => {
       const all = document.querySelectorAll(`${selector} .cover-tile`);

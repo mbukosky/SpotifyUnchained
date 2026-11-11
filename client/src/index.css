@@ -1079,9 +1079,8 @@ body {
 
 /* --- Cover grid ---
    Every track as an album-cover tile. --tile-g / --tile-c are the lead
-   artist's fallback gradient and color (client/src/lib/tracks.js);
-   --player-h is the player bar's height, published by PlayerBar.jsx. */
-.ep-tracks { position: relative; --player-h: 100px; }
+   artist's fallback gradient and color (client/src/lib/tracks.js). */
+.ep-tracks { position: relative; }
 
 .cover-grid {
   position: relative;
@@ -1100,9 +1099,8 @@ body {
   overflow: hidden;
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  /* Clear the sticky header and the player bar when focus or a lucky dip
-     scrolls a tile into view. */
-  scroll-margin: 96px 0 calc(var(--player-h) + 28px);
+  /* Clear the sticky header when focus or a lucky dip scrolls a tile into view. */
+  scroll-margin: 96px 0 28px;
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s, border-radius 0.3s, filter 0.3s;
   /* backwards, not both: a held end frame would pin transform and kill the hover grow. */
   animation: cover-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) backwards;
@@ -1235,13 +1233,10 @@ body {
 }
 
 /* --- Player bar ---
-   Sticky at the viewport bottom while the grid is taller than the screen;
-   it sits after the grid in flow, so at the end of the grid it rests below
-   the last row instead of covering it. */
+   Sits below the last row of the grid and scrolls with it. It does not
+   follow the viewport: a bar floating over the covers hid them. */
 .player-bar {
-  position: sticky;
-  bottom: max(12px, env(safe-area-inset-bottom));
-  z-index: 6;
+  position: relative;
   margin-top: 18px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1351,7 +1346,7 @@ body {
   .cover-grid { grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 4px; }
   .cover-tile { border-radius: 6px; scroll-margin-top: 140px; }
   .cover-fallback { font-size: 0.72rem; }
-  .player-bar { bottom: max(8px, env(safe-area-inset-bottom)); margin-top: 14px; padding: 8px 8px 8px 14px; gap: 8px 10px; }
+  .player-bar { margin-top: 14px; padding: 8px 8px 8px 14px; gap: 8px 10px; }
   .player-hint { font-size: 0.76rem; line-height: 1.35; }
   .player-bar.is-open {
     padding: 8px;
