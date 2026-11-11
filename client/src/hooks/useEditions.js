@@ -78,8 +78,9 @@ export function expandTracks(columns) {
     id,
     name: columns.name?.[i] ?? '',
     artist: columns.artist?.[i] ?? '',
-    uri: columns.uri ? columns.uri[i] : `spotify:track:${id}`,
-    open_url: columns.open_url ? columns.open_url[i] : `https://open.spotify.com/track/${id}`,
+    // A column can still hold null or '' for a track stored without the value.
+    uri: columns.uri?.[i] || `spotify:track:${id}`,
+    open_url: columns.open_url?.[i] || `https://open.spotify.com/track/${id}`,
     cover: columns.cover?.[i] ?? null,
   }));
 }
