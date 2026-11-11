@@ -652,6 +652,12 @@ body {
 
 .jump input:focus-visible { outline: 2px solid var(--rc); outline-offset: 1px; }
 
+/* iOS Safari zooms the whole page in when a field with text under 16px takes
+   focus, and stays zoomed, which pushes the right edge of the page off screen. */
+@media (pointer: coarse) {
+  .jump input { font-size: 16px; }
+}
+
 /* --- Wall --- */
 .wall-frame {
   position: relative;
